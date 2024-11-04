@@ -1,0 +1,87 @@
+/* App.module.css */
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  color: #333;
+}
+
+.title {
+  text-align: center;
+  font-size: 2.2em;
+  margin-bottom: 20px;
+  color: #222;
+  font-weight: 600;
+}
+
+.error {
+  color: #d9534f;
+  text-align: center;
+  margin-bottom: 1em;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+}
+
+th,
+td {
+  padding: 15px;
+  text-align: left;
+}
+
+th {
+  background-color: #f3f4f6;
+  color: #333;
+  font-weight: 600;
+  border-bottom: 2px solid #e5e7eb;
+  cursor: pointer;
+  position: relative;
+}
+
+th:hover {
+  background-color: #e2e6ea;
+}
+
+th .chevron {
+  font-size: 0.8em;
+  margin-left: 8px;
+  position: absolute;
+  right: 15px;
+  color: #555;
+}
+
+td {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+tr:hover {
+  background-color: #f9fafb;
+  transition: background-color 0.3s ease;
+}
+
+.link {
+  color: #0073e6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.link:hover {
+  text-decoration: underline;
+  color: #005bb5;
+}
+
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
