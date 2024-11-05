@@ -2,8 +2,19 @@ import { useState, useEffect } from "react";
 import { fetchTattooShopsWithArtists } from "./services/api";
 import styles from "./App.module.css";
 
+interface Artist {
+  id: number;
+  name: string;
+  instagram_handle?: string;
+  shop_name?: string;
+  shop_instagram_handle?: string;
+  city_name?: string;
+  state_name?: string;
+  country_name?: string;
+}
+
 function App() {
-  const [artists, setArtists] = useState([]);
+  const [artists, setArtists] = useState<Artist[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState({
     key: "name",
@@ -14,7 +25,7 @@ function App() {
     async function getArtists() {
       try {
         const data = await fetchTattooShopsWithArtists();
-        const sortedArtists = data.sort((a: any, b: any) =>
+        const sortedArtists = data.sort((a: Artist, b: Artist) =>
           a.name.localeCompare(b.name)
         );
         setArtists(sortedArtists);
@@ -27,15 +38,19 @@ function App() {
     getArtists();
   }, []);
 
-  const sortedArtists = [...artists].sort((a: any, b: any) => {
-    if (a[sortConfig.key] < b[sortConfig.key])
-      return sortConfig.direction === "asc" ? -1 : 1;
-    if (a[sortConfig.key] > b[sortConfig.key])
-      return sortConfig.direction === "asc" ? 1 : -1;
+  const sortedArtists = [...artists].sort((a, b) => {
+    const aValue = a[sortConfig.key as keyof Artist];
+    const bValue = b[sortConfig.key as keyof Artist];
+
+    if (aValue === undefined) return 1; // Sort undefined values to the end
+    if (bValue === undefined) return -1; // Sort undefined values to the end
+
+    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
     return 0;
   });
 
-  const requestSort = (key: string) => {
+  const requestSort = (key: keyof Artist) => {
     let direction = "asc";
     if (sortConfig.key === key && sortConfig.direction === "asc") {
       direction = "desc";
@@ -43,7 +58,7 @@ function App() {
     setSortConfig({ key, direction });
   };
 
-  const getChevron = (column: string) => {
+  const getChevron = (column: keyof Artist) => {
     if (sortConfig.key !== column) return null;
     return sortConfig.direction === "asc" ? "▲" : "▼";
   };
@@ -77,7 +92,7 @@ function App() {
           </tr>
         </thead>
         <tbody>
-          {sortedArtists.map((artist: any) => (
+          {sortedArtists.map((artist) => (
             <tr key={artist.id}>
               <td>{artist.name}</td>
               <td>
