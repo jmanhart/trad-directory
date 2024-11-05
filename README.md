@@ -1,50 +1,58 @@
-# React + TypeScript + Vite
+# Tattoo Artist Directory
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React and Vite-powered web app for discovering tattoo artists and shops. Built with Supabase for data management and deployed on Vercel.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Artist Directory**: Browse and filter tattoo artists by city, state, and country.
+- **Shop Links**: View associated tattoo shops and Instagram profiles for each artist.
+- **Sorting**: Easily sort artists by name, location, or shop.
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- **Frontend**: React + Vite
+- **Backend**: Supabase (PostgreSQL)
+- **Deployment**: Vercel
 
-- Configure the top-level `parserOptions` property like this:
+## Setup & Development
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+1. **Clone the repository**:
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+   ```bash
+   git clone https://github.com/your-username/tattoo-artist-directory.git
+   cd tattoo-artist-directory
+   ```
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+2. **Install dependencies**:
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+   ```bash
+   npm install
+   ```
+
+3. **Environment Variables**:
+
+   - Create a `.env` file in the project root with the following:
+     ```plaintext
+     VITE_SUPABASE_URL=your-supabase-url
+     VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+     ```
+
+4. **Run the app**:
+
+   ```bash
+   npm run dev
+   ```
+
+5. **Build for production**:
+   ```bash
+   npm run build
+   ```
+
+## Deployment
+
+1. Add the `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` environment variables in Vercel’s dashboard.
+2. Connect your GitHub repository to Vercel and deploy.
+
+---
+
+Enjoy discovering and organizing talented tattoo artists!
