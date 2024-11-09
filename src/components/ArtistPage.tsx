@@ -40,6 +40,7 @@ const ArtistPage: React.FC = () => {
   return (
     <div className={styles.container}>
       <h1>{artist.name}</h1>
+      {error && <p className="error-message">{error}</p>}
       {/* The rest of the artist details */}
     </div>
   );

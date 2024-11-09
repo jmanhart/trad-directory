@@ -3,23 +3,40 @@ import styles from "./SearchBar.module.css";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
+  suggestions: string[]; // Array of possible search terms (e.g., names, cities, etc.)
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
+const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
   const [query, setQuery] = useState("");
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
+    const input = e.target.value;
+    setQuery(input);
+
+    if (input.length > 0) {
+      const filtered = suggestions.filter((suggestion) =>
+        suggestion.toLowerCase().includes(input.toLowerCase())
+      );
+      setFilteredSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setFilteredSuggestions([]);
+      setShowSuggestions(false);
+    }
   };
 
-  const handleSearch = () => {
-    onSearch(query);
+  const handleSelectSuggestion = (suggestion: string) => {
+    setQuery(suggestion);
+    setShowSuggestions(false);
+    onSearch(suggestion);
   };
 
-  // Call onSearch whenever the input changes (for live search)
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      handleSearch();
+      onSearch(query);
+      setShowSuggestions(false);
     }
   };
 
@@ -32,7 +49,20 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
         onKeyPress={handleKeyPress}
         placeholder="Search by city, state, or country..."
       />
-      <button onClick={handleSearch}>Search</button>
+      <button onClick={() => onSearch(query)}>Search</button>
+      {showSuggestions && (
+        <ul className={styles.suggestionsList}>
+          {filteredSuggestions.map((suggestion, index) => (
+            <li
+              key={index}
+              onClick={() => handleSelectSuggestion(suggestion)}
+              className={styles.suggestionItem}
+            >
+              {suggestion}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };

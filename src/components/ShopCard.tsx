@@ -1,5 +1,5 @@
 import React from "react";
-// import styles from "./ShopCard.module.css";
+import styles from "./ShopCard.module.css";
 
 interface Shop {
   id: number;

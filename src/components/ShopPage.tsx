@@ -23,7 +23,7 @@ interface Shop {
 const ShopPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [shop, setShop] = useState<Shop | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function getShop() {
