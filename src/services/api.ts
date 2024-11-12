@@ -7,7 +7,11 @@ export async function fetchTattooShopsWithArtists() {
         id,
         name,
         instagram_handle,
-        city: cities (city_name, state: states (state_name), country: countries (country_name)),
+        city: cities (
+          city_name,
+          state: states (state_name),
+          country: countries (country_name)
+        ),
         artist_shop (
           shop: tattoo_shops (id, shop_name, instagram_handle)
         )
@@ -18,17 +22,21 @@ export async function fetchTattooShopsWithArtists() {
       throw new Error(error.message);
     }
 
-    console.log("Fetched artists with shops data:", data);
-
     return (data || []).map((artist: any) => ({
       ...artist,
-      city_name: artist.city?.city_name || "N/A",
-      state_name: artist.city?.state?.state_name || "N/A",
-      country_name: artist.city?.country?.country_name || "N/A",
-      shop_id: artist.artist_shop[0]?.shop?.id || null,
-      shop_name: artist.artist_shop[0]?.shop?.shop_name || "N/A",
+      city_name: Array.isArray(artist.city)
+        ? artist.city[0]?.city_name
+        : artist.city?.city_name || "N/A",
+      state_name: Array.isArray(artist.city?.state)
+        ? artist.city.state[0]?.state_name
+        : artist.city.state?.state_name || "N/A",
+      country_name: Array.isArray(artist.city?.country)
+        ? artist.city.country[0]?.country_name
+        : artist.city.country?.country_name || "N/A",
+      shop_id: artist.artist_shop?.[0]?.shop?.id || null,
+      shop_name: artist.artist_shop?.[0]?.shop?.shop_name || "N/A",
       shop_instagram_handle:
-        artist.artist_shop[0]?.shop?.instagram_handle || null,
+        artist.artist_shop?.[0]?.shop?.instagram_handle || null,
     }));
   } catch (err) {
     console.error("Unhandled error in fetchTattooShopsWithArtists:", err);
@@ -46,7 +54,11 @@ export async function fetchArtistById(id: number) {
         id,
         name,
         instagram_handle,
-        city: cities (city_name, state: states (state_name), country: countries (country_name)),
+        city: cities (
+          city_name,
+          state: states (state_name),
+          country: countries (country_name)
+        ),
         artist_shop (
           shop: tattoo_shops (id, shop_name, instagram_handle)
         )
@@ -60,17 +72,21 @@ export async function fetchArtistById(id: number) {
       throw new Error(error.message);
     }
 
-    console.log(`Fetched artist data for ID ${id}:`, data);
-
     return {
       ...data,
-      city_name: data.city?.city_name || "N/A",
-      state_name: data.city?.state?.state_name || "N/A",
-      country_name: data.city?.country?.country_name || "N/A",
-      shop_id: data.artist_shop[0]?.shop?.id || null,
-      shop_name: data.artist_shop[0]?.shop?.shop_name || "N/A",
+      city_name: Array.isArray(data.city)
+        ? data.city[0]?.city_name
+        : data.city?.city_name || "N/A",
+      state_name: Array.isArray(data.city?.state)
+        ? data.city.state[0]?.state_name
+        : data.city.state?.state_name || "N/A",
+      country_name: Array.isArray(data.city?.country)
+        ? data.city.country[0]?.country_name
+        : data.city.country?.country_name || "N/A",
+      shop_id: data.artist_shop?.[0]?.shop?.id || null,
+      shop_name: data.artist_shop?.[0]?.shop?.shop_name || "N/A",
       shop_instagram_handle:
-        data.artist_shop[0]?.shop?.instagram_handle || null,
+        data.artist_shop?.[0]?.shop?.instagram_handle || null,
     };
   } catch (err) {
     console.error(`Unhandled error in fetchArtistById for ID ${id}:`, err);
@@ -88,8 +104,14 @@ export async function fetchShopById(id: number) {
         id,
         shop_name,
         address,
-        city: cities (city_name, state: states (state_name), country: countries (country_name)),
-        artists: artist_shop (artist: artists (id, name, instagram_handle))
+        city: cities (
+          city_name,
+          state: states (state_name),
+          country: countries (country_name)
+        ),
+        artists: artist_shop (
+          artist: artists (id, name, instagram_handle)
+        )
       `
       )
       .eq("id", id)
@@ -100,13 +122,17 @@ export async function fetchShopById(id: number) {
       throw new Error(error.message);
     }
 
-    console.log(`Fetched shop data for ID ${id}:`, data);
-
     return {
       ...data,
-      city_name: data.city?.city_name || "N/A",
-      state_name: data.city?.state?.state_name || "N/A",
-      country_name: data.city?.country?.country_name || "N/A",
+      city_name: Array.isArray(data.city)
+        ? data.city[0]?.city_name
+        : data.city?.city_name || "N/A",
+      state_name: Array.isArray(data.city?.state)
+        ? data.city.state[0]?.state_name
+        : data.city.state?.state_name || "N/A",
+      country_name: Array.isArray(data.city?.country)
+        ? data.city.country[0]?.country_name
+        : data.city.country?.country_name || "N/A",
       artists: (data.artists || []).map((entry: any) => ({
         id: entry.artist.id,
         name: entry.artist.name,
