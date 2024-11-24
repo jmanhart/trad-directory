@@ -1,23 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./SearchBar.module.css";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
-  suggestions: string[]; // Array of possible search terms (e.g., names, cities, etc.)
+  suggestions: { label: string; type: "artist" | "shop" | "location" }[]; // Array of possible search terms
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
   const [query, setQuery] = useState("");
-  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<
+    { label: string; type: string }[]
+  >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-    setQuery(input);
-
-    if (input.length > 0) {
+  useEffect(() => {
+    if (query) {
       const filtered = suggestions.filter((suggestion) =>
-        suggestion.toLowerCase().includes(input.toLowerCase())
+        suggestion.label.toLowerCase().includes(query.toLowerCase())
       );
       setFilteredSuggestions(filtered);
       setShowSuggestions(true);
@@ -25,19 +24,57 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
       setFilteredSuggestions([]);
       setShowSuggestions(false);
     }
+  }, [query, suggestions]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
   };
 
   const handleSelectSuggestion = (suggestion: string) => {
     setQuery(suggestion);
-    setShowSuggestions(false);
-    onSearch(suggestion);
+    setShowSuggestions(false); // Close the suggestions list
+    onSearch(suggestion); // Trigger the search callback
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       onSearch(query);
-      setShowSuggestions(false);
+      setShowSuggestions(false); // Close the suggestions list
     }
+  };
+
+  const handleSearch = (query: string) => {
+    console.log("Search query:", query); // Debugging log
+
+    if (!artists.length) return;
+
+    const lowerCaseQuery = query.toLowerCase();
+
+    // Filter artists matching the query
+    const filteredArtists = artists.filter(
+      (artist) =>
+        artist.name?.toLowerCase().includes(lowerCaseQuery) ||
+        artist.city_name?.toLowerCase().includes(lowerCaseQuery) ||
+        artist.state_name?.toLowerCase().includes(lowerCaseQuery) ||
+        artist.country_name?.toLowerCase().includes(lowerCaseQuery)
+    );
+
+    // Filter shops matching the query and deduplicate them
+    const filteredShops = [
+      ...new Map(
+        artists
+          .filter((artist) =>
+            artist.shop_name?.toLowerCase().includes(lowerCaseQuery)
+          )
+          .map((artist) => [artist.shop_id, artist])
+      ).values(),
+    ];
+
+    // Combine results, prioritizing shops if needed
+    const combinedResults = [...filteredArtists, ...filteredShops];
+
+    console.log("Filtered results:", combinedResults); // Debugging log
+    setFilteredResults(combinedResults);
   };
 
   return (
@@ -47,18 +84,18 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
         value={query}
         onChange={handleInputChange}
         onKeyPress={handleKeyPress}
-        placeholder="Search by city, state, or country..."
+        placeholder="Search by artist, shop, city, or country..."
       />
-      <button onClick={() => onSearch(query)}>Search</button>
-      {showSuggestions && (
+      <button onClick={handleSearch}>Search</button>
+      {showSuggestions && filteredSuggestions.length > 0 && (
         <ul className={styles.suggestionsList}>
           {filteredSuggestions.map((suggestion, index) => (
             <li
               key={index}
-              onClick={() => handleSelectSuggestion(suggestion)}
+              onMouseDown={() => handleSelectSuggestion(suggestion.label)}
               className={styles.suggestionItem}
             >
-              {suggestion}
+              {suggestion.label} ({suggestion.type})
             </li>
           ))}
         </ul>

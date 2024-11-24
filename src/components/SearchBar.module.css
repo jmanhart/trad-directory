@@ -1,26 +1,99 @@
 .searchBar {
+  position: relative;
   display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 input {
-  padding: 8px;
-  border: 1px solid #ccc;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--input-border-color, #ccc);
   border-radius: 4px;
-  width: 300px;
+  font-size: 16px;
+  background-color: var(--input-bg-color, #ffffff);
+  color: var(--input-text-color, #213547);
 }
 
 button {
-  padding: 8px 16px;
+  padding: 10px 15px;
+  margin-left: 10px;
   border: none;
-  background-color: #0073e6;
-  color: #fff;
   border-radius: 4px;
-  margin-left: 8px;
   cursor: pointer;
+  font-size: 16px;
+  color: var(--button-text-color, #213547);
+  background-color: var(--button-bg-color, #f9f9f9);
 }
 
 button:hover {
-  background-color: #005bb5;
+  background-color: var(--button-hover-bg-color, #e6e6e6);
+}
+
+.suggestionsList {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 150px;
+  overflow-y: auto;
+  background: var(--dropdown-bg-color, #ffffff);
+  border: 1px solid var(--dropdown-border-color, #ccc);
+  border-radius: 4px;
+  z-index: 10;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  margin: 5px 0 0;
+  list-style-type: none;
+}
+
+.suggestionItem {
+  padding: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--dropdown-item-text-color, #213547);
+  border-bottom: 1px solid var(--dropdown-item-border-color, #f0f0f0);
+}
+
+.suggestionItem:last-child {
+  border-bottom: none;
+}
+
+.suggestionItem:hover {
+  background-color: var(--dropdown-item-hover-bg-color, #f9f9f9);
+}
+
+/* Dark Theme Support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --input-border-color: #444;
+    --input-bg-color: #333;
+    --input-text-color: #eee;
+    --button-bg-color: #444;
+    --button-text-color: #eee;
+    --button-hover-bg-color: #555;
+    --dropdown-bg-color: #333;
+    --dropdown-border-color: #444;
+    --dropdown-item-text-color: #eee;
+    --dropdown-item-border-color: #555;
+    --dropdown-item-hover-bg-color: #444;
+  }
+}
+
+/* Light Theme Support */
+@media (prefers-color-scheme: light) {
+  :root {
+    --input-border-color: #ccc;
+    --input-bg-color: #ffffff;
+    --input-text-color: #213547;
+    --button-bg-color: #f9f9f9;
+    --button-text-color: #213547;
+    --button-hover-bg-color: #e6e6e6;
+    --dropdown-bg-color: #ffffff;
+    --dropdown-border-color: #ccc;
+    --dropdown-item-text-color: #213547;
+    --dropdown-item-border-color: #f0f0f0;
+    --dropdown-item-hover-bg-color: #f9f9f9;
+  }
 }
