@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { fetchTattooShopsWithArtists } from "../services/api";
 import SearchBar from "./SearchBar";
+import HeroMessage from "./HeroMessage";
 import ArtistList from "./ArtistList";
 import styles from "./MainApp.module.css";
 
@@ -97,9 +98,10 @@ const MainApp: React.FC = () => {
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Tattoo Artist & Shop Directory</h1>
+      <HeroMessage />
       {error && <p className={styles.error}>{error}</p>}
       <SearchBar onSearch={handleSearch} suggestions={suggestions} />
-      <h2>Results</h2>
+
       {filteredResults.length > 0 ? (
         <ArtistList artists={filteredResults} />
       ) : (

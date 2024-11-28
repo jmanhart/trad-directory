@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styles from "./SearchBar.module.css";
 
 interface SearchBarProps {
@@ -12,7 +12,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
     { label: string; type: string }[]
   >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
+  // Filter suggestions when the query changes
   useEffect(() => {
     if (query) {
       const filtered = suggestions.filter((suggestion) =>
@@ -25,6 +27,23 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
       setShowSuggestions(false);
     }
   }, [query, suggestions]);
+
+  // Close suggestions when clicking outside the component
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
@@ -43,50 +62,24 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
     }
   };
 
-  const handleSearch = (query: string) => {
-    console.log("Search query:", query); // Debugging log
-
-    if (!artists.length) return;
-
-    const lowerCaseQuery = query.toLowerCase();
-
-    // Filter artists matching the query
-    const filteredArtists = artists.filter(
-      (artist) =>
-        artist.name?.toLowerCase().includes(lowerCaseQuery) ||
-        artist.city_name?.toLowerCase().includes(lowerCaseQuery) ||
-        artist.state_name?.toLowerCase().includes(lowerCaseQuery) ||
-        artist.country_name?.toLowerCase().includes(lowerCaseQuery)
-    );
-
-    // Filter shops matching the query and deduplicate them
-    const filteredShops = [
-      ...new Map(
-        artists
-          .filter((artist) =>
-            artist.shop_name?.toLowerCase().includes(lowerCaseQuery)
-          )
-          .map((artist) => [artist.shop_id, artist])
-      ).values(),
-    ];
-
-    // Combine results, prioritizing shops if needed
-    const combinedResults = [...filteredArtists, ...filteredShops];
-
-    console.log("Filtered results:", combinedResults); // Debugging log
-    setFilteredResults(combinedResults);
+  const handleSearch = () => {
+    onSearch(query);
+    setShowSuggestions(false); // Close the suggestions list
   };
 
   return (
-    <div className={styles.searchBar}>
+    <div className={styles.searchBar} ref={wrapperRef}>
       <input
         type="text"
         value={query}
         onChange={handleInputChange}
         onKeyPress={handleKeyPress}
         placeholder="Search by artist, shop, city, or country..."
+        className={styles.input}
       />
-      <button onClick={handleSearch}>Search</button>
+      <button onClick={handleSearch} className={styles.searchButton}>
+        Search
+      </button>
       {showSuggestions && filteredSuggestions.length > 0 && (
         <ul className={styles.suggestionsList}>
           {filteredSuggestions.map((suggestion, index) => (
