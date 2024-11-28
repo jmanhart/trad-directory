@@ -3,22 +3,28 @@ import styles from "./SearchBar.module.css";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
-  suggestions: { label: string; type: "artist" | "shop" | "location" }[]; // Array of possible search terms
+  suggestions: {
+    label: string;
+    type: "artist" | "shop" | "location";
+    detail?: string;
+  }[];
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
   const [query, setQuery] = useState("");
   const [filteredSuggestions, setFilteredSuggestions] = useState<
-    { label: string; type: string }[]
+    { label: string; type: string; detail?: string }[]
   >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Filter suggestions when the query changes
   useEffect(() => {
     if (query) {
-      const filtered = suggestions.filter((suggestion) =>
-        suggestion.label.toLowerCase().includes(query.toLowerCase())
+      const normalizedQuery = query.toLowerCase().replace(/^@/, ""); // Normalize the query
+      const filtered = suggestions.filter(
+        (suggestion) =>
+          suggestion.label.toLowerCase().includes(normalizedQuery) ||
+          suggestion.detail?.toLowerCase().includes(normalizedQuery) // Match detail (e.g., Instagram handle)
       );
       setFilteredSuggestions(filtered);
       setShowSuggestions(true);
@@ -28,7 +34,6 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
     }
   }, [query, suggestions]);
 
-  // Close suggestions when clicking outside the component
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -51,20 +56,20 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
 
   const handleSelectSuggestion = (suggestion: string) => {
     setQuery(suggestion);
-    setShowSuggestions(false); // Close the suggestions list
-    onSearch(suggestion); // Trigger the search callback
+    setShowSuggestions(false);
+    onSearch(suggestion);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       onSearch(query);
-      setShowSuggestions(false); // Close the suggestions list
+      setShowSuggestions(false);
     }
   };
 
   const handleSearch = () => {
     onSearch(query);
-    setShowSuggestions(false); // Close the suggestions list
+    setShowSuggestions(false);
   };
 
   return (
@@ -88,7 +93,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
               onMouseDown={() => handleSelectSuggestion(suggestion.label)}
               className={styles.suggestionItem}
             >
-              {suggestion.label} ({suggestion.type})
+              {suggestion.label}
+              {suggestion.detail && (
+                <span className={styles.detail}> ({suggestion.detail})</span>
+              )}
             </li>
           ))}
         </ul>

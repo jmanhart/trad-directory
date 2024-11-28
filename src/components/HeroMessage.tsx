@@ -50,9 +50,10 @@ const HeroMessage: React.FC = () => {
 
   return (
     <h1 className={styles.heroMessage}>
-      Discover <strong>{artistCount || 0}</strong> talented artists across{" "}
+      Discover <strong>{artistCount || 0}</strong> artists working at over{" "}
       <strong>{shopCount || 0}</strong> tattoo shops in{" "}
-      <strong>{countryCount || 0}</strong> countries worldwide.
+      <strong>{countryCount || 0}</strong> countries worldwide. List grows
+      daily.
     </h1>
   );
 };

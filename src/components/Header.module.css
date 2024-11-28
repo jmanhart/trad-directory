@@ -1,0 +1,44 @@
+.header {
+  position: sticky; /* Sticks the header to the top */
+  top: 0;
+  z-index: 1000; /* Ensures the header is above other content */
+  background-color: #1a1a1a; /* Dark mode background color */
+  color: #ffffff; /* Text color for dark mode */
+  border-bottom: 1px solid #333; /* Subtle separator line */
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.5); /* Slight shadow for depth */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%; /* Ensures the header spans the full width */
+  padding: 0; /* Removes default padding */
+}
+
+.logo {
+  font-size: 1em;
+  font-weight: bold;
+  color: #ffffff;
+  padding: 10px 20px; /* Space around the logo text */
+}
+
+.logo a {
+  text-decoration: none;
+  color: inherit; /* Inherits the text color from the parent */
+}
+
+.nav {
+  display: flex;
+  gap: 20px; /* Space between navigation links */
+  padding: 10px 20px; /* Space around the navigation section */
+}
+
+.navLink {
+  text-decoration: none;
+  color: #bbbbbb; /* Softer white for links */
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.navLink:hover {
+  text-decoration: underline;
+  color: #ffffff; /* Brightens the color on hover */
+}
