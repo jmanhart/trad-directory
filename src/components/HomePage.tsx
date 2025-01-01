@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { fetchTattooShopsWithArtists } from "../services/api";
-import SearchBar from "./SearchBar";
-import ArtistList from "./ArtistList";
+import SearchBar from "./common/SearchBar";
+import ArtistList from "./artist/ArtistList";
 import styles from "./MainApp.module.css";
 import HeroMessage from "./HeroMessage";
 
