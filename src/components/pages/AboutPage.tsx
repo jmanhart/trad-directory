@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "./AboutPage.module.css";
-import HeroMessage from "./HeroMessage";
+import HeroMessage from "./../common/HeroMessage";
 
 const AboutPage: React.FC = () => {
   return (
@@ -21,26 +21,6 @@ const AboutPage: React.FC = () => {
         <li>🏢 Discover shops and see the artists who work there.</li>
         <li>🔍 Search by Instagram handle or artist name.</li>
       </ul>
-      {/* <h2 className={styles.subtitle}>Get Involved</h2>
-      <p className={styles.description}>
-        Are you a traditional tattoo artist or shop owner? Contact us to claim
-        your page and ensure your information stays accurate and up-to-date.
-        Let’s grow the community together.
-      </p>
-      <p className={styles.contact}>
-        📧 Email us:{" "}
-        <a href="mailto:contact@tradirectory.com">contact@tradirectory.com</a>
-      </p>
-      <p className={styles.contact}>
-        📸 Follow us on Instagram:{" "}
-        <a
-          href="https://www.instagram.com/tradirectory"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          @tradirectory
-        </a>
-      </p> */}
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomePage from "./components/HomePage";
-import Header from "./components/Header";
-import AboutPage from "./components/AboutPage";
+import HomePage from "./components/pages/HomePage";
+import Header from "/src/components/common/Header";
+import AboutPage from "./components/pages/AboutPage";
 import ShopPage from "./components/shop/ShopPage";
 // import ShopList from "./components/shop/ShopList";
 import styles from "./App.module.css"; // Import your CSS for styling
