@@ -29,9 +29,9 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist }) => {
       className={styles.cardLink}
     >
       <div className={styles.card}>
-        <h2>{artist.name}</h2>
+        <span className={styles.artistName}>{artist.name}</span>
         <p>
-          Instagram:{" "}
+          {" "}
           {artist.instagram_handle ? (
             <a
               href={`https://www.instagram.com/${artist.instagram_handle}`}
@@ -58,9 +58,10 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist }) => {
             artist.shop_name || "N/A"
           )}
         </p>
-        <p>City: {artist.city_name || "N/A"}</p>
-        <p>State: {artist.state_name || "N/A"}</p>
-        <p>Country: {artist.country_name || "N/A"}</p>
+        <p>
+          {artist.city_name || "N/A"},{artist.state_name || "N/A"}.{" "}
+          {artist.country_name || "N/A"}
+        </p>
       </div>
     </a>
   );

@@ -24,7 +24,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
       const filtered = suggestions.filter(
         (suggestion) =>
           suggestion.label.toLowerCase().includes(normalizedQuery) ||
-          suggestion.detail?.toLowerCase().includes(normalizedQuery) // Match detail (e.g., Instagram handle)
+          suggestion.detail?.toLowerCase().includes(normalizedQuery)
       );
       setFilteredSuggestions(filtered);
       setShowSuggestions(true);
@@ -61,14 +61,17 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && query.trim() !== "") {
       onSearch(query);
       setShowSuggestions(false);
     }
   };
 
   const handleSearch = () => {
-    onSearch(query);
+    // Only trigger search if the query is non-empty after trimming whitespace
+    if (query.trim() !== "") {
+      onSearch(query);
+    }
     setShowSuggestions(false);
   };
 

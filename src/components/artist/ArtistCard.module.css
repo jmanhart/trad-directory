@@ -6,6 +6,7 @@
 
 .link:hover {
   text-decoration: none;
+  color: yellow;
 }
 
 .cardLink {
@@ -26,4 +27,8 @@
 
 .card:hover {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.artistName {
+  font-size: 18px;
 }
