@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { fetchTattooShopsWithArtists } from "../../services/api";
 import SearchBar from "../common/SearchBar";
 import ArtistList from "../artist/ArtistList";
-import styles from "../MainApp.module.css";
 import HeroMessage from "../common/HeroMessage";
+import styles from "./HomePage.module.css";
 
 interface Artist {
   id: number;
