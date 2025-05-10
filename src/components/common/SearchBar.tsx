@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import styles from "./SearchBar.module.css";
+import SearchIcon from "../../assets/icons/searchIcon";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -17,6 +18,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
   >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
+  const suggestionRefs = useRef<(HTMLLIElement | null)[]>([]);
 
   useEffect(() => {
     if (query) {
@@ -50,6 +53,15 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (highlightedIndex >= 0 && suggestionRefs.current[highlightedIndex]) {
+      suggestionRefs.current[highlightedIndex]?.scrollIntoView({
+        block: "nearest",
+        behavior: "smooth",
+      });
+    }
+  }, [highlightedIndex]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
   };
@@ -67,34 +79,62 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
     }
   };
 
-  const handleSearch = () => {
-    // Only trigger search if the query is non-empty after trimming whitespace
-    if (query.trim() !== "") {
-      onSearch(query);
-    }
-    setShowSuggestions(false);
-  };
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || filteredSuggestions.length === 0) return;
 
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev < filteredSuggestions.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev > 0 ? prev - 1 : filteredSuggestions.length - 1
+      );
+    } else if (e.key === "Enter") {
+      if (
+        highlightedIndex >= 0 &&
+        highlightedIndex < filteredSuggestions.length
+      ) {
+        handleSelectSuggestion(filteredSuggestions[highlightedIndex].label);
+      } else if (query.trim() !== "") {
+        onSearch(query);
+        setShowSuggestions(false);
+      }
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+    }
+  };
   return (
     <div className={styles.searchBar} ref={wrapperRef}>
-      <input
-        type="text"
-        value={query}
-        onChange={handleInputChange}
-        onKeyPress={handleKeyPress}
-        placeholder="Search by artist, shop, city, or country..."
-        className={styles.input}
-      />
-      <button onClick={handleSearch} className={styles.searchButton}>
-        Search
-      </button>
+      <div className={styles.inputWrapper}>
+        <span className={styles.icon}>
+          <SearchIcon />
+        </span>
+        <input
+          type="text"
+          value={query}
+          onChange={handleInputChange}
+          onKeyPress={handleKeyPress}
+          placeholder="Search by artist, shop, city, or country..."
+          className={styles.input}
+          onKeyDown={handleKeyDown}
+        />
+      </div>
       {showSuggestions && filteredSuggestions.length > 0 && (
         <ul className={styles.suggestionsList}>
           {filteredSuggestions.map((suggestion, index) => (
             <li
-              key={index}
+              key={suggestion.label}
+              ref={(el) => {
+                if (el) suggestionRefs.current[index] = el;
+              }}
               onMouseDown={() => handleSelectSuggestion(suggestion.label)}
-              className={styles.suggestionItem}
+              className={`${styles.suggestionItem} ${
+                index === highlightedIndex ? styles.highlighted : ""
+              }`}
+              id={`suggestion-${index}`}
             >
               {suggestion.label}
               {suggestion.detail && (

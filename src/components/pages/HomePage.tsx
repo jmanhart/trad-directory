@@ -54,7 +54,7 @@ const MainApp: React.FC = () => {
                 )
                 .map((artist) => artist.shop_name!)
             )
-          ).map((name) => ({ label: name, type: "shop" }));
+          ).map((name) => ({ label: name, type: "shop" as const }));
 
           const locationSuggestions = Array.from(
             new Set(
@@ -66,7 +66,10 @@ const MainApp: React.FC = () => {
             )
           )
             .filter(Boolean)
-            .map((location) => ({ label: location!, type: "location" }));
+            .map((location) => ({
+              label: location!,
+              type: "location" as const,
+            }));
 
           setSuggestions([
             ...artistSuggestions,
