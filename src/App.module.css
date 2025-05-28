@@ -146,3 +146,27 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+h4 {
+  display: block;
+  font-size: 2em;
+  text-align: left;
+  margin: 0 auto;
+  font-weight: bold;
+  unicode-bidi: isolate;
+}
+
+h3 {
+  display: block;
+  font-size: 1.5em;
+  text-align: left;
+  margin: 0 auto;
+  font-weight: bold;
+  unicode-bidi: isolate;
+}
+
+p {
+  font-size: 1em;
+  margin: 0 auto;
+  text-align: left;
+}

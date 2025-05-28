@@ -12,10 +12,6 @@
   color: yellow;
 }
 
-/*
-  .cardLink is assumed to wrap the .card element and serve as the grid item.
-  We remove any extra margin so that the grid gap is solely responsible for spacing.
-*/
 .cardLink {
   text-decoration: none;
   color: inherit;
@@ -30,8 +26,9 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.3s ease;
   cursor: pointer;
-  width: 100%; /* Make sure the card fills the grid cell */
-  box-sizing: border-box; /* Include padding and border in the element’s width */
+  width: 100%;
+  max-width: 334px;
+  box-sizing: border-box;
 }
 
 .card:hover {

@@ -46,8 +46,16 @@
   );
   align-content: start;
   /* 
-    Padding here gives a consistent outer margin equal to the gap, so the grid’s
+    Padding here gives a consistent outer margin equal to the gap, so the grid's
     outer edge aligns with the internal spacing.
   */
   padding: var(--grid-gap);
+}
+
+.cardList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  justify-items: center;
+  gap: 24px;
+  width: 100%;
 }

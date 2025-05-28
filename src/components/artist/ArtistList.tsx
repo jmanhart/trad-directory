@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import ArtistCard from "./ArtistCard";
 import styles from "./ArtistList.module.css";
 
