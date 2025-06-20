@@ -57,3 +57,16 @@ p {
   text-align: center;
   margin-bottom: 1em;
 }
+
+.noResults {
+  text-align: center;
+  margin-top: 20px;
+  color: var(--color-text-secondary);
+}
+
+.searchResultsMessage {
+  text-align: center;
+  margin: 8px 0;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}

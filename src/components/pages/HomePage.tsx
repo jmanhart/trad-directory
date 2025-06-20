@@ -39,7 +39,7 @@ const MainApp: React.FC = () => {
             const artist = data.find((artist) => artist.name === name);
             return {
               label: name,
-              type: "artist",
+              type: "artist" as const,
               detail: artist?.instagram_handle
                 ? `@${artist.instagram_handle}`
                 : "",
@@ -77,7 +77,7 @@ const MainApp: React.FC = () => {
             ...locationSuggestions,
           ]);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         setError("Error fetching data.");
         console.error("Fetch error:", error);
       }
@@ -115,6 +115,13 @@ const MainApp: React.FC = () => {
       <SearchBar onSearch={handleSearch} suggestions={suggestions} />
 
       {error && <p className={styles.error}>{error}</p>}
+
+      {hasSearched && filteredResults.length > 0 && (
+        <p className={styles.searchResultsMessage}>
+          {filteredResults.length} result
+          {filteredResults.length !== 1 ? "s" : ""} found
+        </p>
+      )}
 
       {hasSearched && filteredResults.length === 0 && (
         <p className={styles.noResults}>No results found. Please try again.</p>
