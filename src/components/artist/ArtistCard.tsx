@@ -17,43 +17,30 @@ interface ArtistCardProps {
 }
 
 const ArtistCard: React.FC<ArtistCardProps> = ({ artist }) => {
+  const artistInstagramUrl = artist.instagram_handle
+    ? `https://www.instagram.com/${artist.instagram_handle}`
+    : "#";
+
   return (
-    <a
-      href={
-        artist.instagram_handle
-          ? `https://www.instagram.com/${artist.instagram_handle}`
-          : "#"
-      }
-      target="_blank"
-      rel="noopener noreferrer"
-      className={styles.cardLink}
-    >
-      <div className={styles.card}>
-        <h3>{artist.name}</h3>
-        <p>
-          {" "}
-          {artist.instagram_handle ? (
-            <a
-              href={`https://www.instagram.com/${artist.instagram_handle}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              @{artist.instagram_handle}
-            </a>
-          ) : (
-            "N/A"
-          )}
-        </p>
-        <p>
-          {artist.shop_instagram_handle ? (
-            <p>{artist.shop_name}</p>
-          ) : (
-            artist.shop_name || "N/A"
-          )}
-        </p>
+    <div className={styles.card}>
+      <h3 className={styles.artistName}>{artist.name}</h3>
+
+      {artist.instagram_handle && (
+        <a
+          href={artistInstagramUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.link}
+        >
+          @{artist.instagram_handle}
+        </a>
+      )}
+
+      <div className={styles.details}>
+        <p>{artist.shop_name || "N/A"}</p>
         <p>{artist.city_name || "N/A"}</p>
       </div>
-    </a>
+    </div>
   );
 };
 

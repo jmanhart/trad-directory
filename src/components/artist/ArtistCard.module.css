@@ -2,14 +2,14 @@
 
 /* Link styles */
 .link {
-  color: #0073e6;
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: 500;
+  text-align: left;
 }
 
 .link:hover {
-  text-decoration: none;
-  color: yellow;
+  text-decoration: underline;
 }
 
 .cardLink {
@@ -20,15 +20,17 @@
 }
 
 .card {
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   padding: 15px;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.3s ease;
-  cursor: pointer;
-  width: 100%;
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   max-width: 334px;
-  box-sizing: border-box;
+  width: 100%;
 }
 
 .card:hover {
@@ -36,7 +38,21 @@
 }
 
 .artistName {
-  font-size: 18px;
+  font-size: 1.2em;
+  margin: 0;
+  text-align: left;
+  color: var(--color-text-primary);
+}
+
+.details {
+  margin-top: auto;
+  font-size: 0.9em;
+  color: var(--color-text-tertiary);
+}
+
+.details p {
+  margin: 4px 0;
+  text-align: left;
 }
 
 /* Optional responsive tweaks for smaller screens */

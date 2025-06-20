@@ -4,12 +4,12 @@
   font-size: 1.5rem;
   font-weight: 400;
   margin: 20px 0;
-  color: #f9f9f9; /* Default light text for dark mode */
+  color: var(--color-text-secondary);
 }
 
 .heroMessage strong {
   font-weight: 700;
-  color: #1e90ff; /* Accent color for dark mode */
+  color: var(--color-primary);
 }
 
 /* Light mode styles */

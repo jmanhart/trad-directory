@@ -121,29 +121,30 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, suggestions }) => {
           className={styles.input}
           onKeyDown={handleKeyDown}
         />
+
+        {showSuggestions && filteredSuggestions.length > 0 && (
+          <ul className={styles.suggestionsList}>
+            {filteredSuggestions.map((suggestion, index) => (
+              <li
+                key={suggestion.label}
+                ref={(el) => {
+                  if (el) suggestionRefs.current[index] = el;
+                }}
+                onMouseDown={() => handleSelectSuggestion(suggestion.label)}
+                className={`${styles.suggestionItem} ${
+                  index === highlightedIndex ? styles.highlighted : ""
+                }`}
+                id={`suggestion-${index}`}
+              >
+                {suggestion.label}
+                {suggestion.detail && (
+                  <span className={styles.detail}> ({suggestion.detail})</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-      {showSuggestions && filteredSuggestions.length > 0 && (
-        <ul className={styles.suggestionsList}>
-          {filteredSuggestions.map((suggestion, index) => (
-            <li
-              key={suggestion.label}
-              ref={(el) => {
-                if (el) suggestionRefs.current[index] = el;
-              }}
-              onMouseDown={() => handleSelectSuggestion(suggestion.label)}
-              className={`${styles.suggestionItem} ${
-                index === highlightedIndex ? styles.highlighted : ""
-              }`}
-              id={`suggestion-${index}`}
-            >
-              {suggestion.label}
-              {suggestion.detail && (
-                <span className={styles.detail}> ({suggestion.detail})</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 };

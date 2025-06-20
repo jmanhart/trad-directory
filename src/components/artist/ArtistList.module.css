@@ -30,10 +30,6 @@
 .list {
   display: grid;
   gap: var(--grid-gap);
-  /* 
-    The calculation subtracts the total gap width for (columns - 1) gaps from 100% 
-    and then divides the remaining width equally among the columns.
-  */
   grid-template-columns: repeat(
     auto-fit,
     minmax(
@@ -58,4 +54,8 @@
   justify-items: center;
   gap: 24px;
   width: 100%;
+}
+
+.card h3 {
+  color: blue;
 }

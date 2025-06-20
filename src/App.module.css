@@ -1,62 +1,189 @@
 /* App.module.css */
 
+/* 
+  ==============================================
+  THEME & COLOR DEFINITIONS
+  ==============================================
+  - Dark theme is the default.
+  - Light theme overrides are below in the @media query.
+*/
+:root {
+  /* Color Palette */
+  --color-background: #121212;
+  --color-surface: #1a1a1a;
+  --color-border: #333;
+
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #e0e0e0;
+  --color-text-tertiary: #bbbbbb;
+
+  --color-primary: #646cff;
+  --color-primary-hover: #535bf2;
+  --color-error: #d9534f;
+
+  /* Grayscale Palette */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* Base Styles */
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light dark;
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #ffffff;
+    --color-surface: #f9f9f9;
+    --color-border: #e0e0e0;
+
+    --color-text-primary: #213547;
+    --color-text-secondary: #333333;
+    --color-text-tertiary: #555555;
+
+    --color-primary-hover: #747bff;
+  }
+}
+
+/* 
+  ==============================================
+  BASE & GLOBAL STYLES
+  ==============================================
+*/
+body {
+  padding: 0;
+  margin: 0;
+}
+
+a {
+  font-weight: 500;
+  color: var(--color-primary);
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+h3,
+h4 {
+  margin: 0 auto;
+  font-weight: bold;
+  unicode-bidi: isolate;
+}
+
+h3 {
+  font-size: 1.5em;
+}
+
+h4 {
+  font-size: 2em;
+}
+
+p {
+  font-size: 1em;
+  margin: 0 auto;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+
+button:hover {
+  border-color: var(--color-primary);
+}
+
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+/* 
+  ==============================================
+  LAYOUT & COMPONENT STYLES
+  ==============================================
+*/
 .container {
   max-width: 1000px;
   margin: 0 auto;
   padding: 20px;
   font-family: Arial, sans-serif;
-  color: #e0e0e0; /* Softer white for dark mode */
+  color: var(--color-text-secondary);
 }
 
 .title {
   text-align: center;
   font-size: 2.2em;
   margin-bottom: 20px;
-  color: #ffffff; /* Bright white for title */
+  color: var(--color-text-primary);
   font-weight: 600;
 }
 
 .error {
-  color: #d9534f;
+  color: var(--color-error);
   text-align: center;
   margin-bottom: 1em;
 }
 
-/* Layout Styles */
-
 .appContainer {
   display: flex;
   flex-direction: column;
-  min-height: 100vh; /* Full viewport height */
+  min-height: 100vh;
 }
 
 .mainContent {
   flex: 1;
   padding: 20px;
-  background-color: #121212; /* Dark mode background */
-  color: #e0e0e0; /* Softer white for text */
 }
 
-/* Header Styles */
-
 .header {
-  position: sticky; /* Keeps header at the top */
+  position: sticky;
   top: 0;
   z-index: 1000;
-  width: 100%; /* Full-width header */
-  background-color: #1a1a1a; /* Dark background */
-  color: #ffffff; /* White text for header */
-  border-bottom: 1px solid #333;
+  width: 100%;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
   box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.5);
-  padding: 0; /* No padding */
+  padding: 0;
 }
 
 .headerContent {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 100%; /* Ensures content fills the header */
-  padding: 0 20px; /* Add some padding inside the header */
+  max-width: 100%;
+  padding: 0 20px;
 }
 
 .logo {
@@ -71,102 +198,12 @@
 
 .navLink {
   text-decoration: none;
-  color: #bbbbbb;
+  color: var(--color-text-tertiary);
   font-weight: 500;
   transition: color 0.3s ease;
 }
 
 .navLink:hover {
   text-decoration: underline;
-  color: #ffffff;
-}
-
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  padding: 0;
-  margin: 0;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
-
-h4 {
-  display: block;
-  font-size: 2em;
-  text-align: left;
-  margin: 0 auto;
-  font-weight: bold;
-  unicode-bidi: isolate;
-}
-
-h3 {
-  display: block;
-  font-size: 1.5em;
-  text-align: left;
-  margin: 0 auto;
-  font-weight: bold;
-  unicode-bidi: isolate;
-}
-
-p {
-  font-size: 1em;
-  margin: 0 auto;
-  text-align: left;
+  color: var(--color-text-primary);
 }
