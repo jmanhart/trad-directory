@@ -1,0 +1,9 @@
+.resultsContainer {
+  width: 100%;
+}
+
+.noResults {
+  text-align: center;
+  margin-top: 20px;
+  color: var(--color-text-secondary);
+}

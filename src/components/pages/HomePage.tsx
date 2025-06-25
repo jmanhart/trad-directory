@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { fetchTattooShopsWithArtists } from "../../services/api";
 import SearchBar from "../common/SearchBar";
-import ArtistList from "../artist/ArtistList";
+import ResultsSection from "../results/ResultsSection";
 import HeroMessage from "../common/HeroMessage";
 import styles from "./HomePage.module.css";
 
@@ -87,24 +87,20 @@ const MainApp: React.FC = () => {
   }, []);
 
   const handleSearch = (query: string) => {
-    console.log("Search query:", query);
-
     if (!artists.length) return;
-
-    const normalizedQuery = query.toLowerCase().replace(/^@/, ""); // Remove '@' if it exists
-
+    const normalizedQuery = query.toLowerCase().replace(/^@/, "");
     const filtered = artists.filter(
       (artist) =>
-        artist.name?.toLowerCase().includes(normalizedQuery) || // Match artist name
-        artist.instagram_handle?.toLowerCase().includes(normalizedQuery) || // Match artist Instagram handle
-        artist.shop_name?.toLowerCase().includes(normalizedQuery) || // Match shop name
-        artist.city_name?.toLowerCase().includes(normalizedQuery) || // Match city
-        artist.state_name?.toLowerCase().includes(normalizedQuery) || // Match state
-        artist.country_name?.toLowerCase().includes(normalizedQuery) // Match country
+        artist.name?.toLowerCase().includes(normalizedQuery) ||
+        artist.instagram_handle?.toLowerCase().includes(normalizedQuery) ||
+        artist.shop_name?.toLowerCase().includes(normalizedQuery) ||
+        artist.city_name?.toLowerCase().includes(normalizedQuery) ||
+        artist.state_name?.toLowerCase().includes(normalizedQuery) ||
+        artist.country_name?.toLowerCase().includes(normalizedQuery)
     );
-
-    console.log("Filtered results:", filtered);
-    setFilteredResults(filtered);
+    // Always sort A-Z
+    const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+    setFilteredResults(sorted);
     setHasSearched(true);
   };
 
@@ -127,7 +123,7 @@ const MainApp: React.FC = () => {
         <p className={styles.noResults}>No results found. Please try again.</p>
       )}
 
-      {filteredResults.length > 0 && <ArtistList artists={filteredResults} />}
+      <ResultsSection artists={filteredResults} hasSearched={hasSearched} />
     </div>
   );
 };

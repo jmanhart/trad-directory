@@ -1,0 +1,14 @@
+.searchContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.searchResultsMessage {
+  text-align: center;
+  margin: 8px 0;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
