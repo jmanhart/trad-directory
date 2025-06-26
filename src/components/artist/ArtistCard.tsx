@@ -39,6 +39,8 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist }) => {
       <div className={styles.details}>
         <p>{artist.shop_name || "N/A"}</p>
         <p>{artist.city_name || "N/A"}</p>
+        <p>{artist.state_name || "N/A"}</p>
+        <p>{artist.country_name || "N/A"}</p>
       </div>
     </div>
   );
