@@ -1,0 +1,10 @@
+.logoText {
+  font-family: "Figtree", sans-serif;
+  font-size: 256px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #b71c1c; /* deep red */
+  -webkit-text-stroke: 3px #222; /* dark outline */
+  text-shadow: 16px 16px 0 #ffb300; /* solid yellow/orange shadow, offset for 3D effect */
+}

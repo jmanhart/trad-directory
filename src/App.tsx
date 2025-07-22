@@ -3,6 +3,7 @@ import HomePage from "./components/pages/HomePage";
 import Header from "./components/common/Header";
 import AboutPage from "./components/pages/AboutPage";
 import ShopPage from "./components/shop/ShopPage";
+import LogoTypePlayground from "./components/logo/LogoTypePlayground";
 // import ShopList from "./components/shop/ShopList";
 import styles from "./App.module.css"; // Import your CSS for styling
 
@@ -16,6 +17,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/shops" element={<ShopPage />} />
+            <Route path="/logo-type" element={<LogoTypePlayground />} />
             {/* Dynamic Route */}
           </Routes>
         </main>

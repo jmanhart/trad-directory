@@ -107,6 +107,7 @@ const MainApp: React.FC = () => {
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Trad Tattoo Directory</h1>
+
       <HeroMessage />
       <SearchBar onSearch={handleSearch} suggestions={suggestions} />
 
