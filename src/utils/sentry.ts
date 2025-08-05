@@ -18,7 +18,7 @@ export const initSentry = () => {
 
     environment: import.meta.env.MODE,
     debug: import.meta.env.DEV,
-    release: __SENTRY_RELEASE__,
+    release: __SENTRY_RELEASE__, // Now properly defined in vite.config.ts
 
     integrations: [
       // Session Replay with maximum insight
@@ -27,9 +27,9 @@ export const initSentry = () => {
         maskAllText: false,
         blockAllMedia: false,
 
-        // Network monitoring for TMDB API
+        // Network monitoring for Supabase API
         networkDetailAllowUrls: [
-          /^https:\/\/api\.themoviedb\.org/, // Capture TMDB API details
+          /^https:\/\/.*\.supabase\.co/, // Capture Supabase API details
           window.location.origin, // Capture your app's API calls
         ],
         networkCaptureBodies: true, // Capture request/response bodies
