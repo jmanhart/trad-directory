@@ -16,14 +16,28 @@ interface Artist {
 interface ResultsSectionProps {
   artists: Artist[];
   hasSearched: boolean;
+  showAllIfNoSearch?: boolean;
+  allArtists?: Artist[];
 }
 
 const ResultsSection: React.FC<ResultsSectionProps> = ({
   artists,
   hasSearched,
+  showAllIfNoSearch = false,
+  allArtists = [],
 }) => {
-  if (!hasSearched) {
-    return null; // Don't render anything if no search has been performed
+  if (!hasSearched && !showAllIfNoSearch) {
+    return null; // Don't render anything if no search has been performed and we don't want to show all
+  }
+
+  if (!hasSearched && showAllIfNoSearch) {
+    // Show all artists when no search has been performed
+    return (
+      <div className={styles.resultsContainer}>
+        <h2 className={styles.allArtistsTitle}>All Artists</h2>
+        <ArtistList artists={allArtists} />
+      </div>
+    );
   }
 
   return (

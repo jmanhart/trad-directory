@@ -1,0 +1,184 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.backButton {
+  background: none;
+  border: 2px solid #333;
+  color: #333;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.backButton:hover {
+  background: #333;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.searchContainer {
+  margin-bottom: 2rem;
+  max-width: 600px;
+}
+
+.searchInfo {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border-left: 4px solid #007bff;
+}
+
+.searchQuery {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.queryText {
+  color: #007bff;
+  font-weight: 700;
+}
+
+.resultsCount {
+  font-size: 1.1rem;
+  color: #666;
+  margin: 0;
+  font-weight: 500;
+}
+
+.noResults {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+}
+
+.noResults h3 {
+  font-size: 1.5rem;
+  color: #333;
+  margin: 0 0 1rem 0;
+}
+
+.noResults p {
+  font-size: 1.1rem;
+  color: #666;
+  margin: 0 0 1.5rem 0;
+}
+
+.browseAllButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.browseAllButton:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.error {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 12px;
+  color: #721c24;
+}
+
+.error h2 {
+  margin: 0 0 1rem 0;
+  color: #721c24;
+}
+
+.error p {
+  margin: 0 0 1.5rem 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem 0.5rem;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .searchQuery {
+    font-size: 1.25rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .searchContainer {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .searchInfo {
+    padding: 1rem;
+  }
+
+  .searchQuery {
+    font-size: 1.1rem;
+  }
+}

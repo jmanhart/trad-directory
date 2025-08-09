@@ -2,6 +2,14 @@
   width: 100%;
 }
 
+.allArtistsTitle {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+}
+
 .noResults {
   text-align: center;
   margin-top: 20px;
