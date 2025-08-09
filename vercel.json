@@ -1,11 +1,14 @@
 {
   "buildCommand": "npm run build",
-  "installCommand": "npm install",
+  "installCommand": "npm install --include=dev",
   "framework": "vite",
   "build": {
     "env": {
       "NODE_ENV": "production"
     }
+  },
+  "env": {
+    "NPM_CONFIG_PRODUCTION": "false"
   },
   "git": {
     "deploymentEnabled": {
