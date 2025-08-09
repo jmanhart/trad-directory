@@ -6,6 +6,26 @@ import ShopPage from "./components/shop/ShopPage";
 import LogoTypePlayground from "./components/logo/LogoTypePlayground";
 // import ShopList from "./components/shop/ShopList";
 import styles from "./App.module.css"; // Import your CSS for styling
+import { Sentry } from "./utils/sentry";
+
+// Enhanced App component with Sentry error boundary
+const SentryApp = Sentry.withErrorBoundary(App, {
+  fallback: ({ error, componentStack, resetError }) => (
+    <div className={styles.errorBoundary}>
+      <h2>Something went wrong</h2>
+      <p>We've been notified and are working to fix this issue.</p>
+      <details>
+        <summary>Error details</summary>
+        <pre>{error.message}</pre>
+        <pre>{componentStack}</pre>
+      </details>
+      <button onClick={resetError}>Try again</button>
+    </div>
+  ),
+  onError: (error, componentStack) => {
+    console.error("App error boundary caught an error:", error, componentStack);
+  },
+});
 
 function App() {
   return (
@@ -26,4 +46,4 @@ function App() {
   );
 }
 
-export default App;
+export default SentryApp;
