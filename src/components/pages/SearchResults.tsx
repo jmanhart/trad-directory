@@ -129,15 +129,6 @@ const SearchResults: React.FC = () => {
   return (
     <div className={styles.container}>
       {console.log("Rendering SearchResults component")} {/* Log rendering */}
-      <div className={styles.header}>
-        <button onClick={handleBackToHome} className={styles.backButton}>
-          ← Back to Home
-        </button>
-        <h1 className={styles.title}>Search Results</h1>
-      </div>
-      <div className={styles.searchContainer}>
-        {/* <SearchBar onSearch={handleSearch} suggestions={suggestions} /> */}
-      </div>
       <SearchResultsDisplay
         searchQuery={searchQuery}
         hasSearched={hasSearched}

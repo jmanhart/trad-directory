@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchTattooShopsWithArtists } from "../../services/api";
+import {
+  fetchTattooShopsWithArtists,
+  fetchTopCitiesByArtistCount,
+} from "../../services/api";
 import SearchBar from "../common/SearchBar";
 import HeroMessage from "../common/HeroMessage";
 import styles from "./HomePage.module.css";
+import PillGroup from "../common/PillGroup";
 
 interface Artist {
   id: number;
@@ -28,6 +32,12 @@ const MainApp: React.FC = () => {
   const navigate = useNavigate();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [topCities, setTopCities] = useState<
+    { city_name: string; count: number }[]
+  >([]);
+  const [topCountries, setTopCountries] = useState<
+    { country_name: string; count: number }[]
+  >([]);
 
   useEffect(() => {
     async function getData() {
@@ -83,6 +93,18 @@ const MainApp: React.FC = () => {
             ...shopSuggestions,
             ...locationSuggestions,
           ]);
+
+          // Compute top countries by count
+          const countryCounts = new Map<string, number>();
+          for (const a of data) {
+            const key = a.country_name || "N/A";
+            countryCounts.set(key, (countryCounts.get(key) || 0) + 1);
+          }
+          const top5Countries = Array.from(countryCounts.entries())
+            .map(([country_name, count]) => ({ country_name, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5);
+          setTopCountries(top5Countries);
         }
       } catch (error: unknown) {
         setError("Error fetching data.");
@@ -90,7 +112,17 @@ const MainApp: React.FC = () => {
       }
     }
 
+    async function getTopCities() {
+      try {
+        const cities = await fetchTopCitiesByArtistCount(5);
+        setTopCities(cities);
+      } catch (e) {
+        console.error("Error fetching top cities:", e);
+      }
+    }
+
     getData();
+    getTopCities();
   }, []);
 
   const handleSearch = (query: string) => {
@@ -119,6 +151,38 @@ const MainApp: React.FC = () => {
         suggestions={suggestions}
         onSelectSuggestion={handleSelectSuggestion}
       />
+
+      {topCities.length > 0 && (
+        <div style={{ marginTop: "2rem" }}>
+          <PillGroup
+            title="Top Cities"
+            items={topCities.map((c) => ({
+              label: c.city_name,
+              count: c.count,
+              onClick: () =>
+                navigate(
+                  `/search-results?q=${encodeURIComponent(c.city_name)}`
+                ),
+            }))}
+          />
+        </div>
+      )}
+
+      {topCountries.length > 0 && (
+        <div style={{ marginTop: "1rem" }}>
+          <PillGroup
+            title="Top Countries"
+            items={topCountries.map((c) => ({
+              label: c.country_name,
+              count: c.count,
+              onClick: () =>
+                navigate(
+                  `/search-results?q=${encodeURIComponent(c.country_name)}`
+                ),
+            }))}
+          />
+        </div>
+      )}
 
       {error && <p className={styles.error}>{error}</p>}
     </div>

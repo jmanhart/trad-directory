@@ -48,11 +48,7 @@
 }
 
 .searchInfo {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: #f8f9fa;
-  border-radius: 12px;
-  border-left: 4px solid #007bff;
+  padding: 1rem;
 }
 
 .searchQuery {
