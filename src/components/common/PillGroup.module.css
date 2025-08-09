@@ -1,0 +1,13 @@
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.title {
+  margin: 0 0 8px 0;
+  color: var(--color-text-primary);
+  font-weight: 600;
+}

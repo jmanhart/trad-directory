@@ -13,6 +13,19 @@
   padding: 0; /* Removes default padding */
 }
 
+.headerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.headerSearch {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+}
+
 .logo {
   font-size: 1em;
   font-weight: bold;
@@ -29,6 +42,7 @@
   display: flex;
   gap: 20px; /* Space between navigation links */
   padding: 10px 20px; /* Space around the navigation section */
+  justify-content: flex-end;
 }
 
 .navLink {

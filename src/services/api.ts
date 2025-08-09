@@ -144,3 +144,23 @@ export async function fetchShopById(id: number) {
     throw err;
   }
 }
+
+// Compute top cities by artist count using the fetched artists data
+export async function fetchTopCitiesByArtistCount(
+  limit: number = 5
+): Promise<{ city_name: string; count: number }[]> {
+  const artists = await fetchTattooShopsWithArtists();
+  const counts = new Map<string, number>();
+
+  for (const a of artists as any[]) {
+    const key = a.city_name || "N/A";
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+
+  const results = Array.from(counts.entries())
+    .map(([city_name, count]) => ({ city_name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+
+  return results;
+}

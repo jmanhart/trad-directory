@@ -1,8 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
 import { Analytics } from "@vercel/analytics/react";
 import { initSentry } from "./utils/sentry.ts";
+import App from "./App";
 
 // Initialize Sentry
 initSentry();
