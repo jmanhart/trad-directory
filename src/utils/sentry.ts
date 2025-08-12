@@ -25,6 +25,9 @@ export function initSentry() {
     // Performance monitoring - capture all traces for free plan
     tracesSampleRate: 1.0, // Capture 100% of traces
 
+    // Profiling - capture all profiles for performance analysis
+    profilesSampleRate: 1.0, // Profile 100% of transactions
+
     // Session replay - capture all replays for free plan
     replaysSessionSampleRate: 1.0, // Capture 100% of session replays
     replaysOnErrorSampleRate: 1.0, // Always capture on errors
@@ -34,6 +37,17 @@ export function initSentry() {
 
     // Optimize for free plan - keep more breadcrumbs
     maxBreadcrumbs: 100,
+
+    // Integrations for enhanced monitoring
+    integrations: [
+      // Browser tracing integration (required for profiling)
+      Sentry.browserTracingIntegration(),
+      // Browser profiling integration for performance analysis
+      Sentry.browserProfilingIntegration(),
+    ],
+
+    // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
+    tracePropagationTargets: ["localhost", /^https:\/\/yourserver\.io\/api/],
 
     // Before send hook for filtering sensitive data and optimizing
     beforeSend(event) {
@@ -145,6 +159,21 @@ export function setTag(key: string, value: string) {
 // Helper function to set context
 export function setContext(name: string, context: Record<string, unknown>) {
   Sentry.setContext(name, context);
+}
+
+// Helper function to create custom spans for profiling
+export function startSpan<T>(
+  name: string,
+  operation: string,
+  callback: () => T
+): T {
+  return Sentry.startSpan(
+    {
+      name,
+      op: operation,
+    },
+    callback
+  );
 }
 
 // Export Sentry for use in other parts of the app
