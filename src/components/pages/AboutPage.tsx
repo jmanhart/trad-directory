@@ -8,24 +8,20 @@ const AboutPage: React.FC = () => {
       <h1 className={styles.title}>Trad Tattoo Directory</h1>
       <HeroMessage />
       <p className={styles.description}>
-        Let’s face it, Instagram search fucking sucks. Most artists and shops
-        use Instagram to show their work. I’m building this tool to help people
-        keep track of the cool shit people are doing in what will hopefully be
-        an easy way. Right now, you can’t search 'Traditional Tattoo Artists in
-        Nashville' on Instagram. Everything relies on word of mouth. I’ve been
-        compiling this list from Reddit, my own finds, and a general
-        appreciation for this art form.
+        Let’s face it, Instagram search fucking sucks and most artists and shops
+        use Instagram to show their work. This tool isto help people keep track
+        of the cool work people are doing in what will hopefully be an easy way
+        to find artists when you are looking.{" "}
       </p>
       <p className={styles.description}>
-        Why only traditional? Because it’s fucking sick, that’s why.
+        And right now, you can’t easily search by city, state or country on
+        Instagram. Everything relies on word of mouth. I’ve been compiling this
+        list from Reddit, my own finds on insta, and just a general appreciation
+        for this art form.
       </p>
-      <h2 className={styles.subtitle}>Goals</h2>
-      <ul className={styles.list}>
-        <li>📍 Find artists by location: city, state, or country.</li>
-        <li>🎨 Explore profiles of traditional tattoo artists.</li>
-        <li>🏢 Discover shops and see the artists who work there.</li>
-        <li>🔍 Search by Instagram handle or artist name.</li>
-      </ul>
+      <p className={styles.description}>
+        Why only traditional? Because it’s fucking awesome, that’s why.
+      </p>
     </div>
   );
 };
