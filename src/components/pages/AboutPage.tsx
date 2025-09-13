@@ -5,22 +5,29 @@ import HeroMessage from "./../common/HeroMessage";
 const AboutPage: React.FC = () => {
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>Trad Tattoo Directory</h1>
-      <HeroMessage />
+      {/* <h1 className={styles.title}>Trad Tattoo Directory</h1>
+      <HeroMessage /> */}
+      <h2 className={styles.subtitle}>Why does this directory exist?</h2>
       <p className={styles.description}>
-        Let’s face it, Instagram search fucking sucks and most artists and shops
-        use Instagram to show their work. This tool isto help people keep track
-        of the cool work people are doing in what will hopefully be an easy way
-        to find artists when you are looking.{" "}
+        Let’s be real...Instagram’s search fucking sucks. This directory exists
+        to help people find solid traditional tattoo artists and shops by
+        location, and hopefully make the act of finding artists easy.
       </p>
       <p className={styles.description}>
-        And right now, you can’t easily search by city, state or country on
-        Instagram. Everything relies on word of mouth. I’ve been compiling this
-        list from Reddit, my own finds on insta, and just a general appreciation
-        for this art form.
+        <strong>Full transparency I'm not a tattoo artist.</strong> I don’t even
+        work in the industry. I just like making silly shit for the internet. If
+        this directory helps someone find an artist doing killer work, awesome.
+        Because honestly as terrible as Instagram search is bad tattoos are way
+        worse.
       </p>
       <p className={styles.description}>
-        Why only traditional? Because it’s fucking awesome, that’s why.
+        This site will never have ads, and I’ll never sell the data I’ve
+        painstakingly collected over the years. Why? Because that’s shitty and
+        dumb.
+      </p>
+      <p className={styles.description}>
+        Now go finish that sleeve, start planning that back piece, and don’t
+        forget to tip your artist.
       </p>
     </div>
   );
