@@ -43,7 +43,16 @@ export default async function handler(req: any, res: any) {
     // Search for artists in Supabase
     const { data: artists, error } = await supabase
       .from("artists")
-      .select("id, name, insta, location")
+      .select(`
+        id,
+        name,
+        instagram_handle,
+        city: cities (
+          city_name,
+          state: states (state_name),
+          country: countries (country_name)
+        )
+      `)
       .ilike("name", `%${query}%`)
       .limit(50);
 
@@ -53,7 +62,20 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const results: Artist[] = artists || [];
+    const results: Artist[] = (artists || []).map((artist: any) => ({
+      id: artist.id,
+      name: artist.name,
+      instagram_handle: artist.instagram_handle || null,
+      city_name: Array.isArray(artist.city)
+        ? artist.city[0]?.city_name
+        : artist.city?.city_name || null,
+      state_name: Array.isArray(artist.city?.state)
+        ? artist.city.state[0]?.state_name
+        : artist.city.state?.state_name || null,
+      country_name: Array.isArray(artist.city?.country)
+        ? artist.city.country[0]?.country_name
+        : artist.city.country?.country_name || null,
+    }));
 
     res.status(200).json({
       results,

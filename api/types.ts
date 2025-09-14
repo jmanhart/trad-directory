@@ -1,6 +1,8 @@
 export interface Artist {
-  id: string;
+  id: number;
   name: string;
-  insta: string;
-  location: string;
+  instagram_handle?: string;
+  city_name?: string;
+  state_name?: string;
+  country_name?: string;
 }
