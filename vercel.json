@@ -10,11 +10,6 @@
   "env": {
     "NPM_CONFIG_PRODUCTION": "false"
   },
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "git": {
     "deploymentEnabled": {
       "main": true,
