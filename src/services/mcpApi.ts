@@ -3,7 +3,7 @@
 // Use local API for development, production API for deployed app
 const MCP_BASE_URL = import.meta.env.DEV
   ? "http://localhost:3000/api" // Local development
-  : "https://trad-directory-3ci2toicl-jmanharts-projects.vercel.app/api"; // Production
+  : "https://trad-directory-dkgyaoeey-jmanharts-projects.vercel.app/api"; // Production
 
 console.log("MCP_BASE_URL:", MCP_BASE_URL, "DEV:", import.meta.env.DEV);
 
