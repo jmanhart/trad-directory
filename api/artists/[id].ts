@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { Artist } from "./types";
+import { Artist } from "../types";
 
 export default async function handler(req: any, res: any) {
   // Set CORS headers
@@ -20,10 +20,10 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { query } = req.query;
+    const { id } = req.query;
 
-    if (!query) {
-      res.status(400).json({ error: "Query parameter is required" });
+    if (!id) {
+      res.status(400).json({ error: "Artist ID is required" });
       return;
     }
 
@@ -40,11 +40,10 @@ export default async function handler(req: any, res: any) {
       process.env.SUPABASE_SERVICE_KEY
     );
 
-    // Search for artists in Supabase
-    const { data: artists, error } = await supabase
+    // Fetch specific artist by ID
+    const { data: artist, error } = await supabase
       .from("artists")
-      .select(
-        `
+      .select(`
         id,
         name,
         instagram_handle,
@@ -52,21 +51,30 @@ export default async function handler(req: any, res: any) {
           city_name,
           state: states (state_name),
           country: countries (country_name)
+        ),
+        artist_shop (
+          shop: tattoo_shops (id, shop_name, instagram_handle)
         )
-      `
-      )
-      .ilike("name", `%${query}%`)
-      .limit(50);
+      `)
+      .eq("id", id)
+      .single();
 
     if (error) {
       console.error("Supabase error:", error);
-      res
-        .status(500)
-        .json({ error: "Database query failed", details: error.message });
+      if (error.code === 'PGRST116') {
+        res.status(404).json({ error: "Artist not found" });
+        return;
+      }
+      res.status(500).json({ error: "Database query failed", details: error.message });
       return;
     }
 
-    const results: Artist[] = (artists || []).map((artist: any) => ({
+    if (!artist) {
+      res.status(404).json({ error: "Artist not found" });
+      return;
+    }
+
+    const result: Artist & { shop?: any } = {
       id: artist.id,
       name: artist.name,
       instagram_handle: artist.instagram_handle || null,
@@ -79,17 +87,15 @@ export default async function handler(req: any, res: any) {
       country_name: Array.isArray(artist.city?.country)
         ? artist.city.country[0]?.country_name
         : artist.city.country?.country_name || null,
-    }));
+      shop: artist.artist_shop?.[0]?.shop || null
+    };
 
     res.status(200).json({
-      results,
-      count: results.length,
-      query,
+      result
     });
+
   } catch (error) {
     console.error("Unexpected error:", error);
-    res
-      .status(500)
-      .json({ error: "Internal server error", details: error.message });
+    res.status(500).json({ error: "Internal server error", details: error.message });
   }
 }

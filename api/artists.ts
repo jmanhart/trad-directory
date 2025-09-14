@@ -20,13 +20,6 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { query } = req.query;
-
-    if (!query) {
-      res.status(400).json({ error: "Query parameter is required" });
-      return;
-    }
-
     // Check if environment variables are available
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
       console.error("Missing Supabase environment variables");
@@ -40,11 +33,14 @@ export default async function handler(req: any, res: any) {
       process.env.SUPABASE_SERVICE_KEY
     );
 
-    // Search for artists in Supabase
-    const { data: artists, error } = await supabase
+    // Get query parameters for pagination
+    const { page = 1, limit = 50 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    // Fetch all artists with pagination
+    const { data: artists, error, count } = await supabase
       .from("artists")
-      .select(
-        `
+      .select(`
         id,
         name,
         instagram_handle,
@@ -53,16 +49,13 @@ export default async function handler(req: any, res: any) {
           state: states (state_name),
           country: countries (country_name)
         )
-      `
-      )
-      .ilike("name", `%${query}%`)
-      .limit(50);
+      `, { count: 'exact' })
+      .range(offset, offset + parseInt(limit) - 1)
+      .order('name');
 
     if (error) {
       console.error("Supabase error:", error);
-      res
-        .status(500)
-        .json({ error: "Database query failed", details: error.message });
+      res.status(500).json({ error: "Database query failed", details: error.message });
       return;
     }
 
@@ -84,12 +77,14 @@ export default async function handler(req: any, res: any) {
     res.status(200).json({
       results,
       count: results.length,
-      query,
+      total: count || 0,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil((count || 0) / parseInt(limit))
     });
+
   } catch (error) {
     console.error("Unexpected error:", error);
-    res
-      .status(500)
-      .json({ error: "Internal server error", details: error.message });
+    res.status(500).json({ error: "Internal server error", details: error.message });
   }
 }
