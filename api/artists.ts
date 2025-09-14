@@ -38,9 +38,14 @@ export default async function handler(req: any, res: any) {
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
     // Fetch all artists with pagination
-    const { data: artists, error, count } = await supabase
+    const {
+      data: artists,
+      error,
+      count,
+    } = await supabase
       .from("artists")
-      .select(`
+      .select(
+        `
         id,
         name,
         instagram_handle,
@@ -49,13 +54,17 @@ export default async function handler(req: any, res: any) {
           state: states (state_name),
           country: countries (country_name)
         )
-      `, { count: 'exact' })
+      `,
+        { count: "exact" }
+      )
       .range(offset, offset + parseInt(limit) - 1)
-      .order('name');
+      .order("name");
 
     if (error) {
       console.error("Supabase error:", error);
-      res.status(500).json({ error: "Database query failed", details: error.message });
+      res
+        .status(500)
+        .json({ error: "Database query failed", details: error.message });
       return;
     }
 
@@ -80,11 +89,15 @@ export default async function handler(req: any, res: any) {
       total: count || 0,
       page: parseInt(page),
       limit: parseInt(limit),
-      totalPages: Math.ceil((count || 0) / parseInt(limit))
+      totalPages: Math.ceil((count || 0) / parseInt(limit)),
     });
-
   } catch (error) {
     console.error("Unexpected error:", error);
-    res.status(500).json({ error: "Internal server error", details: error.message });
+    res
+      .status(500)
+      .json({
+        error: "Internal server error",
+        details: (error as Error).message,
+      });
   }
 }

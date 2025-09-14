@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { fetchArtistById } from "../../services/api";
+import { fetchArtistById } from "../../services/mcpApi";
 import styles from "./ArtistPage.module.css";
 
 interface Artist {

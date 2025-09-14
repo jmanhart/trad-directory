@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { Artist } from "../types";
+import { withCache, CacheManager, CACHE_TTL } from "../cache";
 
 export default async function handler(req: any, res: any) {
   // Set CORS headers
@@ -34,68 +35,79 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    // Initialize Supabase client
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_KEY
+    // Use caching for artist details
+    const cacheKey = CacheManager.artistKey(id);
+    const artistData = await withCache(
+      cacheKey,
+      CACHE_TTL.ARTIST_DETAILS,
+      async () => {
+        // Initialize Supabase client
+        const supabase = createClient(
+          process.env.SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_KEY!
+        );
+
+        // Fetch specific artist by ID
+        const { data: artist, error } = await supabase
+          .from("artists")
+          .select(
+            `
+            id,
+            name,
+            instagram_handle,
+            city: cities (
+              city_name,
+              state: states (state_name),
+              country: countries (country_name)
+            ),
+            artist_shop (
+              shop: tattoo_shops (id, shop_name, instagram_handle)
+            )
+          `
+          )
+          .eq("id", id)
+          .single();
+
+        if (error) {
+          console.error("Supabase error:", error);
+          if (error.code === "PGRST116") {
+            throw new Error("Artist not found");
+          }
+          throw new Error(`Database query failed: ${error.message}`);
+        }
+
+        if (!artist) {
+          throw new Error("Artist not found");
+        }
+
+        return artist;
+      }
     );
 
-    // Fetch specific artist by ID
-    const { data: artist, error } = await supabase
-      .from("artists")
-      .select(`
-        id,
-        name,
-        instagram_handle,
-        city: cities (
-          city_name,
-          state: states (state_name),
-          country: countries (country_name)
-        ),
-        artist_shop (
-          shop: tattoo_shops (id, shop_name, instagram_handle)
-        )
-      `)
-      .eq("id", id)
-      .single();
-
-    if (error) {
-      console.error("Supabase error:", error);
-      if (error.code === 'PGRST116') {
-        res.status(404).json({ error: "Artist not found" });
-        return;
-      }
-      res.status(500).json({ error: "Database query failed", details: error.message });
-      return;
-    }
-
-    if (!artist) {
-      res.status(404).json({ error: "Artist not found" });
-      return;
-    }
-
     const result: Artist & { shop?: any } = {
-      id: artist.id,
-      name: artist.name,
-      instagram_handle: artist.instagram_handle || null,
-      city_name: Array.isArray(artist.city)
-        ? artist.city[0]?.city_name
-        : artist.city?.city_name || null,
-      state_name: Array.isArray(artist.city?.state)
-        ? artist.city.state[0]?.state_name
-        : artist.city.state?.state_name || null,
-      country_name: Array.isArray(artist.city?.country)
-        ? artist.city.country[0]?.country_name
-        : artist.city.country?.country_name || null,
-      shop: artist.artist_shop?.[0]?.shop || null
+      id: artistData.id,
+      name: artistData.name,
+      instagram_handle: artistData.instagram_handle || null,
+      city_name: Array.isArray(artistData.city)
+        ? artistData.city[0]?.city_name
+        : (artistData.city as any)?.city_name || null,
+      state_name: Array.isArray((artistData.city as any)?.state)
+        ? (artistData.city as any).state[0]?.state_name
+        : (artistData.city as any)?.state?.state_name || null,
+      country_name: Array.isArray((artistData.city as any)?.country)
+        ? (artistData.city as any).country[0]?.country_name
+        : (artistData.city as any)?.country?.country_name || null,
+      shop: artistData.artist_shop?.[0]?.shop || null,
     };
 
     res.status(200).json({
-      result
+      result,
     });
-
   } catch (error) {
     console.error("Unexpected error:", error);
-    res.status(500).json({ error: "Internal server error", details: error.message });
+    res.status(500).json({
+      error: "Internal server error",
+      details: (error as Error).message,
+    });
   }
 }

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { fetchTattooShopsWithArtists } from "../../services/api";
+import { searchArtists } from "../../services/mcpApi";
 import ResultsSection from "../results/ResultsSection";
 import SearchResultsDisplay from "../results/SearchResultsDisplay";
 // import SearchBar from "../common/SearchBar";
@@ -27,76 +27,72 @@ const SearchResults: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasSearched, setHasSearched] = useState(false);
 
+  // Refs to prevent duplicate API calls
+  const hasInitialized = useRef(false);
+  const lastSearchQuery = useRef<string>("");
+
   const searchQuery = searchParams.get("q") || "";
 
   useEffect(() => {
-    async function getData() {
-      try {
-        setIsLoading(true);
-        const data = await fetchTattooShopsWithArtists();
-        console.log("Fetched data:", data); // Log fetched data
-        if (data) {
-          setArtists(data);
-          console.log("Artists set:", data); // Log artists state
-
-          // Generate deduplicated suggestions
-          // setSuggestions([
-          //   ...artistSuggestions,
-          //   ...shopSuggestions,
-          //   ...locationSuggestions,
-          // ]);
-        }
-      } catch (error: unknown) {
-        setError("Error fetching data.");
-        console.error("Fetch error:", error);
-        captureException(error as Error, {
-          component: "SearchResults",
-          action: "fetch_data",
-        });
-      } finally {
-        setIsLoading(false);
-      }
+    // Prevent duplicate calls
+    if (hasInitialized.current) {
+      return;
     }
 
-    getData();
-  }, []);
+    hasInitialized.current = true;
+
+    // Only fetch all artists if there's no search query (for "show all" functionality)
+    if (!searchQuery) {
+      const fetchAllArtists = async () => {
+        try {
+          const { fetchTattooShopsWithArtists } = await import(
+            "../../services/mcpApi"
+          );
+          const allArtistsData = await fetchTattooShopsWithArtists();
+          setArtists(allArtistsData);
+        } catch (error) {
+          console.error("Error fetching all artists:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchAllArtists();
+    } else {
+      // If there's a search query, we don't need to fetch all artists
+      setIsLoading(false);
+    }
+  }, [searchQuery]);
 
   useEffect(() => {
-    if (searchQuery && artists.length > 0) {
+    if (searchQuery && searchQuery !== lastSearchQuery.current) {
+      lastSearchQuery.current = searchQuery;
       performSearch(searchQuery);
     }
-  }, [searchQuery, artists]);
+  }, [searchQuery]);
 
-  const performSearch = (query: string) => {
+  const performSearch = async (query: string) => {
     try {
+      setIsLoading(true);
       addBreadcrumb("Search performed on results page", "search", "info", {
         query,
         timestamp: new Date().toISOString(),
         component: "SearchResults",
       });
 
-      if (!artists.length) return;
-
-      const normalizedQuery = query.toLowerCase().replace(/^@/, "");
-      const filtered = artists.filter(
-        (artist) =>
-          artist.name?.toLowerCase().includes(normalizedQuery) ||
-          artist.instagram_handle?.toLowerCase().includes(normalizedQuery) ||
-          artist.shop_name?.toLowerCase().includes(normalizedQuery) ||
-          artist.city_name?.toLowerCase().includes(normalizedQuery) ||
-          artist.state_name?.toLowerCase().includes(normalizedQuery) ||
-          artist.country_name?.toLowerCase().includes(normalizedQuery)
-      );
-
-      const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
-      setFilteredResults(sorted);
+      const results = await searchArtists(query);
+      setFilteredResults(results);
       setHasSearched(true);
     } catch (error) {
+      setError("Error searching artists.");
+      console.error("Search error:", error);
       captureException(error as Error, {
         component: "SearchResults",
         action: "perform_search",
         query,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -128,7 +124,6 @@ const SearchResults: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      {console.log("Rendering SearchResults component")} {/* Log rendering */}
       <SearchResultsDisplay
         searchQuery={searchQuery}
         hasSearched={hasSearched}
