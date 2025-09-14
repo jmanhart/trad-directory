@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { Artist } from "../shared/types";
+import { Artist } from "./types";
 
 // Initialize Supabase client
 const supabase = createClient(
