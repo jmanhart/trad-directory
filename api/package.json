@@ -1,0 +1,20 @@
+{
+  "name": "tattoo-directory-api",
+  "version": "1.0.0",
+  "description": "MCP server for tattoo directory",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "tsc",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.46.1",
+    "ioredis": "^5.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "~5.6.2",
+    "vercel": "^32.0.0"
+  }
+}

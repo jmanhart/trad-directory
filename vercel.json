@@ -19,7 +19,9 @@
     }
   },
   "env": {
-    "NPM_CONFIG_PRODUCTION": "false"
+    "NPM_CONFIG_PRODUCTION": "false",
+    "SUPABASE_URL": "https://qxracnhgzceywcqtyvzz.supabase.co",
+    "SUPABASE_SERVICE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF4cmFjbmhnemNleXdjcXR5dnp6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczMDU4NjEyNywiZXhwIjoyMDQ2MTYyMTI3fQ.M6jfg2Qcv-HREUhwtKrIVNGJODae74lab2x3LH7N0j0"
   },
   "git": {
     "deploymentEnabled": {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import SearchBar from "./SearchBar";
 import styles from "./Header.module.css";
@@ -17,11 +17,15 @@ const Header: React.FC = () => {
   const [nameToId, setNameToId] = useState<Map<string, number>>(new Map());
   const [handleToId, setHandleToId] = useState<Map<string, number>>(new Map());
 
+  // Ref to prevent duplicate API calls
+  const hasFetchedSuggestions = useRef(false);
+
   const isHomePage = location.pathname === "/";
   const showSearchBar = !isHomePage;
 
   useEffect(() => {
-    if (showSearchBar) {
+    if (showSearchBar && !hasFetchedSuggestions.current) {
+      hasFetchedSuggestions.current = true;
       fetchSuggestions();
     }
   }, [showSearchBar]);
@@ -29,7 +33,7 @@ const Header: React.FC = () => {
   const fetchSuggestions = async () => {
     try {
       const { fetchTattooShopsWithArtists } = await import(
-        "../../services/api"
+        "../../services/mcpApi"
       );
       const data = await fetchTattooShopsWithArtists();
 
@@ -104,7 +108,7 @@ const Header: React.FC = () => {
       if (!id) {
         try {
           const { fetchTattooShopsWithArtists } = await import(
-            "../../services/api"
+            "../../services/mcpApi"
           );
           const data = await fetchTattooShopsWithArtists();
           const byName = data.find((a: any) => a.name === s.label)?.id;

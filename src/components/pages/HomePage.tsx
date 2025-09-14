@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   fetchTattooShopsWithArtists,
   fetchTopCitiesByArtistCount,
-} from "../../services/api";
+} from "../../services/mcpApi";
 import SearchBar from "../common/SearchBar";
 import HeroMessage from "../common/HeroMessage";
 import styles from "./HomePage.module.css";

@@ -164,3 +164,64 @@ export async function fetchTopCitiesByArtistCount(
 
   return results;
 }
+
+// Direct Supabase search for better performance
+export async function searchArtists(query: string) {
+  const supabase = createClient(
+    import.meta.env.VITE_SUPABASE_URL,
+    import.meta.env.VITE_SUPABASE_ANON_KEY
+  );
+
+  // Get all artists with their city information
+  const { data: artists, error } = await supabase
+    .from("artists")
+    .select(
+      `
+      id,
+      name,
+      instagram_handle,
+      city: cities (
+        city_name,
+        state: states (state_name),
+        country: countries (country_name)
+      )
+    `
+    )
+    .limit(100); // Optimized for speed
+
+  if (error) {
+    console.error("Supabase search error:", error);
+    throw error;
+  }
+
+  // Transform the data and filter based on query
+  const normalizedQuery = query.toLowerCase().replace(/^@/, "");
+
+  const allResults = (artists || []).map((artist: any) => ({
+    id: artist.id,
+    name: artist.name,
+    instagram_handle: artist.instagram_handle || null,
+    city_name: Array.isArray(artist.city)
+      ? artist.city[0]?.city_name
+      : artist.city?.city_name || null,
+    state_name: Array.isArray(artist.city?.state)
+      ? artist.city.state[0]?.state_name
+      : artist.city.state?.state_name || null,
+    country_name: Array.isArray(artist.city?.country)
+      ? artist.city.country[0]?.country_name
+      : artist.city.country?.country_name || null,
+    shop_id: null,
+    shop_name: "N/A",
+    shop_instagram_handle: null,
+  }));
+
+  // Filter results based on query
+  return allResults.filter(
+    (artist) =>
+      artist.name?.toLowerCase().includes(normalizedQuery) ||
+      artist.instagram_handle?.toLowerCase().includes(normalizedQuery) ||
+      artist.city_name?.toLowerCase().includes(normalizedQuery) ||
+      artist.state_name?.toLowerCase().includes(normalizedQuery) ||
+      artist.country_name?.toLowerCase().includes(normalizedQuery)
+  );
+}
