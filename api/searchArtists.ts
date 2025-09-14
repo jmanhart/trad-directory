@@ -1,12 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { Artist } from "./types";
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-);
-
 export default async function handler(req: any, res: any) {
   // Set CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -33,6 +27,19 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
+    // Check if environment variables are available
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+      console.error("Missing Supabase environment variables");
+      res.status(500).json({ error: "Server configuration error" });
+      return;
+    }
+
+    // Initialize Supabase client
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_KEY
+    );
+
     // Search for artists in Supabase
     const { data: artists, error } = await supabase
       .from("artists")
@@ -42,7 +49,7 @@ export default async function handler(req: any, res: any) {
 
     if (error) {
       console.error("Supabase error:", error);
-      res.status(500).json({ error: "Database query failed" });
+      res.status(500).json({ error: "Database query failed", details: error.message });
       return;
     }
 
@@ -55,6 +62,6 @@ export default async function handler(req: any, res: any) {
     });
   } catch (error) {
     console.error("Unexpected error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error", details: error.message });
   }
 }
