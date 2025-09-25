@@ -1,4 +1,5 @@
 import { supabase } from "./supabaseClient";
+import { createClient } from "@supabase/supabase-js";
 
 // Fetch all tattoo shops with their associated artists
 export async function fetchTattooShopsWithArtists() {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { searchArtists } from "../../services/mcpApi";
+import { searchArtists } from "../../services/api";
 import ResultsSection from "../results/ResultsSection";
 import SearchResultsDisplay from "../results/SearchResultsDisplay";
 // import SearchBar from "../common/SearchBar";
@@ -46,7 +46,7 @@ const SearchResults: React.FC = () => {
       const fetchAllArtists = async () => {
         try {
           const { fetchTattooShopsWithArtists } = await import(
-            "../../services/mcpApi"
+            "../../services/api"
           );
           const allArtistsData = await fetchTattooShopsWithArtists();
           setArtists(allArtistsData);

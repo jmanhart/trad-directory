@@ -33,7 +33,7 @@ const Header: React.FC = () => {
   const fetchSuggestions = async () => {
     try {
       const { fetchTattooShopsWithArtists } = await import(
-        "../../services/mcpApi"
+        "../../services/api"
       );
       const data = await fetchTattooShopsWithArtists();
 
@@ -108,7 +108,7 @@ const Header: React.FC = () => {
       if (!id) {
         try {
           const { fetchTattooShopsWithArtists } = await import(
-            "../../services/mcpApi"
+            "../../services/api"
           );
           const data = await fetchTattooShopsWithArtists();
           const byName = data.find((a: any) => a.name === s.label)?.id;
