@@ -1,6 +1,7 @@
 import React from "react";
 import styles from "./ArtistCard.module.css";
 import { Link, useLocation } from "react-router-dom";
+import InstagramLogoUrl from "/logo-instagram.svg";
 
 interface Artist {
   id: number;
@@ -33,7 +34,7 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist }) => {
       className={styles.cardLink}
     >
       <div className={styles.card}>
-        <h3 className={styles.artistName}>{artist.name}</h3>
+        <h4 className={styles.artistName}>{artist.name}</h4>
 
         {artist.instagram_handle && (
           <a
@@ -41,17 +42,24 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist }) => {
             target="_blank"
             rel="noopener noreferrer"
             className={styles.link}
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
+            <img
+              src={InstagramLogoUrl}
+              alt="Instagram"
+              className={styles.instagramIcon}
+            />
             @{artist.instagram_handle}
           </a>
         )}
 
         <div className={styles.details}>
-          <p>{artist.shop_name || "N/A"}</p>
-          <p>{artist.city_name || "N/A"}</p>
-          <p>{artist.state_name || "N/A"}</p>
-          <p>{artist.country_name || "N/A"}</p>
+          <p className={styles.shopName}>{artist.shop_name || "N/A"}</p>
+          <p className={styles.address}>
+            {[artist.city_name, artist.state_name, artist.country_name]
+              .filter(Boolean)
+              .join(", ") || "N/A"}
+          </p>
         </div>
       </div>
     </Link>

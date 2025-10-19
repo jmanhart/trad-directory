@@ -5,4 +5,6 @@ export interface Artist {
   city_name?: string;
   state_name?: string;
   country_name?: string;
+  shop_name?: string;
+  shop_instagram_handle?: string;
 }

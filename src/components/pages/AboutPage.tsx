@@ -7,7 +7,7 @@ const AboutPage: React.FC = () => {
     <div className={styles.container}>
       {/* <h1 className={styles.title}>Trad Tattoo Directory</h1>
       <HeroMessage /> */}
-      <h2 className={styles.subtitle}>Why does this directory exist?</h2>
+      <h2 className={styles.subtitle}>Why that fuck is this directory?</h2>
       <p className={styles.description}>
         Let’s be real...Instagram’s search fucking sucks. This directory exists
         to help people find solid traditional tattoo artists and shops by

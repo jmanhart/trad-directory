@@ -53,6 +53,9 @@ export default async function handler(req: any, res: any) {
           city_name,
           state: states (state_name),
           country: countries (country_name)
+        ),
+        artist_shop (
+          shop: tattoo_shops (id, shop_name, instagram_handle)
         )
       `,
         { count: "exact" }
@@ -81,6 +84,8 @@ export default async function handler(req: any, res: any) {
       country_name: Array.isArray(artist.city?.country)
         ? artist.city.country[0]?.country_name
         : artist.city.country?.country_name || null,
+      shop_name: artist.artist_shop?.[0]?.shop?.shop_name || null,
+      shop_instagram_handle: artist.artist_shop?.[0]?.shop?.instagram_handle || null,
     }));
 
     res.status(200).json({

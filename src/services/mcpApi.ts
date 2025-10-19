@@ -57,9 +57,9 @@ export async function fetchTattooShopsWithArtists() {
       city_name: artist.city_name || "N/A",
       state_name: artist.state_name || "N/A",
       country_name: artist.country_name || "N/A",
-      shop_id: null, // We'll need to add this to the MCP endpoint
-      shop_name: "N/A", // We'll need to add this to the MCP endpoint
-      shop_instagram_handle: null, // We'll need to add this to the MCP endpoint
+      shop_id: artist.shop?.id || null,
+      shop_name: artist.shop_name || "N/A",
+      shop_instagram_handle: artist.shop_instagram_handle || null,
     }));
   } catch (error) {
     console.warn("MCP API failed, falling back to direct Supabase");
