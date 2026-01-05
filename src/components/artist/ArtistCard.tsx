@@ -1,6 +1,7 @@
 import React from "react";
 import styles from "./ArtistCard.module.css";
 import { Link, useLocation } from "react-router-dom";
+import { formatRelativeTime } from "../../utils/relativeTime";
 import InstagramLogoUrl from "/logo-instagram.svg";
 
 interface Artist {
@@ -12,13 +13,15 @@ interface Artist {
   city_name?: string;
   state_name?: string;
   country_name?: string;
+  created_at?: string | null;
 }
 
 interface ArtistCardProps {
   artist: Artist;
+  showTimestamp?: boolean;
 }
 
-const ArtistCard: React.FC<ArtistCardProps> = ({ artist }) => {
+const ArtistCard: React.FC<ArtistCardProps> = ({ artist, showTimestamp = false }) => {
   const location = useLocation();
   const artistInstagramUrl = artist.instagram_handle
     ? `https://www.instagram.com/${artist.instagram_handle}`
@@ -34,7 +37,14 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist }) => {
       className={styles.cardLink}
     >
       <div className={styles.card}>
-        <h4 className={styles.artistName}>{artist.name}</h4>
+        <div className={styles.header}>
+          <h4 className={styles.artistName}>{artist.name}</h4>
+          {showTimestamp && artist.created_at && (
+            <span className={styles.timestampLabel}>
+              {formatRelativeTime(artist.created_at)}
+            </span>
+          )}
+        </div>
 
         {artist.instagram_handle && (
           <a
@@ -42,7 +52,11 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist }) => {
             target="_blank"
             rel="noopener noreferrer"
             className={styles.link}
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              window.open(artistInstagramUrl, '_blank', 'noopener,noreferrer');
+            }}
           >
             <img
               src={InstagramLogoUrl}
