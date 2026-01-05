@@ -27,6 +27,7 @@
   color: inherit;
   display: block;
   margin: 0;
+  width: 100%;
 }
 
 .card {
@@ -39,8 +40,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-width: 334px;
-  width: 100%;
+  min-width: 0; /* Allows card to shrink below content size */
 }
 
 .card:hover {
