@@ -47,11 +47,30 @@
   border-color: var(--color-text-primary);
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
 .artistName {
   font-size: 1.2em;
   margin: 0;
   text-align: left;
   color: var(--color-text-primary);
+  flex: 1;
+}
+
+.timestampLabel {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary, #999);
+  background-color: var(--color-surface-secondary, #f5f5f5);
+  padding: 2px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .details {

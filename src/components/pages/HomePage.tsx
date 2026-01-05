@@ -8,6 +8,8 @@ import SearchBar from "../common/SearchBar";
 import HeroMessage from "../common/HeroMessage";
 import styles from "./HomePage.module.css";
 import PillGroup from "../common/PillGroup";
+import RecentArtists from "../recent/RecentArtists";
+import RecentShops from "../recent/RecentShops";
 
 interface Artist {
   id: number;
@@ -184,6 +186,8 @@ const MainApp: React.FC = () => {
         </div>
       )}
 
+        <RecentArtists limit={3} />
+        <RecentShops limit={3} />
       {error && <p className={styles.error}>{error}</p>}
     </div>
   );
