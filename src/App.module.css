@@ -188,13 +188,20 @@ button:focus-visible {
 
 .appContainer {
   display: flex;
-  flex-direction: column;
   min-height: 100vh;
 }
 
 .mainContent {
   flex: 1;
   padding: 20px;
+  margin-left: 250px; /* Default to expanded sidebar width */
+  transition: margin-left 0.3s ease;
+  min-height: 100vh;
+}
+
+/* Adjust margin when sidebar is collapsed */
+.mainContent.sidebarCollapsed {
+  margin-left: 70px;
 }
 
 .header {

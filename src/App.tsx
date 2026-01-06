@@ -1,10 +1,13 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import HomePage from "./components/pages/HomePage";
-import Header from "./components/common/Header";
+import Sidebar from "./components/common/Sidebar";
+import { SidebarProvider, useSidebar } from "./contexts/SidebarContext";
 import AboutPage from "./components/pages/AboutPage";
 import ShopPage from "./components/shop/ShopPage";
 import SearchResults from "./components/pages/SearchResults";
 import LogoTypePlayground from "./components/logo/LogoTypePlayground";
+import AllArtistsPage from "./components/pages/AllArtistsPage";
+import AllShopsPage from "./components/pages/AllShopsPage";
 import styles from "./App.module.css";
 import { Sentry } from "./utils/sentry";
 import ArtistPage from "./components/pages/ArtistPage";
@@ -15,6 +18,7 @@ import AdminAddShop from "./components/pages/AdminAddShop";
 import AdminAddCity from "./components/pages/AdminAddCity";
 import AdminAddCountry from "./components/pages/AdminAddCountry";
 import AdminAddArtistShopLink from "./components/pages/AdminAddArtistShopLink";
+import AdminBrokenLinks from "./components/pages/AdminBrokenLinks";
 
 // Enhanced App component with Sentry error boundary
 const SentryApp = Sentry.withErrorBoundary(App, {
@@ -38,16 +42,19 @@ const SentryApp = Sentry.withErrorBoundary(App, {
   },
 });
 
-function App() {
+function AppContent() {
+  const { isExpanded } = useSidebar();
+  
   return (
-    <Router>
-      <div className={styles.appContainer}>
-        <Header />
-        <main className={styles.mainContent}>
+    <div className={styles.appContainer}>
+      <Sidebar />
+      <main className={`${styles.mainContent} ${!isExpanded ? styles.sidebarCollapsed : ""}`}>
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/artists" element={<AllArtistsPage />} />
+            <Route path="/shops" element={<AllShopsPage />} />
             <Route path="/about" element={<AboutPage />} />
-            <Route path="/shops" element={<ShopPage />} />
+            <Route path="/shop/:shopId" element={<ShopPage />} />
             <Route path="/search-results" element={<SearchResults />} />
             <Route path="/logo-type" element={<LogoTypePlayground />} />
             <Route path="/artist/:artistId" element={<ArtistPage />} />
@@ -99,9 +106,26 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin/broken-links"
+              element={
+                <ProtectedRoute>
+                  <AdminBrokenLinks />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </main>
       </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <SidebarProvider>
+        <AppContent />
+      </SidebarProvider>
     </Router>
   );
 }

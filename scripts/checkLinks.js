@@ -1,14 +1,25 @@
 // Import 'dotenv' to load environment variables from a .env file
+// Using dotenv/config import works better with ES modules
 import "dotenv/config";
+
 import axios from "axios";
 import { createClient } from "@supabase/supabase-js";
 
 // Initialize Supabase client using environment variables
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+// Try VITE_ prefixed variables first (for frontend), then fallback to non-prefixed
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Supabase URL and ANON key must be provided.");
+  console.error("\n=== Debug Info ===");
+  console.error("Looking for .env at:", envPath);
+  console.error(".env file exists:", existsSync(envPath));
+  const supabaseVars = Object.keys(process.env).filter(k => k.includes('SUPABASE'));
+  console.error("Available env vars with 'SUPABASE':", supabaseVars.length > 0 ? supabaseVars : "NONE FOUND");
+  console.error("VITE_SUPABASE_URL:", process.env.VITE_SUPABASE_URL ? "✓ Found" : "✗ Not found");
+  console.error("VITE_SUPABASE_ANON_KEY:", process.env.VITE_SUPABASE_ANON_KEY ? "✓ Found" : "✗ Not found");
+  console.error("==================\n");
+  throw new Error("Supabase URL and ANON key must be provided. Looking for VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (or SUPABASE_URL and SUPABASE_ANON_KEY) in .env file.");
 }
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
