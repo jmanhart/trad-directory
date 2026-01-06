@@ -2,6 +2,12 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install --include=dev",
   "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
