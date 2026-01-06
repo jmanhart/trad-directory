@@ -47,8 +47,7 @@
   color: var(--color-error);
 }
 
-.input,
-.select {
+.input {
   padding: 0.75rem;
   border: 1px solid var(--color-border);
   border-radius: 6px;
@@ -59,23 +58,13 @@
   transition: border-color 0.2s ease;
 }
 
-.input:focus,
-.select:focus {
+.input:focus {
   outline: none;
   border-color: var(--color-primary);
 }
 
 .input::placeholder {
   color: var(--color-text-tertiary);
-}
-
-.select {
-  cursor: pointer;
-}
-
-.select option {
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
 }
 
 .submitButton {

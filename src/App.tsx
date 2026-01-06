@@ -9,7 +9,12 @@ import styles from "./App.module.css"; // Import your CSS for styling
 import { Sentry } from "./utils/sentry";
 import ArtistPage from "./components/pages/ArtistPage";
 import ProtectedRoute from "./components/common/ProtectedRoute";
+import AdminPage from "./components/pages/AdminPage";
 import AdminAddArtist from "./components/pages/AdminAddArtist";
+import AdminAddShop from "./components/pages/AdminAddShop";
+import AdminAddCity from "./components/pages/AdminAddCity";
+import AdminAddCountry from "./components/pages/AdminAddCountry";
+import AdminAddArtistShopLink from "./components/pages/AdminAddArtistShopLink";
 
 // Enhanced App component with Sentry error boundary
 const SentryApp = Sentry.withErrorBoundary(App, {
@@ -47,10 +52,50 @@ function App() {
             <Route path="/logo-type" element={<LogoTypePlayground />} />
             <Route path="/artist/:artistId" element={<ArtistPage />} />
             <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/admin/add-artist"
               element={
                 <ProtectedRoute>
                   <AdminAddArtist />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/add-shop"
+              element={
+                <ProtectedRoute>
+                  <AdminAddShop />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/add-city"
+              element={
+                <ProtectedRoute>
+                  <AdminAddCity />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/add-country"
+              element={
+                <ProtectedRoute>
+                  <AdminAddCountry />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/link-artist-shop"
+              element={
+                <ProtectedRoute>
+                  <AdminAddArtistShopLink />
                 </ProtectedRoute>
               }
             />

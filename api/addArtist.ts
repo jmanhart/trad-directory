@@ -3,6 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 interface AddArtistData {
   name: string;
   instagram_handle?: string;
+  gender?: string;
+  url?: string;
+  contact?: string;
   city_id?: number; // If provided, use this city directly
   city_name?: string; // If city_id not provided, create/find city using these
   state_name?: string;
@@ -189,6 +192,18 @@ export default async function handler(req: any, res: any) {
 
     if (data.instagram_handle) {
       artistData.instagram_handle = data.instagram_handle.replace(/^@/, "");
+    }
+
+    if (data.gender) {
+      artistData.gender = data.gender;
+    }
+
+    if (data.url) {
+      artistData.url = data.url;
+    }
+
+    if (data.contact) {
+      artistData.contact = data.contact;
     }
 
     const { data: newArtist, error: artistError } = await supabase
