@@ -5,7 +5,7 @@ import AboutPage from "./components/pages/AboutPage";
 import ShopPage from "./components/shop/ShopPage";
 import SearchResults from "./components/pages/SearchResults";
 import LogoTypePlayground from "./components/logo/LogoTypePlayground";
-import styles from "./App.module.css"; // Import your CSS for styling
+import styles from "./App.module.css";
 import { Sentry } from "./utils/sentry";
 import ArtistPage from "./components/pages/ArtistPage";
 import ProtectedRoute from "./components/common/ProtectedRoute";

@@ -20,6 +20,18 @@
   margin-bottom: 1em;
 }
 
+.section {
+  margin-top: 2rem;
+}
+
+.section:first-of-type {
+  margin-top: 2rem;
+}
+
+.section + .section {
+  margin-top: 1rem;
+}
+
 .links {
   display: flex;
   justify-content: center;

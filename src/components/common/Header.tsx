@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import SearchBar from "./SearchBar";
 import styles from "./Header.module.css";
 
@@ -13,6 +14,7 @@ interface Suggestion {
 const Header: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [nameToId, setNameToId] = useState<Map<string, number>>(new Map());
   const [handleToId, setHandleToId] = useState<Map<string, number>>(new Map());
@@ -163,6 +165,22 @@ const Header: React.FC = () => {
           >
             Instagram
           </a>
+          {false && user ? (
+            <>
+              <Link to="/saved" className={styles.navLink}>
+                Saved
+              </Link>
+              <Link to="/account" className={styles.navLink}>
+                Account
+              </Link>
+            </>
+          ) : (
+            false && (
+              <Link to="/login" className={styles.navLink}>
+                Sign In
+              </Link>
+            )
+          )}
         </nav>
       </div>
     </header>

@@ -3,15 +3,17 @@ import styles from "./Pill.module.css";
 
 interface PillProps {
   label: string;
-  count: number;
+  count?: number;
   onClick?: () => void;
+  icon?: React.ReactNode;
 }
 
-const Pill: React.FC<PillProps> = ({ label, count, onClick }) => {
+const Pill: React.FC<PillProps> = ({ label, count, onClick, icon }) => {
   return (
     <button type="button" className={styles.pill} onClick={onClick}>
+      {icon && <span className={styles.icon}>{icon}</span>}
       <span className={styles.label}>{label}</span>
-      <span className={styles.count}>{count}</span>
+      {count !== undefined && <span className={styles.count}>{count}</span>}
     </button>
   );
 };
