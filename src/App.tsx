@@ -8,6 +8,8 @@ import LogoTypePlayground from "./components/logo/LogoTypePlayground";
 import styles from "./App.module.css"; // Import your CSS for styling
 import { Sentry } from "./utils/sentry";
 import ArtistPage from "./components/pages/ArtistPage";
+import ProtectedRoute from "./components/common/ProtectedRoute";
+import AdminAddArtist from "./components/pages/AdminAddArtist";
 
 // Enhanced App component with Sentry error boundary
 const SentryApp = Sentry.withErrorBoundary(App, {
@@ -44,6 +46,14 @@ function App() {
             <Route path="/search-results" element={<SearchResults />} />
             <Route path="/logo-type" element={<LogoTypePlayground />} />
             <Route path="/artist/:artistId" element={<ArtistPage />} />
+            <Route
+              path="/admin/add-artist"
+              element={
+                <ProtectedRoute>
+                  <AdminAddArtist />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </main>
       </div>
