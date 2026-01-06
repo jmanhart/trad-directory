@@ -27,3 +27,4 @@ dist-ssr
 
 battle-plan.md
 .vercel
+.env*.local

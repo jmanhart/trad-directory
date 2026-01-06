@@ -10,6 +10,25 @@ import PillGroup from "../common/PillGroup";
 import RecentArtists from "../recent/RecentArtists";
 import RecentShops from "../recent/RecentShops";
 
+interface Artist {
+  id: number;
+  name: string;
+  instagram_handle?: string | null;
+  city_name?: string;
+  state_name?: string;
+  country_name?: string;
+  shop_id?: number | null;
+  shop_name?: string | null;
+  shop_instagram_handle?: string | null;
+}
+
+interface Suggestion {
+  label: string;
+  type: "artist" | "shop" | "location";
+  detail?: string;
+  id?: number;
+}
+
 const MainApp: React.FC = () => {
   const navigate = useNavigate();
   const { suggestions, topCities, topCountries, error, loading } =
@@ -73,10 +92,8 @@ const MainApp: React.FC = () => {
         </div>
       )}
 
-      <RecentArtists limit={3} />
-      <RecentShops limit={3} />
-
-     
+        <RecentArtists limit={3} />
+        <RecentShops limit={3} />
       {error && <p className={styles.error}>{error}</p>}
     </div>
   );
