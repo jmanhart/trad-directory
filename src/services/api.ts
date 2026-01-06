@@ -104,6 +104,7 @@ export async function fetchShopById(id: number) {
         `
         id,
         shop_name,
+        instagram_handle,
         address,
         city: cities (
           city_name,
@@ -111,7 +112,13 @@ export async function fetchShopById(id: number) {
           country: countries (country_name)
         ),
         artists: artist_shop (
-          artist: artists (id, name, instagram_handle)
+          artist: artists (id, name, instagram_handle, city: cities (
+            city_name,
+            state: states (state_name),
+            country: countries (country_name)
+          ), artist_shop (
+            shop: tattoo_shops (id, shop_name, instagram_handle)
+          ))
         )
       `
       )
@@ -125,6 +132,7 @@ export async function fetchShopById(id: number) {
 
     return {
       ...data,
+      instagram_handle: data.instagram_handle || null,
       city_name: Array.isArray(data.city)
         ? data.city[0]?.city_name
         : data.city?.city_name || "N/A",
@@ -134,11 +142,26 @@ export async function fetchShopById(id: number) {
       country_name: Array.isArray(data.city?.country)
         ? data.city.country[0]?.country_name
         : data.city.country?.country_name || "N/A",
-      artists: (data.artists || []).map((entry: any) => ({
-        id: entry.artist.id,
-        name: entry.artist.name,
-        instagram_handle: entry.artist.instagram_handle || null,
-      })),
+      artists: (data.artists || []).map((entry: any) => {
+        const artist = entry.artist;
+        return {
+          id: artist.id,
+          name: artist.name,
+          instagram_handle: artist.instagram_handle || null,
+          city_name: Array.isArray(artist.city)
+            ? artist.city[0]?.city_name
+            : artist.city?.city_name || "N/A",
+          state_name: Array.isArray(artist.city?.state)
+            ? artist.city.state[0]?.state_name
+            : artist.city.state?.state_name || "N/A",
+          country_name: Array.isArray(artist.city?.country)
+            ? artist.city.country[0]?.country_name
+            : artist.city.country?.country_name || "N/A",
+          shop_id: artist.artist_shop?.[0]?.shop?.id || null,
+          shop_name: artist.artist_shop?.[0]?.shop?.shop_name || "N/A",
+          shop_instagram_handle: artist.artist_shop?.[0]?.shop?.instagram_handle || null,
+        };
+      }),
     };
   } catch (err) {
     console.error(`Unhandled error in fetchShopById for ID ${id}:`, err);
@@ -274,6 +297,50 @@ export async function fetchRecentArtists(limit: number = 6) {
     }));
   } catch (err) {
     console.error("Unhandled error in fetchRecentArtists:", err);
+    throw err;
+  }
+}
+
+// Fetch all tattoo shops
+export async function fetchAllShops() {
+  try {
+    const { data, error } = await supabase
+      .from("tattoo_shops")
+      .select(`
+        id,
+        shop_name,
+        instagram_handle,
+        address,
+        city: cities (
+          city_name,
+          state: states (state_name),
+          country: countries (country_name)
+        )
+      `)
+      .order("shop_name", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching all shops:", error.message);
+      throw new Error(error.message);
+    }
+
+    return (data || []).map((shop: any) => ({
+      id: shop.id,
+      shop_name: shop.shop_name,
+      instagram_handle: shop.instagram_handle || null,
+      address: shop.address || null,
+      city_name: Array.isArray(shop.city)
+        ? shop.city[0]?.city_name
+        : shop.city?.city_name || "N/A",
+      state_name: Array.isArray(shop.city?.state)
+        ? shop.city.state[0]?.state_name
+        : shop.city.state?.state_name || "N/A",
+      country_name: Array.isArray(shop.city?.country)
+        ? shop.city.country[0]?.country_name
+        : shop.city.country?.country_name || "N/A",
+    }));
+  } catch (err) {
+    console.error("Unhandled error in fetchAllShops:", err);
     throw err;
   }
 }

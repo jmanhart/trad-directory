@@ -1,73 +1,178 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { supabase } from "./../../services/supabaseClient";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { fetchShopById } from "../../services/api";
+import ArtistCard from "../artist/ArtistCard";
+import styles from "./ShopPage.module.css";
+import InstagramLogoUrl from "/logo-instagram.svg";
+
+interface Artist {
+  id: number;
+  name: string;
+  instagram_handle?: string | null;
+  city_name?: string;
+  state_name?: string;
+  country_name?: string;
+  shop_id?: number | null;
+  shop_name?: string | null;
+  shop_instagram_handle?: string | null;
+}
 
 interface Shop {
   id: number;
-  name: string;
-  address?: string;
-  phone?: string;
-  artists?: string[];
+  shop_name: string;
+  instagram_handle?: string | null;
+  address?: string | null;
+  city_name?: string;
+  state_name?: string;
+  country_name?: string;
+  artists?: Artist[];
 }
 
 const ShopPage: React.FC = () => {
-  const { shopId } = useParams<{ shopId: string }>(); // Dynamic route parameter
+  const { shopId } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [shop, setShop] = useState<Shop | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const fromSearch = Boolean((location.state as any)?.fromSearch);
+  const previous = (location.state as any)?.previous as string | undefined;
 
   useEffect(() => {
-    const fetchShop = async () => {
-      setLoading(true);
-
-      // Replace "tattoo_shops" with your actual Supabase table name
-      const { data, error } = await supabase
-        .from("tattoo_shops")
-        .select("id, shop_name, address") // Include all required columns
-        .eq("id", shopId)
-        .single(); // Fetch a single record
-
-      if (error) {
-        setError("Failed to load shop data.");
-        console.error(error);
-      } else {
-        setShop(data);
+    async function getShop() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const id = Number(shopId);
+        if (!Number.isFinite(id)) {
+          throw new Error("Invalid shop id");
+        }
+        const data = await fetchShopById(id);
+        setShop(data as unknown as Shop);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setIsLoading(false);
       }
+    }
 
-      setLoading(false);
-    };
-
-    fetchShop();
+    getShop();
   }, [shopId]);
 
-  if (loading) {
-    return <p>Loading shop details...</p>;
+  const handleBack = () => {
+    if (previous) {
+      navigate(previous);
+    } else {
+      navigate(-1);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.card}>Loading shop details…</div>
+      </div>
+    );
   }
 
-  if (error) {
-    return <p>{error}</p>;
+  if (error || !shop) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.card}>Unable to load shop. {error || ""}</div>
+      </div>
+    );
   }
 
-  if (!shop) {
-    return <p>Shop not found.</p>;
-  }
+  const instagramUrl = shop.instagram_handle
+    ? `https://www.instagram.com/${shop.instagram_handle}`
+    : null;
+
+  const locationString = [
+    shop.city_name,
+    shop.state_name,
+    shop.country_name,
+  ]
+    .filter(Boolean)
+    .join(", ") || "N/A";
 
   return (
-    <div style={{ fontFamily: "Arial, sans-serif", padding: "20px" }}>
-      <h1>{shop.shop_name}</h1>
-      <p>
-        <strong>Address:</strong> {shop.address || "No address available"}
-      </p>
-      {/* <h2>Artists:</h2>
-      {shop.artists && shop.artists.length > 0 ? (
-        <ul>
-          {shop.artists.map((artist, index) => (
-            <li key={index}>{artist}</li>
-          ))}
-        </ul>
-      ) : (
-        <p>No artists listed for this shop.</p>
-      )} */}
+    <div className={styles.container}>
+      <div className={styles.card}>
+        {fromSearch && (
+          <button onClick={handleBack} className={styles.backButton}>
+            ← Back to results
+          </button>
+        )}
+        <div className={styles.header}>
+          <div>
+            <h1 className={styles.name}>{shop.shop_name}</h1>
+            {instagramUrl && (
+              <div className={styles.handle}>
+                <a
+                  className={styles.link}
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  <img
+                    src={InstagramLogoUrl}
+                    alt="Instagram"
+                    className={styles.instagramIcon}
+                  />
+                  @{shop.instagram_handle}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.meta}>
+          {shop.address && (
+            <div className={styles.metaItem}>
+              <span className={styles.label}>Address</span>
+              <span className={styles.value}>{shop.address}</span>
+            </div>
+          )}
+          {locationString !== "N/A" && (
+            <div className={styles.metaItem}>
+              <span className={styles.label}>Location</span>
+              <span className={styles.value}>{locationString}</span>
+            </div>
+          )}
+          {shop.city_name && shop.city_name !== "N/A" && (
+            <div className={styles.metaItem}>
+              <span className={styles.label}>City</span>
+              <span className={styles.value}>{shop.city_name}</span>
+            </div>
+          )}
+          {shop.state_name && shop.state_name !== "N/A" && (
+            <div className={styles.metaItem}>
+              <span className={styles.label}>State</span>
+              <span className={styles.value}>{shop.state_name}</span>
+            </div>
+          )}
+          {shop.country_name && shop.country_name !== "N/A" && (
+            <div className={styles.metaItem}>
+              <span className={styles.label}>Country</span>
+              <span className={styles.value}>{shop.country_name}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {shop.artists && shop.artists.length > 0 && (
+        <div className={styles.artistsSection}>
+          <h2 className={styles.artistsTitle}>
+            Artists at {shop.shop_name} ({shop.artists.length})
+          </h2>
+          <div className={styles.artistsGrid}>
+            {shop.artists.map((artist) => (
+              <ArtistCard key={artist.id} artist={artist} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

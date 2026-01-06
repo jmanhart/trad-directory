@@ -32,6 +32,11 @@ export default function AdminPage() {
           <span className={styles.buttonIcon}>🔗</span>
           <span className={styles.buttonText}>Link Artist / Shop</span>
         </Link>
+        
+        <Link to="/admin/broken-links" className={styles.actionButton}>
+          <span className={styles.buttonIcon}>🔍</span>
+          <span className={styles.buttonText}>Check Broken Links</span>
+        </Link>
       </div>
     </div>
   );

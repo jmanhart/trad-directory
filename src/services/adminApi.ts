@@ -313,3 +313,39 @@ export async function addArtistShopLink(
     throw error;
   }
 }
+
+interface BrokenLink {
+  url: string;
+  handle: string;
+  type: "artist" | "shop";
+  id: number;
+  name: string;
+  status: number | null;
+  error: string | null;
+}
+
+interface CheckLinksResponse {
+  brokenLinks: BrokenLink[];
+  totalChecked: number;
+  brokenCount: number;
+}
+
+/**
+ * Check Instagram links and return only broken ones (not status 200)
+ */
+export async function checkInstagramLinks(): Promise<CheckLinksResponse> {
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || "/api/checkInstagramLinks";
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      throw new Error(`Failed to check links: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Error checking Instagram links:", error);
+    throw error;
+  }
+}
