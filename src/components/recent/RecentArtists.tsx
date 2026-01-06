@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { fetchRecentArtists } from "../../services/api";
-import ArtistCard from "../artist/ArtistCard";
+import PillGroup from "../common/PillGroup";
+import InstagramLogoUrl from "/logo-instagram.svg";
 import styles from "./RecentArtists.module.css";
 
 interface Artist {
@@ -20,6 +22,7 @@ interface RecentArtistsProps {
 }
 
 const RecentArtists: React.FC<RecentArtistsProps> = ({ limit = 6 }) => {
+  const navigate = useNavigate();
   const [artists, setArtists] = useState<Artist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,8 +47,7 @@ const RecentArtists: React.FC<RecentArtistsProps> = ({ limit = 6 }) => {
   if (isLoading) {
     return (
       <div className={styles.container}>
-        <h2 className={styles.title}>Recently Added Artists</h2>
-        <p className={styles.loading}>Loading...</p>
+        <p className={styles.loading}>Loading recent artists...</p>
       </div>
     );
   }
@@ -53,7 +55,6 @@ const RecentArtists: React.FC<RecentArtistsProps> = ({ limit = 6 }) => {
   if (error) {
     return (
       <div className={styles.container}>
-        <h2 className={styles.title}>Recently Added Artists</h2>
         <p className={styles.error}>{error}</p>
       </div>
     );
@@ -65,12 +66,23 @@ const RecentArtists: React.FC<RecentArtistsProps> = ({ limit = 6 }) => {
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.title}>Recently Added Artists</h2>
-      <div className={styles.grid}>
-        {artists.map((artist) => (
-          <ArtistCard key={artist.id} artist={artist} />
-        ))}
-      </div>
+      <PillGroup
+        title="Recently Added Artists"
+        items={artists.map((artist) => ({
+          key: artist.id,
+          label: artist.instagram_handle
+            ? `@${artist.instagram_handle}`
+            : artist.name,
+          onClick: () => navigate(`/artist/${artist.id}`),
+          icon: artist.instagram_handle ? (
+            <img
+              src={InstagramLogoUrl}
+              alt="Instagram"
+              className={styles.instagramIcon}
+            />
+          ) : undefined,
+        }))}
+      />
     </div>
   );
 };

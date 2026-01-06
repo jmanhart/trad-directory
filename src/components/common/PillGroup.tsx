@@ -4,8 +4,10 @@ import styles from "./PillGroup.module.css";
 
 interface PillData {
   label: string;
-  count: number;
+  count?: number;
   onClick?: () => void;
+  icon?: React.ReactNode;
+  key?: string | number;
 }
 
 interface PillGroupProps {
@@ -20,12 +22,13 @@ const PillGroup: React.FC<PillGroupProps> = ({ title, items }) => {
     <div>
       {title && <p className={styles.title}>{title}</p>}
       <div className={styles.group}>
-        {items.map((item) => (
+        {items.map((item, index) => (
           <Pill
-            key={item.label}
+            key={item.key ?? item.label ?? index}
             label={item.label}
             count={item.count}
             onClick={item.onClick}
+            icon={item.icon}
           />
         ))}
       </div>

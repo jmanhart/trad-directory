@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { fetchRecentShops } from "../../services/api";
+import PillGroup from "../common/PillGroup";
 import InstagramLogoUrl from "/logo-instagram.svg";
 import styles from "./RecentShops.module.css";
 
@@ -20,6 +21,7 @@ interface RecentShopsProps {
 }
 
 const RecentShops: React.FC<RecentShopsProps> = ({ limit = 6 }) => {
+  const navigate = useNavigate();
   const [shops, setShops] = useState<Shop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,8 +46,7 @@ const RecentShops: React.FC<RecentShopsProps> = ({ limit = 6 }) => {
   if (isLoading) {
     return (
       <div className={styles.container}>
-        <h2 className={styles.title}>Recently Added Shops</h2>
-        <p className={styles.loading}>Loading...</p>
+        <p className={styles.loading}>Loading recent shops...</p>
       </div>
     );
   }
@@ -53,7 +54,6 @@ const RecentShops: React.FC<RecentShopsProps> = ({ limit = 6 }) => {
   if (error) {
     return (
       <div className={styles.container}>
-        <h2 className={styles.title}>Recently Added Shops</h2>
         <p className={styles.error}>{error}</p>
       </div>
     );
@@ -65,64 +65,23 @@ const RecentShops: React.FC<RecentShopsProps> = ({ limit = 6 }) => {
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.title}>Recently Added Shops</h2>
-      <div className={styles.grid}>
-        {shops.map((shop) => {
-          const shopInstagramUrl = shop.instagram_handle
-            ? `https://www.instagram.com/${shop.instagram_handle}`
-            : "#";
-
-          const location = [
-            shop.city_name,
-            shop.state_name,
-            shop.country_name,
-          ]
-            .filter(Boolean)
-            .join(", ") || "N/A";
-
-          return (
-            <Link
-              key={shop.id}
-              to={`/shop/${shop.id}`}
-              className={styles.cardLink}
-            >
-              <div className={styles.card}>
-                <div className={styles.header}>
-                  <h3 className={styles.shopName}>{shop.shop_name}</h3>
-                </div>
-
-                {shop.instagram_handle && (
-                  <a
-                    href={shopInstagramUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.link}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      window.open(shopInstagramUrl, '_blank', 'noopener,noreferrer');
-                    }}
-                  >
-                    <img
-                      src={InstagramLogoUrl}
-                      alt="Instagram"
-                      className={styles.instagramIcon}
-                    />
-                    @{shop.instagram_handle}
-                  </a>
-                )}
-
-                <div className={styles.details}>
-                  {shop.address && (
-                    <p className={styles.address}>{shop.address}</p>
-                  )}
-                  <p className={styles.location}>{location}</p>
-                </div>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+      <PillGroup
+        title="Recently Added Shops"
+        items={shops.map((shop) => ({
+          key: shop.id,
+          label: shop.instagram_handle
+            ? `@${shop.instagram_handle}`
+            : shop.shop_name,
+          onClick: () => navigate(`/shop/${shop.id}`),
+          icon: shop.instagram_handle ? (
+            <img
+              src={InstagramLogoUrl}
+              alt="Instagram"
+              className={styles.instagramIcon}
+            />
+          ) : undefined,
+        }))}
+      />
     </div>
   );
 };
