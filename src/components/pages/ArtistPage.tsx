@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchArtistById } from "../../services/api";
+import { useSavedArtists } from "../../hooks/useSavedArtists";
+import { useAuth } from "../../contexts/AuthContext";
 import styles from "./ArtistPage.module.css";
 
 interface Artist {
@@ -19,9 +21,12 @@ const ArtistPage: React.FC = () => {
   const { artistId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isSaved, toggleSave } = useSavedArtists();
   const [artist, setArtist] = useState<Artist | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [saving, setSaving] = useState(false);
 
   const fromSearch = Boolean((location.state as any)?.fromSearch);
   const previous = (location.state as any)?.previous as string | undefined;
@@ -53,6 +58,19 @@ const ArtistPage: React.FC = () => {
     } else {
       navigate(-1);
     }
+  };
+
+  const handleSave = async () => {
+    if (!user) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+
+    if (!artist) return;
+
+    setSaving(true);
+    await toggleSave(artist.id);
+    setSaving(false);
   };
 
   if (isLoading) {
@@ -87,18 +105,35 @@ const ArtistPage: React.FC = () => {
           </button>
         )}
         <div className={styles.header}>
-          <h1 className={styles.name}>{artist.name}</h1>
-          {instagramUrl && (
-            <div className={styles.handle}>
-              <a
-                className={styles.link}
-                href={instagramUrl}
-                target="_blank"
-                rel="noreferrer noopener"
-              >
-                @{artist.instagram_handle}
-              </a>
-            </div>
+          <div>
+            <h1 className={styles.name}>{artist.name}</h1>
+            {instagramUrl && (
+              <div className={styles.handle}>
+                <a
+                  className={styles.link}
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  @{artist.instagram_handle}
+                </a>
+              </div>
+            )}
+          </div>
+          {user && (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className={`${styles.saveButton} ${
+                isSaved(artist.id) ? styles.saved : ""
+              }`}
+            >
+              {saving
+                ? "Saving..."
+                : isSaved(artist.id)
+                  ? "✓ Saved"
+                  : "Save Artist"}
+            </button>
           )}
         </div>
 

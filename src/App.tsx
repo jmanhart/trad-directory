@@ -5,9 +5,14 @@ import AboutPage from "./components/pages/AboutPage";
 import ShopPage from "./components/shop/ShopPage";
 import SearchResults from "./components/pages/SearchResults";
 import LogoTypePlayground from "./components/logo/LogoTypePlayground";
-import styles from "./App.module.css"; // Import your CSS for styling
+import styles from "./App.module.css";
 import { Sentry } from "./utils/sentry";
 import ArtistPage from "./components/pages/ArtistPage";
+import LoginPage from "./components/auth/LoginPage";
+import AuthCallback from "./components/auth/AuthCallback";
+import RequireAuth from "./components/auth/RequireAuth";
+import SavedPage from "./components/pages/SavedPage";
+import AccountPage from "./components/pages/AccountPage";
 
 // Enhanced App component with Sentry error boundary
 const SentryApp = Sentry.withErrorBoundary(App, {
@@ -44,6 +49,20 @@ function App() {
             <Route path="/search-results" element={<SearchResults />} />
             <Route path="/logo-type" element={<LogoTypePlayground />} />
             <Route path="/artist/:artistId" element={<ArtistPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route
+              path="/saved"
+              element={
+                <RequireAuth>
+                  <SavedPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/account"
+              element={<AccountPage />}
+            />
           </Routes>
         </main>
       </div>

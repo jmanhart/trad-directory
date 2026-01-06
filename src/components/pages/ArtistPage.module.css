@@ -14,8 +14,16 @@
 }
 
 .header {
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 1.25rem;
+  gap: 1rem;
+}
+
+.header > div {
+  flex: 1;
+  text-align: center;
 }
 
 .name {
@@ -59,8 +67,47 @@
   font-weight: 500;
 }
 
+.saveButton {
+  padding: 0.5rem 1rem;
+  background: var(--color-primary, #0073e6);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.saveButton:hover:not(:disabled) {
+  background: var(--color-primary-hover, #005bb5);
+}
+
+.saveButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.saveButton.saved {
+  background: #28a745;
+}
+
+.saveButton.saved:hover:not(:disabled) {
+  background: #218838;
+}
+
 @media (max-width: 600px) {
   .meta {
     grid-template-columns: 1fr;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .header > div {
+    width: 100%;
   }
 }
