@@ -120,7 +120,7 @@ const ArtistPage: React.FC = () => {
               </div>
             )}
           </div>
-          {user && (
+          {false && user && (
             <button
               onClick={handleSave}
               disabled={saving}

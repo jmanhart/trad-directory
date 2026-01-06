@@ -165,7 +165,7 @@ const Header: React.FC = () => {
           >
             Instagram
           </a>
-          {user ? (
+          {false && user ? (
             <>
               <Link to="/saved" className={styles.navLink}>
                 Saved
@@ -175,9 +175,11 @@ const Header: React.FC = () => {
               </Link>
             </>
           ) : (
-            <Link to="/login" className={styles.navLink}>
-              Sign In
-            </Link>
+            false && (
+              <Link to="/login" className={styles.navLink}>
+                Sign In
+              </Link>
+            )
           )}
         </nav>
       </div>
