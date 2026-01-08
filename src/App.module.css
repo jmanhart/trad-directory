@@ -204,6 +204,18 @@ button:focus-visible {
   margin-left: 70px;
 }
 
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .mainContent {
+    margin-left: 0 !important; /* Override sidebar margins on mobile */
+    padding-bottom: 80px; /* Space for bottom navigation */
+  }
+
+  .mainContent.sidebarCollapsed {
+    margin-left: 0 !important; /* Override collapsed sidebar margin on mobile */
+  }
+}
+
 .header {
   position: sticky;
   top: 0;
