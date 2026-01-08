@@ -118,37 +118,122 @@ const Sidebar: React.FC = () => {
     );
   };
 
-  return (
-    <aside className={`${styles.sidebar} ${isExpanded ? styles.expanded : styles.collapsed}`}>
-      <div className={styles.navContainer}>
-        <nav className={styles.nav}>
-          <div
-            className={styles.navItem}
-            onClick={() => {
-              setIsExpanded(!isExpanded);
-              // Navigate to home if not already there
-              if (location.pathname !== "/") {
-                navigate("/");
-              }
-            }}
-            style={{ cursor: "pointer" }}
-          >
-            <span className={styles.icon}>
-              <img
-                src="/logo.jpg"
-                alt="Trad Directory"
-                className={styles.logoIcon}
-              />
-            </span>
-            {isExpanded && <span className={styles.label}>Trad Directory</span>}
-          </div>
-          {mainMenuItems.map(renderNavItem)}
-        </nav>
-        <nav className={styles.bottomNav}>
-          {bottomMenuItems.map(renderNavItem)}
-        </nav>
+  // Mobile menu items (Search, Artists, Shops, About)
+  const mobileMenuItems: SidebarItem[] = [
+    {
+      path: "/",
+      label: "Search",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
+        </svg>
+      ),
+    },
+    {
+      path: "/artists",
+      label: "Artists",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      ),
+    },
+    {
+      path: "/shops",
+      label: "Shops",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+      ),
+    },
+    {
+      path: "/about",
+      label: "About",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 16v-4" />
+          <path d="M12 8h.01" />
+        </svg>
+      ),
+    },
+  ];
+
+  const renderMobileNavItem = (item: SidebarItem) => {
+    const active = isActive(item.path);
+    const content = (
+      <div className={`${styles.mobileNavItem} ${active ? styles.mobileActive : ""}`}>
+        <span className={styles.mobileIcon}>{item.icon}</span>
+        <span className={styles.mobileLabel}>{item.label}</span>
       </div>
-    </aside>
+    );
+
+    if (item.external) {
+      return (
+        <a
+          key={item.path}
+          href={item.path}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.mobileNavLink}
+        >
+          {content}
+        </a>
+      );
+    }
+
+    return (
+      <Link key={item.path} to={item.path} className={styles.mobileNavLink}>
+        {content}
+      </Link>
+    );
+  };
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside className={`${styles.sidebar} ${isExpanded ? styles.expanded : styles.collapsed}`}>
+        <div className={styles.navContainer}>
+          <nav className={styles.nav}>
+            <div
+              className={styles.navItem}
+              onClick={() => {
+                setIsExpanded(!isExpanded);
+                // Navigate to home if not already there
+                if (location.pathname !== "/") {
+                  navigate("/");
+                }
+              }}
+              style={{ cursor: "pointer" }}
+            >
+              <span className={styles.icon}>
+                <img
+                  src="/logo.jpg"
+                  alt="Trad Directory"
+                  className={styles.logoIcon}
+                />
+              </span>
+              {isExpanded && <span className={styles.label}>Trad Directory</span>}
+            </div>
+            {mainMenuItems.map(renderNavItem)}
+          </nav>
+          <nav className={styles.bottomNav}>
+            {bottomMenuItems.map(renderNavItem)}
+          </nav>
+        </div>
+      </aside>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className={styles.mobileBottomNav}>
+        {mobileMenuItems.map(renderMobileNavItem)}
+      </nav>
+    </>
   );
 };
 
