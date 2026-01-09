@@ -46,9 +46,9 @@ function AppContent() {
   const { isExpanded } = useSidebar();
   
   return (
-    <div className={styles.appContainer}>
+    <div className={`${styles.appContainer} ${!isExpanded ? styles.sidebarCollapsed : ""}`}>
       <Sidebar />
-      <main className={`${styles.mainContent} ${!isExpanded ? styles.sidebarCollapsed : ""}`}>
+      <main className={styles.mainContent}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/artists" element={<AllArtistsPage />} />

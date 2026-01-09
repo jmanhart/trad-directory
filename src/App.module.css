@@ -187,32 +187,36 @@ button:focus-visible {
 }
 
 .appContainer {
-  display: flex;
+  display: grid;
+  grid-template-columns: 250px 1fr; /* Sidebar width, then remaining space */
   min-height: 100vh;
+  transition: grid-template-columns 0.3s ease;
+}
+
+.appContainer.sidebarCollapsed {
+  grid-template-columns: 60px 1fr; /* Collapsed sidebar width */
 }
 
 .mainContent {
-  flex: 1;
   padding: 20px;
-  margin-left: 250px; /* Default to expanded sidebar width */
-  transition: margin-left 0.3s ease;
   min-height: 100vh;
-}
-
-/* Adjust margin when sidebar is collapsed */
-.mainContent.sidebarCollapsed {
-  margin-left: 70px;
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Mobile adjustments */
 @media (max-width: 768px) {
-  .mainContent {
-    margin-left: 0 !important; /* Override sidebar margins on mobile */
-    padding-bottom: 80px; /* Space for bottom navigation */
+  .appContainer {
+    grid-template-columns: 1fr; /* Single column on mobile */
   }
 
-  .mainContent.sidebarCollapsed {
-    margin-left: 0 !important; /* Override collapsed sidebar margin on mobile */
+  .appContainer.sidebarCollapsed {
+    grid-template-columns: 1fr; /* Single column on mobile */
+  }
+
+  .mainContent {
+    padding-bottom: 80px; /* Space for bottom navigation */
   }
 }
 

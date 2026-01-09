@@ -1,15 +1,14 @@
 .sidebar {
-  position: fixed;
-  left: 0;
-  top: 0;
   height: 100vh;
   background-color: var(--color-surface);
   border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   transition: width 0.3s ease;
-  z-index: 1000;
   overflow-x: hidden;
+  position: sticky;
+  top: 0;
+  align-self: start;
 }
 
 .sidebar.expanded {
