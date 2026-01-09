@@ -6,6 +6,7 @@ import ArtistsIcon from "../../assets/icons/artistsIcon";
 import ShopsIcon from "../../assets/icons/shopsIcon";
 import AboutIcon from "../../assets/icons/aboutIcon";
 import InstagramIcon from "../../assets/icons/instagramIcon";
+import SidebarLogo from "./SidebarLogo";
 import styles from "./Sidebar.module.css";
 
 interface SidebarItem {
@@ -154,7 +155,7 @@ const Sidebar: React.FC = () => {
         <div className={styles.navContainer}>
           <nav className={styles.nav}>
             <div
-              className={styles.navItem}
+              className={styles.logoItem}
               onClick={() => {
                 setIsExpanded(!isExpanded);
                 // Navigate to home if not already there
@@ -164,14 +165,7 @@ const Sidebar: React.FC = () => {
               }}
               style={{ cursor: "pointer" }}
             >
-              <span className={styles.icon}>
-                <img
-                  src="/logo.jpg"
-                  alt="Trad Directory"
-                  className={styles.logoIcon}
-                />
-              </span>
-              <span className={styles.label}>Trad Directory</span>
+              <SidebarLogo isExpanded={isExpanded} />
             </div>
             {mainMenuItems.map(renderNavItem)}
           </nav>

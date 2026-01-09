@@ -55,6 +55,11 @@
   flex-shrink: 0;
 }
 
+.logoItem {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
 .navItem {
   display: flex;
   align-items: center;
