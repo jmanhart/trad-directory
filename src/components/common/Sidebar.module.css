@@ -73,7 +73,7 @@
 
 
 .navItem:hover {
-  background-color: var(--color-background);
+  background-color: var(--color-gray-100);
   color: var(--color-text-primary);
 }
 
