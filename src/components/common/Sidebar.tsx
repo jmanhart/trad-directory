@@ -64,7 +64,7 @@ const Sidebar: React.FC = () => {
     const content = (
       <>
         <span className={styles.icon}>{item.icon}</span>
-        {isExpanded && <span className={styles.label}>{item.label}</span>}
+        <span className={styles.label}>{item.label}</span>
       </>
     );
 
@@ -171,7 +171,7 @@ const Sidebar: React.FC = () => {
                   className={styles.logoIcon}
                 />
               </span>
-              {isExpanded && <span className={styles.label}>Trad Directory</span>}
+              <span className={styles.label}>Trad Directory</span>
             </div>
             {mainMenuItems.map(renderNavItem)}
           </nav>
