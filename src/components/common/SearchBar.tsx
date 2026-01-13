@@ -15,11 +15,11 @@ interface SearchBarProps {
   onSelectSuggestion?: (suggestion: Suggestion) => void;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({
+export default function SearchBar({
   onSearch,
   suggestions,
   onSelectSuggestion,
-}) => {
+}: SearchBarProps) {
   const [query, setQuery] = useState("");
   const [filteredSuggestions, setFilteredSuggestions] = useState<Suggestion[]>(
     []
@@ -174,6 +174,4 @@ const SearchBar: React.FC<SearchBarProps> = ({
       </div>
     </div>
   );
-};
-
-export default SearchBar;
+}

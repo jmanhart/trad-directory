@@ -17,7 +17,7 @@ interface Artist {
   country_name?: string;
 }
 
-const AllArtistsPage: React.FC = () => {
+export default function AllArtistsPage() {
   const navigate = useNavigate();
   const [artists, setArtists] = useState<Artist[]>([]);
   const [filteredArtists, setFilteredArtists] = useState<Artist[]>([]);
@@ -125,7 +125,5 @@ const AllArtistsPage: React.FC = () => {
       )}
     </div>
   );
-};
-
-export default AllArtistsPage;
+}
 

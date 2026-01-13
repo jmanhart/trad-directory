@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import TattooBlockSVG from "./TattooBlockSVG";
 
-const LogoTypePlayground: React.FC = () => {
+export default function LogoTypePlayground() {
   useEffect(() => {
     // Inject Google Fonts link for Figtree (not needed for block SVG, but kept for consistency)
     const link = document.createElement("link");
@@ -19,6 +19,4 @@ const LogoTypePlayground: React.FC = () => {
       <TattooBlockSVG />
     </div>
   );
-};
-
-export default LogoTypePlayground;
+}

@@ -10,7 +10,7 @@ interface SidebarItem {
   external?: boolean;
 }
 
-const Sidebar: React.FC = () => {
+export default function Sidebar() {
   const { isExpanded, setIsExpanded } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
@@ -20,7 +20,14 @@ const Sidebar: React.FC = () => {
       path: "/",
       label: "Search",
       icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.35-4.35" />
         </svg>
@@ -30,7 +37,14 @@ const Sidebar: React.FC = () => {
       path: "/artists",
       label: "Artists",
       icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
           <circle cx="9" cy="7" r="4" />
           <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -42,7 +56,14 @@ const Sidebar: React.FC = () => {
       path: "/shops",
       label: "Tattoo Shops",
       icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
           <polyline points="9 22 9 12 15 12 15 22" />
           <path d="M21 10h-4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2z" />
@@ -56,7 +77,14 @@ const Sidebar: React.FC = () => {
       path: "/about",
       label: "About",
       icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <circle cx="12" cy="12" r="10" />
           <path d="M12 16v-4" />
           <path d="M12 8h.01" />
@@ -67,7 +95,14 @@ const Sidebar: React.FC = () => {
       path: "https://www.instagram.com/trad_tattoo_directory/",
       label: "Instagram",
       icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
           <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
           <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
@@ -119,7 +154,9 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className={`${styles.sidebar} ${isExpanded ? styles.expanded : styles.collapsed}`}>
+    <aside
+      className={`${styles.sidebar} ${isExpanded ? styles.expanded : styles.collapsed}`}
+    >
       <div className={styles.navContainer}>
         <nav className={styles.nav}>
           <div
@@ -150,7 +187,4 @@ const Sidebar: React.FC = () => {
       </div>
     </aside>
   );
-};
-
-export default Sidebar;
-
+}

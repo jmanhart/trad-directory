@@ -5,10 +5,10 @@ interface LogoTypeSVGProps {
   fontSize?: number;
 }
 
-const LogoTypeSVG: React.FC<LogoTypeSVGProps> = ({
+export default function LogoTypeSVG({
   text = "Tattoo Directory",
   fontSize = 160,
-}) => {
+}: LogoTypeSVGProps) {
   useEffect(() => {
     // Inject Google Fonts link for Figtree
     const link = document.createElement("link");
@@ -59,6 +59,4 @@ const LogoTypeSVG: React.FC<LogoTypeSVGProps> = ({
       </text>
     </svg>
   );
-};
-
-export default LogoTypeSVG;
+}

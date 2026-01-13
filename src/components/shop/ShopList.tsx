@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import ShopCard from "./ShopCard";
 import styles from "./ShopList.module.css";
 import { supabase } from "../../services/supabaseClient";
@@ -11,7 +11,7 @@ interface Shop {
   country_name?: string;
 }
 
-const ShopList: React.FC = () => {
+export default function ShopList() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,6 +49,4 @@ const ShopList: React.FC = () => {
       ))}
     </div>
   );
-};
-
-export default ShopList;
+}

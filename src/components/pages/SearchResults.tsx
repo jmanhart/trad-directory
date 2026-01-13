@@ -18,7 +18,7 @@ interface Artist {
   country_name?: string;
 }
 
-const SearchResults: React.FC = () => {
+function SearchResults() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [artists, setArtists] = useState<Artist[]>([]);
@@ -150,7 +150,7 @@ const SearchResults: React.FC = () => {
       />
     </div>
   );
-};
+}
 
 // Wrap with Sentry profiler for performance monitoring
 const SentrySearchResults = Sentry.withProfiler(SearchResults, {
