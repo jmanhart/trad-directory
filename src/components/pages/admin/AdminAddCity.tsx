@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Link } from "react-router-dom";
 import { addCity, fetchStates, fetchCities } from "../../../services/adminApi";
-import styles from "./AdminAddCity.module.css";
+import AdminFormLayout from "./AdminFormLayout";
+import { FormGroup, Label, Input, Select, SubmitButton, Message } from "./AdminFormComponents";
+import styles from "./AdminForm.module.css";
 
 interface State {
   id: number;
@@ -177,26 +178,13 @@ export default function AdminAddCity() {
       (!formData.state_id || !city.state_id || city.state_id === parseInt(formData.state_id))
   );
 
-  if (loadingData) {
-    return (
-      <div className={styles.container}>
-        <h1 className={styles.title}>Add City</h1>
-        <p>Loading data...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className={styles.container}>
-      <Link to="/admin" className={styles.backLink}>← Back to Admin</Link>
-      <h1 className={styles.title}>Add City</h1>
+    <AdminFormLayout title="Add City" loading={loadingData}>
       <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.formGroup}>
-          <label htmlFor="city_name" className={styles.label}>
-            City Name <span className={styles.required}>*</span>
-          </label>
+        <FormGroup>
+          <Label htmlFor="city_name" required>City Name</Label>
           <div className={styles.autocompleteWrapper}>
-            <input
+            <Input
               ref={cityInputRef}
               type="text"
               id="city_name"
@@ -204,7 +192,6 @@ export default function AdminAddCity() {
               value={formData.city_name}
               onChange={handleChange}
               onFocus={() => setShowSuggestions(citySearch.length >= 2)}
-              className={styles.input}
               required
               placeholder="Type city name"
               autoComplete="off"
@@ -231,18 +218,15 @@ export default function AdminAddCity() {
               ⚠️ A city with this name already exists: {getCityDisplayName(exactCityMatch)}
             </p>
           )}
-        </div>
+        </FormGroup>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="state_id" className={styles.label}>
-            State/Province (optional)
-          </label>
-          <select
+        <FormGroup>
+          <Label htmlFor="state_id">State/Province (optional)</Label>
+          <Select
             id="state_id"
             name="state_id"
             value={formData.state_id}
             onChange={handleChange}
-            className={styles.select}
           >
             <option value="">No state/province</option>
             {states.map((state) => (
@@ -250,27 +234,19 @@ export default function AdminAddCity() {
                 {getStateDisplayName(state)}
               </option>
             ))}
-          </select>
+          </Select>
           <p className={styles.helperText}>
             Leave blank for countries without states (e.g., China)
           </p>
-        </div>
+        </FormGroup>
 
-        {message && (
-          <div
-            className={`${styles.message} ${
-              message.type === "success" ? styles.success : styles.error
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
+        {message && <Message type={message.type} text={message.text} />}
 
-        <button type="submit" className={styles.submitButton} disabled={loading}>
-          {loading ? "Adding..." : "Add City"}
-        </button>
+        <SubmitButton loading={loading} loadingText="Adding...">
+          Add City
+        </SubmitButton>
       </form>
-    </div>
+    </AdminFormLayout>
   );
 }
 

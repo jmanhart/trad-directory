@@ -1,3 +1,5 @@
+/* Shared styles for all admin form pages */
+
 .container {
   max-width: 600px;
   margin: 0 auto;
@@ -119,6 +121,7 @@
   border: 1px solid rgba(217, 83, 79, 0.3);
 }
 
+/* Additional styles for specific features */
 .autocompleteWrapper {
   position: relative;
 }
@@ -175,3 +178,34 @@
   font-weight: 500;
 }
 
+/* Search input for filtered selects */
+.searchInput {
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+  margin-bottom: 0.5rem;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.selectedInfo {
+  margin-top: 0.5rem;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.selectedInfo strong {
+  color: var(--color-text-primary);
+}

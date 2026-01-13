@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { addCountry } from "../../../services/adminApi";
-import styles from "./AdminAddCountry.module.css";
+import AdminFormLayout from "./AdminFormLayout";
+import { FormGroup, Label, Input, SubmitButton, Message } from "./AdminFormComponents";
+import styles from "./AdminForm.module.css";
 
 export default function AdminAddCountry() {
   const [formData, setFormData] = useState({
@@ -25,7 +26,6 @@ export default function AdminAddCountry() {
     setMessage(null);
 
     try {
-      // Validate required fields
       if (!formData.country_name) {
         setMessage({
           type: "error",
@@ -46,7 +46,6 @@ export default function AdminAddCountry() {
         text: `Country "${formData.country_name}" added successfully! (ID: ${countryId})`,
       });
 
-      // Reset form
       setFormData({
         country_name: "",
         country_code: "",
@@ -62,57 +61,43 @@ export default function AdminAddCountry() {
   };
 
   return (
-    <div className={styles.container}>
-      <Link to="/admin" className={styles.backLink}>← Back to Admin</Link>
-      <h1 className={styles.title}>Add Country</h1>
+    <AdminFormLayout title="Add Country">
       <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.formGroup}>
-          <label htmlFor="country_name" className={styles.label}>
-            Country Name <span className={styles.required}>*</span>
-          </label>
-          <input
+        <FormGroup>
+          <Label htmlFor="country_name" required>
+            Country Name
+          </Label>
+          <Input
             type="text"
             id="country_name"
             name="country_name"
             value={formData.country_name}
             onChange={handleChange}
-            className={styles.input}
             required
             placeholder="Country name"
           />
-        </div>
+        </FormGroup>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="country_code" className={styles.label}>
-            Country Code
-          </label>
-          <input
+        <FormGroup>
+          <Label htmlFor="country_code">Country Code</Label>
+          <Input
             type="text"
             id="country_code"
             name="country_code"
             value={formData.country_code}
             onChange={handleChange}
-            className={styles.input}
             placeholder="e.g., US, CA, GB"
             maxLength={3}
           />
-        </div>
+        </FormGroup>
 
-        {message && (
-          <div
-            className={`${styles.message} ${
-              message.type === "success" ? styles.success : styles.error
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
+        {message && <Message type={message.type} text={message.text} />}
 
-        <button type="submit" className={styles.submitButton} disabled={loading}>
-          {loading ? "Adding..." : "Add Country"}
-        </button>
+        <SubmitButton loading={loading} loadingText="Adding...">
+          Add Country
+        </SubmitButton>
       </form>
-    </div>
+    </AdminFormLayout>
   );
 }
 

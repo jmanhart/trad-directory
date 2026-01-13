@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { addShop, fetchCities } from "../../../services/adminApi";
-import styles from "./AdminAddShop.module.css";
+import AdminFormLayout from "./AdminFormLayout";
+import { FormGroup, Label, Input, Select, SubmitButton, Message } from "./AdminFormComponents";
+import styles from "./AdminForm.module.css";
 
 interface City {
   id: number;
@@ -116,121 +117,89 @@ export default function AdminAddShop() {
     return parts.join(", ");
   };
 
-  if (loadingData) {
-    return (
-      <div className={styles.container}>
-        <h1 className={styles.title}>Add Shop</h1>
-        <p>Loading data...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className={styles.container}>
-      <Link to="/admin" className={styles.backLink}>← Back to Admin</Link>
-      <h1 className={styles.title}>Add Shop</h1>
+    <AdminFormLayout title="Add Shop" loading={loadingData}>
       <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.formGroup}>
-          <label htmlFor="shop_name" className={styles.label}>
-            Shop Name <span className={styles.required}>*</span>
-          </label>
-          <input
+        <FormGroup>
+          <Label htmlFor="shop_name" required>Shop Name</Label>
+          <Input
             type="text"
             id="shop_name"
             name="shop_name"
             value={formData.shop_name}
             onChange={handleChange}
-            className={styles.input}
             required
             placeholder="Shop name"
           />
-        </div>
+        </FormGroup>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="instagram_handle" className={styles.label}>
-            Instagram Handle
-          </label>
-          <input
+        <FormGroup>
+          <Label htmlFor="instagram_handle">Instagram Handle</Label>
+          <Input
             type="text"
             id="instagram_handle"
             name="instagram_handle"
             value={formData.instagram_handle}
             onChange={handleChange}
-            className={styles.input}
             placeholder="@username or username"
           />
-        </div>
+        </FormGroup>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="address" className={styles.label}>
-            Address
-          </label>
-          <input
+        <FormGroup>
+          <Label htmlFor="address">Address</Label>
+          <Input
             type="text"
             id="address"
             name="address"
             value={formData.address}
             onChange={handleChange}
-            className={styles.input}
             placeholder="Street address"
           />
-        </div>
+        </FormGroup>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="contact" className={styles.label}>
-            Contact
-          </label>
-          <input
+        <FormGroup>
+          <Label htmlFor="contact">Contact</Label>
+          <Input
             type="text"
             id="contact"
             name="contact"
             value={formData.contact}
             onChange={handleChange}
-            className={styles.input}
             placeholder="Email or other contact"
           />
-        </div>
+        </FormGroup>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="phone_number" className={styles.label}>
-            Phone Number
-          </label>
-          <input
+        <FormGroup>
+          <Label htmlFor="phone_number">Phone Number</Label>
+          <Input
             type="tel"
             id="phone_number"
             name="phone_number"
             value={formData.phone_number}
             onChange={handleChange}
-            className={styles.input}
             placeholder="Phone number"
           />
-        </div>
+        </FormGroup>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="website_url" className={styles.label}>
-            Website URL
-          </label>
-          <input
+        <FormGroup>
+          <Label htmlFor="website_url">Website URL</Label>
+          <Input
             type="url"
             id="website_url"
             name="website_url"
             value={formData.website_url}
             onChange={handleChange}
-            className={styles.input}
             placeholder="https://example.com"
           />
-        </div>
+        </FormGroup>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="city_id" className={styles.label}>
-            City <span className={styles.required}>*</span>
-          </label>
-          <select
+        <FormGroup>
+          <Label htmlFor="city_id" required>City</Label>
+          <Select
             id="city_id"
             name="city_id"
             value={formData.city_id}
             onChange={handleChange}
-            className={styles.select}
             required
           >
             <option value="">Select a city</option>
@@ -239,24 +208,16 @@ export default function AdminAddShop() {
                 {getCityDisplayName(city)}
               </option>
             ))}
-          </select>
-        </div>
+          </Select>
+        </FormGroup>
 
-        {message && (
-          <div
-            className={`${styles.message} ${
-              message.type === "success" ? styles.success : styles.error
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
+        {message && <Message type={message.type} text={message.text} />}
 
-        <button type="submit" className={styles.submitButton} disabled={loading}>
-          {loading ? "Adding..." : "Add Shop"}
-        </button>
+        <SubmitButton loading={loading} loadingText="Adding...">
+          Add Shop
+        </SubmitButton>
       </form>
-    </div>
+    </AdminFormLayout>
   );
 }
 

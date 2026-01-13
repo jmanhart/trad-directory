@@ -1,7 +1,19 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { addArtistShopLink, fetchArtists, fetchShops } from "../../../services/adminApi";
-import styles from "./AdminAddArtistShopLink.module.css";
+import {
+  addArtistShopLink,
+  fetchArtists,
+  fetchShops,
+} from "../../../services/adminApi";
+import AdminFormLayout from "./AdminFormLayout";
+import {
+  FormGroup,
+  Label,
+  Select,
+  SubmitButton,
+  Message,
+  Input,
+} from "./AdminFormComponents";
+import styles from "./AdminForm.module.css";
 
 interface Artist {
   id: number;
@@ -58,7 +70,7 @@ export default function AdminAddArtistShopLink() {
     if (!artistSearch) return artists;
     const searchLower = artistSearch.toLowerCase();
     return artists.filter(
-      (artist) =>
+      artist =>
         artist.name.toLowerCase().includes(searchLower) ||
         artist.instagram_handle?.toLowerCase().includes(searchLower)
     );
@@ -68,7 +80,7 @@ export default function AdminAddArtistShopLink() {
   const filteredShops = useMemo(() => {
     if (!shopSearch) return shops;
     const searchLower = shopSearch.toLowerCase();
-    return shops.filter((shop) =>
+    return shops.filter(shop =>
       shop.shop_name.toLowerCase().includes(searchLower)
     );
   }, [shops, shopSearch]);
@@ -77,7 +89,7 @@ export default function AdminAddArtistShopLink() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleArtistSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -134,29 +146,18 @@ export default function AdminAddArtistShopLink() {
 
   // Get selected artist name for display
   const selectedArtist = artists.find(
-    (a) => a.id === parseInt(formData.artist_id)
+    a => a.id === parseInt(formData.artist_id)
   );
-  const selectedShop = shops.find((s) => s.id === parseInt(formData.shop_id));
-
-  if (loadingData) {
-    return (
-      <div className={styles.container}>
-        <h1 className={styles.title}>Link Artist to Shop</h1>
-        <p>Loading data...</p>
-      </div>
-    );
-  }
+  const selectedShop = shops.find(s => s.id === parseInt(formData.shop_id));
 
   return (
-    <div className={styles.container}>
-      <Link to="/admin" className={styles.backLink}>← Back to Admin</Link>
-      <h1 className={styles.title}>Link Artist to Shop</h1>
+    <AdminFormLayout title="Link Artist to Shop" loading={loadingData}>
       <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.formGroup}>
-          <label htmlFor="artist_search" className={styles.label}>
-            Search Artist <span className={styles.required}>*</span>
-          </label>
-          <input
+        <FormGroup>
+          <Label htmlFor="artist_search" required>
+            Search Artist
+          </Label>
+          <Input
             type="text"
             id="artist_search"
             value={artistSearch}
@@ -164,35 +165,36 @@ export default function AdminAddArtistShopLink() {
             className={styles.searchInput}
             placeholder="Type to search artists..."
           />
-          <select
+          <Select
             id="artist_id"
             name="artist_id"
             value={formData.artist_id}
             onChange={handleChange}
-            className={styles.select}
             required
             size={Math.min(filteredArtists.length + 1, 10)}
           >
             <option value="">Select an artist</option>
-            {filteredArtists.map((artist) => (
+            {filteredArtists.map(artist => (
               <option key={artist.id} value={artist.id}>
                 {artist.name}
-                {artist.instagram_handle ? ` (@${artist.instagram_handle})` : ""}
+                {artist.instagram_handle
+                  ? ` (@${artist.instagram_handle})`
+                  : ""}
               </option>
             ))}
-          </select>
+          </Select>
           {selectedArtist && (
             <p className={styles.selectedInfo}>
               Selected: <strong>{selectedArtist.name}</strong>
             </p>
           )}
-        </div>
+        </FormGroup>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="shop_search" className={styles.label}>
-            Search Shop <span className={styles.required}>*</span>
-          </label>
-          <input
+        <FormGroup>
+          <Label htmlFor="shop_search" required>
+            Search Shop
+          </Label>
+          <Input
             type="text"
             id="shop_search"
             value={shopSearch}
@@ -200,44 +202,34 @@ export default function AdminAddArtistShopLink() {
             className={styles.searchInput}
             placeholder="Type to search shops..."
           />
-          <select
+          <Select
             id="shop_id"
             name="shop_id"
             value={formData.shop_id}
             onChange={handleChange}
-            className={styles.select}
             required
             size={Math.min(filteredShops.length + 1, 10)}
           >
             <option value="">Select a shop</option>
-            {filteredShops.map((shop) => (
+            {filteredShops.map(shop => (
               <option key={shop.id} value={shop.id}>
                 {shop.shop_name}
               </option>
             ))}
-          </select>
+          </Select>
           {selectedShop && (
             <p className={styles.selectedInfo}>
               Selected: <strong>{selectedShop.shop_name}</strong>
             </p>
           )}
-        </div>
+        </FormGroup>
 
-        {message && (
-          <div
-            className={`${styles.message} ${
-              message.type === "success" ? styles.success : styles.error
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
+        {message && <Message type={message.type} text={message.text} />}
 
-        <button type="submit" className={styles.submitButton} disabled={loading}>
-          {loading ? "Linking..." : "Create Link"}
-        </button>
+        <SubmitButton loading={loading} loadingText="Linking...">
+          Create Link
+        </SubmitButton>
       </form>
-    </div>
+    </AdminFormLayout>
   );
 }
-
