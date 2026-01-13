@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "./../../services/supabaseClient";
 import styles from "./HeroMessage.module.css";
 
-const HeroMessage: React.FC = () => {
+export default function HeroMessage() {
   const [artistCount, setArtistCount] = useState<number | null>(null);
   const [shopCount, setShopCount] = useState<number | null>(null);
   const [countryCount, setCountryCount] = useState<number | null>(null);
@@ -56,6 +56,4 @@ const HeroMessage: React.FC = () => {
       daily.
     </h1>
   );
-};
-
-export default HeroMessage;
+}

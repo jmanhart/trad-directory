@@ -15,7 +15,7 @@ interface PillGroupProps {
   items: PillData[];
 }
 
-const PillGroup: React.FC<PillGroupProps> = ({ title, items }) => {
+export default function PillGroup({ title, items }: PillGroupProps) {
   if (!items || items.length === 0) return null;
 
   return (
@@ -34,6 +34,4 @@ const PillGroup: React.FC<PillGroupProps> = ({ title, items }) => {
       </div>
     </div>
   );
-};
-
-export default PillGroup;
+}

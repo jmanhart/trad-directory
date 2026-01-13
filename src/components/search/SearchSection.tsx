@@ -16,12 +16,12 @@ interface SearchSectionProps {
   hasSearched: boolean;
 }
 
-const SearchSection: React.FC<SearchSectionProps> = ({
+function SearchSection({
   onSearch,
   suggestions,
   resultsCount,
   hasSearched,
-}) => {
+}: SearchSectionProps) {
   // Enhanced search handler with Sentry tracking
   const handleSearch = (query: string) => {
     try {
@@ -75,7 +75,7 @@ const SearchSection: React.FC<SearchSectionProps> = ({
       )}
     </div>
   );
-};
+}
 
 // Wrap with Sentry profiler for performance monitoring
 const SentrySearchSection = Sentry.withProfiler(SearchSection, {

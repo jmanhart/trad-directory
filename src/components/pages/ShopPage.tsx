@@ -28,7 +28,7 @@ interface Shop {
   artists?: Artist[];
 }
 
-const ShopPage: React.FC = () => {
+export default function ShopPage() {
   const { shopId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -175,6 +175,4 @@ const ShopPage: React.FC = () => {
       )}
     </div>
   );
-};
-
-export default ShopPage;
+}

@@ -11,7 +11,7 @@ interface Suggestion {
   id?: number;
 }
 
-const Header: React.FC = () => {
+export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -185,6 +185,4 @@ const Header: React.FC = () => {
       </div>
     </header>
   );
-};
-
-export default Header;
+}

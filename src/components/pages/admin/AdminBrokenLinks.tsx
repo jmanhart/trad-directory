@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { checkInstagramLinks } from "../../services/adminApi";
+import { checkInstagramLinks } from "../../../services/adminApi";
 import styles from "./AdminBrokenLinks.module.css";
 
 interface BrokenLink {

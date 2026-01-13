@@ -14,7 +14,7 @@ interface Shop {
   country_name?: string;
 }
 
-const AllShopsPage: React.FC = () => {
+export default function AllShopsPage() {
   const navigate = useNavigate();
   const [shops, setShops] = useState<Shop[]>([]);
   const [filteredShops, setFilteredShops] = useState<Shop[]>([]);
@@ -165,7 +165,5 @@ const AllShopsPage: React.FC = () => {
       )}
     </div>
   );
-};
-
-export default AllShopsPage;
+}
 

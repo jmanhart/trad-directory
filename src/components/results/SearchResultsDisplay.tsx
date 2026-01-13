@@ -19,11 +19,11 @@ interface SearchResultsDisplayProps {
   navigate: (path: string) => void;
 }
 
-const SearchResultsDisplay: React.FC<SearchResultsDisplayProps> = ({
+export default function SearchResultsDisplay({
   searchQuery,
   hasSearched,
   filteredResults,
-}) => {
+}: SearchResultsDisplayProps) {
   return (
     <div>
       {searchQuery && (
@@ -44,6 +44,4 @@ const SearchResultsDisplay: React.FC<SearchResultsDisplayProps> = ({
       {/* Intentionally no no-results block here; handled in parent */}
     </div>
   );
-};
-
-export default SearchResultsDisplay;
+}

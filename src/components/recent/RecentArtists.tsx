@@ -19,7 +19,7 @@ interface RecentArtistsProps {
   limit?: number;
 }
 
-const RecentArtists: React.FC<RecentArtistsProps> = ({ limit = 6 }) => {
+export default function RecentArtists({ limit = 6 }: RecentArtistsProps) {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +73,5 @@ const RecentArtists: React.FC<RecentArtistsProps> = ({ limit = 6 }) => {
       </div>
     </div>
   );
-};
-
-export default RecentArtists;
+}
 

@@ -17,7 +17,7 @@ interface Artist {
   shop_instagram_handle?: string | null;
 }
 
-const ArtistPage: React.FC = () => {
+export default function ArtistPage() {
   const { artistId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -179,6 +179,4 @@ const ArtistPage: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default ArtistPage;
+}

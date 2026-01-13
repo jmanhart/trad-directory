@@ -1,6 +1,7 @@
 import React from "react";
 
-const TattooBlockSVG: React.FC = () => (
+export default function TattooBlockSVG() {
+  return (
   <svg
     width="100%"
     height="320"
@@ -57,6 +58,5 @@ const TattooBlockSVG: React.FC = () => (
       {/* A crossbar */}
     </g>
   </svg>
-);
-
-export default TattooBlockSVG;
+  );
+}

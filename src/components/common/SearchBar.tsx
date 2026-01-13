@@ -18,7 +18,7 @@ interface SearchBarProps {
   size?: SearchBarSize;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({
+export default function SearchBar({
   onSearch,
   suggestions,
   onSelectSuggestion,
@@ -181,6 +181,4 @@ const SearchBar: React.FC<SearchBarProps> = ({
       </div>
     </div>
   );
-};
-
-export default SearchBar;
+}

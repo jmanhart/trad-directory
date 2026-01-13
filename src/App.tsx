@@ -3,7 +3,7 @@ import HomePage from "./components/pages/HomePage";
 import Sidebar from "./components/common/Sidebar";
 import { SidebarProvider, useSidebar } from "./contexts/SidebarContext";
 import AboutPage from "./components/pages/AboutPage";
-import ShopPage from "./components/shop/ShopPage";
+import ShopPage from "./components/pages/ShopPage";
 import SearchResults from "./components/pages/SearchResults";
 import LogoTypePlayground from "./components/logo/LogoTypePlayground";
 import AllArtistsPage from "./components/pages/AllArtistsPage";
@@ -12,13 +12,13 @@ import styles from "./App.module.css";
 import { Sentry } from "./utils/sentry";
 import ArtistPage from "./components/pages/ArtistPage";
 import ProtectedRoute from "./components/common/ProtectedRoute";
-import AdminPage from "./components/pages/AdminPage";
-import AdminAddArtist from "./components/pages/AdminAddArtist";
-import AdminAddShop from "./components/pages/AdminAddShop";
-import AdminAddCity from "./components/pages/AdminAddCity";
-import AdminAddCountry from "./components/pages/AdminAddCountry";
-import AdminAddArtistShopLink from "./components/pages/AdminAddArtistShopLink";
-import AdminBrokenLinks from "./components/pages/AdminBrokenLinks";
+import AdminPage from "./components/pages/admin/AdminPage";
+import AdminAddArtist from "./components/pages/admin/AdminAddArtist";
+import AdminAddShop from "./components/pages/admin/AdminAddShop";
+import AdminAddCity from "./components/pages/admin/AdminAddCity";
+import AdminAddCountry from "./components/pages/admin/AdminAddCountry";
+import AdminAddArtistShopLink from "./components/pages/admin/AdminAddArtistShopLink";
+import AdminBrokenLinks from "./components/pages/admin/AdminBrokenLinks";
 
 // Enhanced App component with Sentry error boundary
 const SentryApp = Sentry.withErrorBoundary(App, {

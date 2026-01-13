@@ -16,7 +16,7 @@ interface SidebarItem {
   external?: boolean;
 }
 
-const Sidebar: React.FC = () => {
+export default function Sidebar() {
   const { isExpanded, setIsExpanded } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
@@ -181,7 +181,4 @@ const Sidebar: React.FC = () => {
       </nav>
     </>
   );
-};
-
-export default Sidebar;
-
+}
