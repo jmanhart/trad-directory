@@ -7,6 +7,7 @@ import {
   Select,
   SubmitButton,
   Message,
+  MessageWithRetry,
 } from "./AdminFormComponents";
 import { useAdminData } from "./useAdminData";
 import { useAdminForm } from "./useAdminForm";
@@ -29,6 +30,7 @@ export default function AdminAddArtist() {
     shops,
     loading: loadingData,
     error: dataError,
+    refetch,
   } = useAdminData({
     loadCities: true,
     loadShops: true,
@@ -65,6 +67,11 @@ export default function AdminAddArtist() {
       },
       getSuccessMessage: (formData, artistId) =>
         `Artist "${formData.name}" added successfully! (ID: ${artistId})`,
+      onSuccess: async () => {
+        // Refresh cities and shops to include any new items
+        await refetch();
+      },
+      autoDismissSuccess: true,
     });
 
   // Use data loading error if present, otherwise use form message
@@ -73,9 +80,16 @@ export default function AdminAddArtist() {
   return (
     <AdminFormLayout title="Add Artist" loading={loadingData}>
       <form onSubmit={handleSubmit} className={styles.form}>
-        {displayMessage && (
+        {displayMessage && dataError ? (
+          <MessageWithRetry
+            type={displayMessage.type}
+            text={displayMessage.text}
+            onRetry={refetch}
+            retryLoading={loadingData}
+          />
+        ) : displayMessage ? (
           <Message type={displayMessage.type} text={displayMessage.text} />
-        )}
+        ) : null}
         <FormGroup>
           <Label htmlFor="name" required>
             Name

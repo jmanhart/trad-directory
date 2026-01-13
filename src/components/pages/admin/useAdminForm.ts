@@ -2,7 +2,7 @@
  * Custom hook for admin form state management and submission
  */
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MessageType } from "./adminTypes";
 
 interface UseAdminFormOptions<TFormData, TSubmitData> {
@@ -12,6 +12,8 @@ interface UseAdminFormOptions<TFormData, TSubmitData> {
   validateData?: (formData: TFormData) => string | null;
   getSuccessMessage: (formData: TFormData, resultId?: number) => string;
   onSuccess?: () => void;
+  autoDismissSuccess?: boolean;
+  successDismissDelay?: number;
 }
 
 interface UseAdminFormReturn<TFormData> {
@@ -31,10 +33,13 @@ export function useAdminForm<TFormData extends Record<string, any>, TSubmitData>
   validateData,
   getSuccessMessage,
   onSuccess,
+  autoDismissSuccess = false,
+  successDismissDelay = 5000,
 }: UseAdminFormOptions<TFormData, TSubmitData>): UseAdminFormReturn<TFormData> {
   const [formData, setFormData] = useState<TFormData>(initialData);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<MessageType>(null);
+  const dismissTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -65,10 +70,21 @@ export function useAdminForm<TFormData extends Record<string, any>, TSubmitData>
       const submitData = transformData(formData);
       const resultId = await onSubmit(submitData);
 
-      setMessage({
-        type: "success",
+      const successMessage = {
+        type: "success" as const,
         text: getSuccessMessage(formData, resultId),
-      });
+      };
+      setMessage(successMessage);
+
+      // Auto-dismiss success message if enabled
+      if (autoDismissSuccess) {
+        if (dismissTimeoutRef.current) {
+          clearTimeout(dismissTimeoutRef.current);
+        }
+        dismissTimeoutRef.current = setTimeout(() => {
+          setMessage(null);
+        }, successDismissDelay);
+      }
 
       // Reset form
       resetForm();
@@ -90,6 +106,15 @@ export function useAdminForm<TFormData extends Record<string, any>, TSubmitData>
   const resetForm = () => {
     setFormData(initialData);
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (dismissTimeoutRef.current) {
+        clearTimeout(dismissTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     formData,

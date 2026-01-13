@@ -36,6 +36,7 @@ export default function AdminAddCountry() {
     },
     getSuccessMessage: (formData, countryId) =>
       `Country "${formData.country_name}" added successfully! (ID: ${countryId})`,
+    autoDismissSuccess: true,
   });
 
   return (

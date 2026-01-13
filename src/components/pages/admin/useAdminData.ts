@@ -25,9 +25,12 @@ interface UseAdminDataReturn {
   artists: Artist[];
   loading: boolean;
   error: MessageType;
+  refetch: () => Promise<void>;
 }
 
-export function useAdminData(options: UseAdminDataOptions = {}): UseAdminDataReturn {
+export function useAdminData(
+  options: UseAdminDataOptions = {}
+): UseAdminDataReturn {
   const {
     loadCities = false,
     loadShops = false,
@@ -42,46 +45,46 @@ export function useAdminData(options: UseAdminDataOptions = {}): UseAdminDataRet
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<MessageType>(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const promises: Promise<any>[] = [];
+      const promises: Promise<any>[] = [];
 
-        if (loadCities) promises.push(fetchCities());
-        if (loadShops) promises.push(fetchShops());
-        if (loadStates) promises.push(fetchStates());
-        if (loadArtists) promises.push(fetchArtists());
+      if (loadCities) promises.push(fetchCities());
+      if (loadShops) promises.push(fetchShops());
+      if (loadStates) promises.push(fetchStates());
+      if (loadArtists) promises.push(fetchArtists());
 
-        const results = await Promise.all(promises);
+      const results = await Promise.all(promises);
 
-        let resultIndex = 0;
-        if (loadCities) {
-          setCities(results[resultIndex++]);
-        }
-        if (loadShops) {
-          setShops(results[resultIndex++]);
-        }
-        if (loadStates) {
-          setStates(results[resultIndex++]);
-        }
-        if (loadArtists) {
-          setArtists(results[resultIndex++]);
-        }
-      } catch (err) {
-        setError({
-          type: "error",
-          text: `Failed to load data: ${err instanceof Error ? err.message : "Unknown error"}`,
-        });
-      } finally {
-        setLoading(false);
+      let resultIndex = 0;
+      if (loadCities) {
+        setCities(results[resultIndex++]);
       }
-    };
+      if (loadShops) {
+        setShops(results[resultIndex++]);
+      }
+      if (loadStates) {
+        setStates(results[resultIndex++]);
+      }
+      if (loadArtists) {
+        setArtists(results[resultIndex++]);
+      }
+    } catch (err) {
+      setError({
+        type: "error",
+        text: `Failed to load data: ${err instanceof Error ? err.message : "Unknown error"}`,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadData();
   }, [loadCities, loadShops, loadStates, loadArtists]);
 
-  return { cities, shops, states, artists, loading, error };
+  return { cities, shops, states, artists, loading, error, refetch: loadData };
 }

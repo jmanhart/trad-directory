@@ -4,6 +4,7 @@ import AdminFormLayout from "./AdminFormLayout";
 import { FormGroup, Label, Input, Select, SubmitButton, Message } from "./AdminFormComponents";
 import { useAdminData } from "./useAdminData";
 import { useAdminForm } from "./useAdminForm";
+import { useDebounce } from "./useDebounce";
 import { getCityDisplayName, getStateDisplayName } from "./adminUtils";
 import { City } from "./adminTypes";
 import styles from "./AdminForm.module.css";
@@ -14,7 +15,7 @@ interface CityFormData {
 }
 
 export default function AdminAddCity() {
-  const { states, cities, loading: loadingData, error: dataError } = useAdminData({
+  const { states, cities, loading: loadingData, error: dataError, refetch } = useAdminData({
     loadStates: true,
     loadCities: true,
   });
@@ -23,6 +24,9 @@ export default function AdminAddCity() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const cityInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  
+  // Debounce search input for better performance
+  const debouncedCitySearch = useDebounce(citySearch, 300);
 
   const {
     formData,
@@ -51,9 +55,12 @@ export default function AdminAddCity() {
     },
     getSuccessMessage: (formData, cityId) =>
       `City "${formData.city_name}" added successfully! (ID: ${cityId})`,
-    onSuccess: () => {
+    onSuccess: async () => {
       setCitySearch("");
+      // Refresh cities list to include the new city
+      await refetch();
     },
+    autoDismissSuccess: true,
   });
 
   // Override handleChange to also update search
@@ -99,14 +106,14 @@ export default function AdminAddCity() {
   // Use data loading error if present, otherwise use form message
   const displayMessage = dataError || message;
 
-  // Filter cities for autocomplete suggestions
+  // Filter cities for autocomplete suggestions (using debounced search)
   const citySuggestions = useMemo(() => {
-    if (!citySearch || citySearch.length < 2) return [];
-    const searchLower = citySearch.toLowerCase();
+    if (!debouncedCitySearch || debouncedCitySearch.length < 2) return [];
+    const searchLower = debouncedCitySearch.toLowerCase();
     return cities
       .filter((city) => city.city_name.toLowerCase().includes(searchLower))
       .slice(0, 10); // Limit to 10 suggestions
-  }, [cities, citySearch]);
+  }, [cities, debouncedCitySearch]);
 
   // Check if exact city name already exists (case-insensitive)
   const exactCityMatch = cities.find(
@@ -129,7 +136,7 @@ export default function AdminAddCity() {
               name="city_name"
               value={formData.city_name}
               onChange={handleChange}
-              onFocus={() => setShowSuggestions(citySearch.length >= 2)}
+              onFocus={() => setShowSuggestions(debouncedCitySearch.length >= 2)}
               required
               placeholder="Type city name"
               autoComplete="off"

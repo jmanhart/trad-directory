@@ -17,7 +17,7 @@ interface ShopFormData {
 }
 
 export default function AdminAddShop() {
-  const { cities, loading: loadingData, error: dataError } = useAdminData({
+  const { cities, loading: loadingData, error: dataError, refetch } = useAdminData({
     loadCities: true,
   });
 
@@ -57,6 +57,11 @@ export default function AdminAddShop() {
     },
     getSuccessMessage: (formData, shopId) =>
       `Shop "${formData.shop_name}" added successfully! (ID: ${shopId})`,
+    onSuccess: async () => {
+      // Refresh cities to include any new items
+      await refetch();
+    },
+    autoDismissSuccess: true,
   });
 
   // Use data loading error if present, otherwise use form message

@@ -69,3 +69,40 @@ export function Message({ type, text }: MessageProps) {
     </div>
   );
 }
+
+interface MessageWithRetryProps extends MessageProps {
+  onRetry?: () => void;
+  retryLoading?: boolean;
+}
+
+export function MessageWithRetry({
+  type,
+  text,
+  onRetry,
+  retryLoading = false,
+}: MessageWithRetryProps) {
+  return (
+    <div className={`${styles.message} ${styles[type]}`}>
+      <span>{text}</span>
+      {type === "error" && onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          disabled={retryLoading}
+          style={{
+            marginLeft: "1rem",
+            padding: "0.5rem 1rem",
+            fontSize: "0.875rem",
+            background: "transparent",
+            border: "1px solid currentColor",
+            borderRadius: "4px",
+            cursor: retryLoading ? "not-allowed" : "pointer",
+            opacity: retryLoading ? 0.6 : 1,
+          }}
+        >
+          {retryLoading ? "Retrying..." : "Retry"}
+        </button>
+      )}
+    </div>
+  );
+}
