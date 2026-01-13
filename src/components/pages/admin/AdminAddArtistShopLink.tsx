@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { addArtistShopLink, fetchArtists, fetchShops } from "../../services/adminApi";
+import { addArtistShopLink, fetchArtists, fetchShops } from "../../../services/adminApi";
 import styles from "./AdminAddArtistShopLink.module.css";
 
 interface Artist {

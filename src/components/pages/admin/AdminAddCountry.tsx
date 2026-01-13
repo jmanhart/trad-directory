@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { addCountry } from "../../services/adminApi";
+import { addCountry } from "../../../services/adminApi";
 import styles from "./AdminAddCountry.module.css";
 
 export default function AdminAddCountry() {

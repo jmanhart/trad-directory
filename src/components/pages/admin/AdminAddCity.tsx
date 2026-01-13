@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
-import { addCity, fetchStates, fetchCities } from "../../services/adminApi";
+import { addCity, fetchStates, fetchCities } from "../../../services/adminApi";
 import styles from "./AdminAddCity.module.css";
 
 interface State {

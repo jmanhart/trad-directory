@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { addShop, fetchCities } from "../../services/adminApi";
-import styles from "./AdminAddShop.module.css";
+import { addArtist, fetchCities, fetchShops } from "../../../services/adminApi";
+import styles from "./AdminAddArtist.module.css";
 
 interface City {
   id: number;
@@ -12,17 +12,23 @@ interface City {
   country_name: string | null;
 }
 
-export default function AdminAddShop() {
+interface Shop {
+  id: number;
+  shop_name: string;
+}
+
+export default function AdminAddArtist() {
   const [formData, setFormData] = useState({
-    shop_name: "",
+    name: "",
     instagram_handle: "",
-    address: "",
+    gender: "",
+    url: "",
     contact: "",
-    phone_number: "",
-    website_url: "",
     city_id: "",
+    shop_id: "",
   });
   const [cities, setCities] = useState<City[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [message, setMessage] = useState<{
@@ -34,8 +40,12 @@ export default function AdminAddShop() {
     const loadData = async () => {
       try {
         setLoadingData(true);
-        const citiesData = await fetchCities();
+        const [citiesData, shopsData] = await Promise.all([
+          fetchCities(),
+          fetchShops(),
+        ]);
         setCities(citiesData);
+        setShops(shopsData);
       } catch (error) {
         setMessage({
           type: "error",
@@ -63,7 +73,7 @@ export default function AdminAddShop() {
 
     try {
       // Validate required fields
-      if (!formData.shop_name || !formData.city_id) {
+      if (!formData.name || !formData.city_id) {
         setMessage({
           type: "error",
           text: "Please fill in all required fields",
@@ -72,36 +82,36 @@ export default function AdminAddShop() {
         return;
       }
 
-      const shopData = {
-        shop_name: formData.shop_name,
+      const artistData = {
+        name: formData.name,
         instagram_handle: formData.instagram_handle || undefined,
-        address: formData.address || undefined,
+        gender: formData.gender || undefined,
+        url: formData.url || undefined,
         contact: formData.contact || undefined,
-        phone_number: formData.phone_number || undefined,
-        website_url: formData.website_url || undefined,
         city_id: parseInt(formData.city_id),
+        shop_id: formData.shop_id ? parseInt(formData.shop_id) : undefined,
       };
 
-      const shopId = await addShop(shopData);
+      const artistId = await addArtist(artistData);
       setMessage({
         type: "success",
-        text: `Shop "${formData.shop_name}" added successfully! (ID: ${shopId})`,
+        text: `Artist "${formData.name}" added successfully! (ID: ${artistId})`,
       });
 
       // Reset form
       setFormData({
-        shop_name: "",
+        name: "",
         instagram_handle: "",
-        address: "",
+        gender: "",
+        url: "",
         contact: "",
-        phone_number: "",
-        website_url: "",
         city_id: "",
+        shop_id: "",
       });
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Failed to add shop",
+        text: error instanceof Error ? error.message : "Failed to add artist",
       });
     } finally {
       setLoading(false);
@@ -119,7 +129,7 @@ export default function AdminAddShop() {
   if (loadingData) {
     return (
       <div className={styles.container}>
-        <h1 className={styles.title}>Add Shop</h1>
+        <h1 className={styles.title}>Add Artist</h1>
         <p>Loading data...</p>
       </div>
     );
@@ -128,21 +138,21 @@ export default function AdminAddShop() {
   return (
     <div className={styles.container}>
       <Link to="/admin" className={styles.backLink}>← Back to Admin</Link>
-      <h1 className={styles.title}>Add Shop</h1>
+      <h1 className={styles.title}>Add Artist</h1>
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.formGroup}>
-          <label htmlFor="shop_name" className={styles.label}>
-            Shop Name <span className={styles.required}>*</span>
+          <label htmlFor="name" className={styles.label}>
+            Name <span className={styles.required}>*</span>
           </label>
           <input
             type="text"
-            id="shop_name"
-            name="shop_name"
-            value={formData.shop_name}
+            id="name"
+            name="name"
+            value={formData.name}
             onChange={handleChange}
             className={styles.input}
             required
-            placeholder="Shop name"
+            placeholder="Artist name"
           />
         </div>
 
@@ -162,17 +172,32 @@ export default function AdminAddShop() {
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="address" className={styles.label}>
-            Address
+          <label htmlFor="gender" className={styles.label}>
+            Gender
           </label>
           <input
             type="text"
-            id="address"
-            name="address"
-            value={formData.address}
+            id="gender"
+            name="gender"
+            value={formData.gender}
             onChange={handleChange}
             className={styles.input}
-            placeholder="Street address"
+            placeholder="Gender"
+          />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label htmlFor="url" className={styles.label}>
+            URL
+          </label>
+          <input
+            type="url"
+            id="url"
+            name="url"
+            value={formData.url}
+            onChange={handleChange}
+            className={styles.input}
+            placeholder="https://example.com"
           />
         </div>
 
@@ -187,37 +212,7 @@ export default function AdminAddShop() {
             value={formData.contact}
             onChange={handleChange}
             className={styles.input}
-            placeholder="Email or other contact"
-          />
-        </div>
-
-        <div className={styles.formGroup}>
-          <label htmlFor="phone_number" className={styles.label}>
-            Phone Number
-          </label>
-          <input
-            type="tel"
-            id="phone_number"
-            name="phone_number"
-            value={formData.phone_number}
-            onChange={handleChange}
-            className={styles.input}
-            placeholder="Phone number"
-          />
-        </div>
-
-        <div className={styles.formGroup}>
-          <label htmlFor="website_url" className={styles.label}>
-            Website URL
-          </label>
-          <input
-            type="url"
-            id="website_url"
-            name="website_url"
-            value={formData.website_url}
-            onChange={handleChange}
-            className={styles.input}
-            placeholder="https://example.com"
+            placeholder="Email or phone number"
           />
         </div>
 
@@ -242,6 +237,26 @@ export default function AdminAddShop() {
           </select>
         </div>
 
+        <div className={styles.formGroup}>
+          <label htmlFor="shop_id" className={styles.label}>
+            Shop (optional)
+          </label>
+          <select
+            id="shop_id"
+            name="shop_id"
+            value={formData.shop_id}
+            onChange={handleChange}
+            className={styles.select}
+          >
+            <option value="">No shop</option>
+            {shops.map((shop) => (
+              <option key={shop.id} value={shop.id}>
+                {shop.shop_name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {message && (
           <div
             className={`${styles.message} ${
@@ -253,7 +268,7 @@ export default function AdminAddShop() {
         )}
 
         <button type="submit" className={styles.submitButton} disabled={loading}>
-          {loading ? "Adding..." : "Add Shop"}
+          {loading ? "Adding..." : "Add Artist"}
         </button>
       </form>
     </div>
