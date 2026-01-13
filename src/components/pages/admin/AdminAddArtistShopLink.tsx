@@ -1,9 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import {
-  addArtistShopLink,
-  fetchArtists,
-  fetchShops,
-} from "../../../services/adminApi";
+import { useState, useMemo } from "react";
+import { addArtistShopLink } from "../../../services/adminApi";
 import AdminFormLayout from "./AdminFormLayout";
 import {
   FormGroup,
@@ -13,57 +9,61 @@ import {
   Message,
   Input,
 } from "./AdminFormComponents";
+import { useAdminData } from "./useAdminData";
+import { useAdminForm } from "./useAdminForm";
 import styles from "./AdminForm.module.css";
 
-interface Artist {
-  id: number;
-  name: string;
-  instagram_handle: string | null;
-}
-
-interface Shop {
-  id: number;
-  shop_name: string;
+interface LinkFormData {
+  artist_id: string;
+  shop_id: string;
 }
 
 export default function AdminAddArtistShopLink() {
-  const [formData, setFormData] = useState({
-    artist_id: "",
-    shop_id: "",
+  const { artists, shops, loading: loadingData, error: dataError } = useAdminData({
+    loadArtists: true,
+    loadShops: true,
   });
-  const [artists, setArtists] = useState<Artist[]>([]);
-  const [shops, setShops] = useState<Shop[]>([]);
+
   const [artistSearch, setArtistSearch] = useState("");
   const [shopSearch, setShopSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [loadingData, setLoadingData] = useState(true);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoadingData(true);
-        const [artistsData, shopsData] = await Promise.all([
-          fetchArtists(),
-          fetchShops(),
-        ]);
-        setArtists(artistsData);
-        setShops(shopsData);
-      } catch (error) {
-        setMessage({
-          type: "error",
-          text: `Failed to load data: ${error instanceof Error ? error.message : "Unknown error"}`,
-        });
-      } finally {
-        setLoadingData(false);
+  const {
+    formData,
+    loading,
+    message,
+    handleChange: baseHandleChange,
+    handleSubmit: baseHandleSubmit,
+  } = useAdminForm<LinkFormData, any>({
+    initialData: {
+      artist_id: "",
+      shop_id: "",
+    },
+    onSubmit: async (data) => {
+      await addArtistShopLink(data);
+    },
+    transformData: (formData) => ({
+      artist_id: parseInt(formData.artist_id),
+      shop_id: parseInt(formData.shop_id),
+    }),
+    validateData: (formData) => {
+      if (!formData.artist_id || !formData.shop_id) {
+        return "Please select both an artist and a shop";
       }
-    };
+      return null;
+    },
+    getSuccessMessage: () => "Artist-shop link created successfully!",
+    onSuccess: () => {
+      setArtistSearch("");
+      setShopSearch("");
+    },
+  });
 
-    loadData();
-  }, []);
+  // Override handleChange to keep base functionality
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    baseHandleChange(e);
+  };
 
   // Filter artists based on search
   const filteredArtists = useMemo(() => {
@@ -85,13 +85,6 @@ export default function AdminAddArtistShopLink() {
     );
   }, [shops, shopSearch]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
   const handleArtistSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setArtistSearch(e.target.value);
   };
@@ -100,49 +93,8 @@ export default function AdminAddArtistShopLink() {
     setShopSearch(e.target.value);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
-
-    try {
-      // Validate required fields
-      if (!formData.artist_id || !formData.shop_id) {
-        setMessage({
-          type: "error",
-          text: "Please select both an artist and a shop",
-        });
-        setLoading(false);
-        return;
-      }
-
-      const linkData = {
-        artist_id: parseInt(formData.artist_id),
-        shop_id: parseInt(formData.shop_id),
-      };
-
-      await addArtistShopLink(linkData);
-      setMessage({
-        type: "success",
-        text: "Artist-shop link created successfully!",
-      });
-
-      // Reset form
-      setFormData({
-        artist_id: "",
-        shop_id: "",
-      });
-      setArtistSearch("");
-      setShopSearch("");
-    } catch (error) {
-      setMessage({
-        type: "error",
-        text: error instanceof Error ? error.message : "Failed to create link",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use data loading error if present, otherwise use form message
+  const displayMessage = dataError || message;
 
   // Get selected artist name for display
   const selectedArtist = artists.find(
@@ -152,7 +104,8 @@ export default function AdminAddArtistShopLink() {
 
   return (
     <AdminFormLayout title="Link Artist to Shop" loading={loadingData}>
-      <form onSubmit={handleSubmit} className={styles.form}>
+      <form onSubmit={baseHandleSubmit} className={styles.form}>
+        {displayMessage && <Message type={displayMessage.type} text={displayMessage.text} />}
         <FormGroup>
           <Label htmlFor="artist_search" required>
             Search Artist
@@ -223,8 +176,6 @@ export default function AdminAddArtistShopLink() {
             </p>
           )}
         </FormGroup>
-
-        {message && <Message type={message.type} text={message.text} />}
 
         <SubmitButton loading={loading} loadingText="Linking...">
           Create Link

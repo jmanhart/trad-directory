@@ -1,68 +1,47 @@
-import { useState } from "react";
 import { addCountry } from "../../../services/adminApi";
 import AdminFormLayout from "./AdminFormLayout";
 import { FormGroup, Label, Input, SubmitButton, Message } from "./AdminFormComponents";
+import { useAdminForm } from "./useAdminForm";
 import styles from "./AdminForm.module.css";
 
+interface CountryFormData {
+  country_name: string;
+  country_code: string;
+}
+
 export default function AdminAddCountry() {
-  const [formData, setFormData] = useState({
-    country_name: "",
-    country_code: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
-
-    try {
+  const {
+    formData,
+    loading,
+    message,
+    handleChange,
+    handleSubmit,
+  } = useAdminForm<CountryFormData, any>({
+    initialData: {
+      country_name: "",
+      country_code: "",
+    },
+    onSubmit: async (data) => {
+      return await addCountry(data);
+    },
+    transformData: (formData) => ({
+      country_name: formData.country_name,
+      country_code: formData.country_code || undefined,
+    }),
+    validateData: (formData) => {
       if (!formData.country_name) {
-        setMessage({
-          type: "error",
-          text: "Please enter a country name",
-        });
-        setLoading(false);
-        return;
+        return "Please enter a country name";
       }
-
-      const countryData = {
-        country_name: formData.country_name,
-        country_code: formData.country_code || undefined,
-      };
-
-      const countryId = await addCountry(countryData);
-      setMessage({
-        type: "success",
-        text: `Country "${formData.country_name}" added successfully! (ID: ${countryId})`,
-      });
-
-      setFormData({
-        country_name: "",
-        country_code: "",
-      });
-    } catch (error) {
-      setMessage({
-        type: "error",
-        text: error instanceof Error ? error.message : "Failed to add country",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+      return null;
+    },
+    getSuccessMessage: (formData, countryId) =>
+      `Country "${formData.country_name}" added successfully! (ID: ${countryId})`,
+  });
 
   return (
     <AdminFormLayout title="Add Country">
       <form onSubmit={handleSubmit} className={styles.form}>
+        {message && <Message type={message.type} text={message.text} />}
         <FormGroup>
           <Label htmlFor="country_name" required>
             Country Name
@@ -90,8 +69,6 @@ export default function AdminAddCountry() {
             maxLength={3}
           />
         </FormGroup>
-
-        {message && <Message type={message.type} text={message.text} />}
 
         <SubmitButton loading={loading} loadingText="Adding...">
           Add Country

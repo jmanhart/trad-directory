@@ -1,125 +1,71 @@
-import { useState, useEffect } from "react";
-import { addShop, fetchCities } from "../../../services/adminApi";
+import { addShop } from "../../../services/adminApi";
 import AdminFormLayout from "./AdminFormLayout";
 import { FormGroup, Label, Input, Select, SubmitButton, Message } from "./AdminFormComponents";
+import { useAdminData } from "./useAdminData";
+import { useAdminForm } from "./useAdminForm";
+import { getCityDisplayName } from "./adminUtils";
 import styles from "./AdminForm.module.css";
 
-interface City {
-  id: number;
-  city_name: string;
-  state_id: number | null;
-  state_name: string | null;
-  country_id: number | null;
-  country_name: string | null;
+interface ShopFormData {
+  shop_name: string;
+  instagram_handle: string;
+  address: string;
+  contact: string;
+  phone_number: string;
+  website_url: string;
+  city_id: string;
 }
 
 export default function AdminAddShop() {
-  const [formData, setFormData] = useState({
-    shop_name: "",
-    instagram_handle: "",
-    address: "",
-    contact: "",
-    phone_number: "",
-    website_url: "",
-    city_id: "",
+  const { cities, loading: loadingData, error: dataError } = useAdminData({
+    loadCities: true,
   });
-  const [cities, setCities] = useState<City[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingData, setLoadingData] = useState(true);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoadingData(true);
-        const citiesData = await fetchCities();
-        setCities(citiesData);
-      } catch (error) {
-        setMessage({
-          type: "error",
-          text: `Failed to load data: ${error instanceof Error ? error.message : "Unknown error"}`,
-        });
-      } finally {
-        setLoadingData(false);
-      }
-    };
-
-    loadData();
-  }, []);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
-
-    try {
-      // Validate required fields
+  const {
+    formData,
+    loading,
+    message,
+    handleChange,
+    handleSubmit,
+  } = useAdminForm<ShopFormData, any>({
+    initialData: {
+      shop_name: "",
+      instagram_handle: "",
+      address: "",
+      contact: "",
+      phone_number: "",
+      website_url: "",
+      city_id: "",
+    },
+    onSubmit: async (data) => {
+      return await addShop(data);
+    },
+    transformData: (formData) => ({
+      shop_name: formData.shop_name,
+      instagram_handle: formData.instagram_handle || undefined,
+      address: formData.address || undefined,
+      contact: formData.contact || undefined,
+      phone_number: formData.phone_number || undefined,
+      website_url: formData.website_url || undefined,
+      city_id: parseInt(formData.city_id),
+    }),
+    validateData: (formData) => {
       if (!formData.shop_name || !formData.city_id) {
-        setMessage({
-          type: "error",
-          text: "Please fill in all required fields",
-        });
-        setLoading(false);
-        return;
+        return "Please fill in all required fields";
       }
+      return null;
+    },
+    getSuccessMessage: (formData, shopId) =>
+      `Shop "${formData.shop_name}" added successfully! (ID: ${shopId})`,
+  });
 
-      const shopData = {
-        shop_name: formData.shop_name,
-        instagram_handle: formData.instagram_handle || undefined,
-        address: formData.address || undefined,
-        contact: formData.contact || undefined,
-        phone_number: formData.phone_number || undefined,
-        website_url: formData.website_url || undefined,
-        city_id: parseInt(formData.city_id),
-      };
-
-      const shopId = await addShop(shopData);
-      setMessage({
-        type: "success",
-        text: `Shop "${formData.shop_name}" added successfully! (ID: ${shopId})`,
-      });
-
-      // Reset form
-      setFormData({
-        shop_name: "",
-        instagram_handle: "",
-        address: "",
-        contact: "",
-        phone_number: "",
-        website_url: "",
-        city_id: "",
-      });
-    } catch (error) {
-      setMessage({
-        type: "error",
-        text: error instanceof Error ? error.message : "Failed to add shop",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Format city display name with state and country
-  const getCityDisplayName = (city: City) => {
-    const parts = [city.city_name];
-    if (city.state_name) parts.push(city.state_name);
-    if (city.country_name) parts.push(city.country_name);
-    return parts.join(", ");
-  };
+  // Use data loading error if present, otherwise use form message
+  const displayMessage = dataError || message;
 
   return (
     <AdminFormLayout title="Add Shop" loading={loadingData}>
       <form onSubmit={handleSubmit} className={styles.form}>
+        {displayMessage && <Message type={displayMessage.type} text={displayMessage.text} />}
         <FormGroup>
           <Label htmlFor="shop_name" required>Shop Name</Label>
           <Input
@@ -210,8 +156,6 @@ export default function AdminAddShop() {
             ))}
           </Select>
         </FormGroup>
-
-        {message && <Message type={message.type} text={message.text} />}
 
         <SubmitButton loading={loading} loadingText="Adding...">
           Add Shop

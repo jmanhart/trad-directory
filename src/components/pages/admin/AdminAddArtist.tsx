@@ -1,106 +1,42 @@
-import { useState, useEffect } from "react";
-import { addArtist, fetchCities, fetchShops } from "../../../services/adminApi";
+import { addArtist } from "../../../services/adminApi";
 import AdminFormLayout from "./AdminFormLayout";
-import { FormGroup, Label, Input, Select, SubmitButton, Message } from "./AdminFormComponents";
+import {
+  FormGroup,
+  Label,
+  Input,
+  Select,
+  SubmitButton,
+  Message,
+} from "./AdminFormComponents";
+import { useAdminData } from "./useAdminData";
+import { useAdminForm } from "./useAdminForm";
+import { getCityDisplayName } from "./adminUtils";
 import styles from "./AdminForm.module.css";
 
-interface City {
-  id: number;
-  city_name: string;
-  state_id: number | null;
-  state_name: string | null;
-  country_id: number | null;
-  country_name: string | null;
-}
-
-interface Shop {
-  id: number;
-  shop_name: string;
+interface ArtistFormData {
+  name: string;
+  instagram_handle: string;
+  gender: string;
+  url: string;
+  contact: string;
+  city_id: string;
+  shop_id: string;
 }
 
 export default function AdminAddArtist() {
-  const [formData, setFormData] = useState({
-    name: "",
-    instagram_handle: "",
-    gender: "",
-    url: "",
-    contact: "",
-    city_id: "",
-    shop_id: "",
+  const {
+    cities,
+    shops,
+    loading: loadingData,
+    error: dataError,
+  } = useAdminData({
+    loadCities: true,
+    loadShops: true,
   });
-  const [cities, setCities] = useState<City[]>([]);
-  const [shops, setShops] = useState<Shop[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingData, setLoadingData] = useState(true);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoadingData(true);
-        const [citiesData, shopsData] = await Promise.all([
-          fetchCities(),
-          fetchShops(),
-        ]);
-        setCities(citiesData);
-        setShops(shopsData);
-      } catch (error) {
-        setMessage({
-          type: "error",
-          text: `Failed to load data: ${error instanceof Error ? error.message : "Unknown error"}`,
-        });
-      } finally {
-        setLoadingData(false);
-      }
-    };
-
-    loadData();
-  }, []);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
-
-    try {
-      // Validate required fields
-      if (!formData.name || !formData.city_id) {
-        setMessage({
-          type: "error",
-          text: "Please fill in all required fields",
-        });
-        setLoading(false);
-        return;
-      }
-
-      const artistData = {
-        name: formData.name,
-        instagram_handle: formData.instagram_handle || undefined,
-        gender: formData.gender || undefined,
-        url: formData.url || undefined,
-        contact: formData.contact || undefined,
-        city_id: parseInt(formData.city_id),
-        shop_id: formData.shop_id ? parseInt(formData.shop_id) : undefined,
-      };
-
-      const artistId = await addArtist(artistData);
-      setMessage({
-        type: "success",
-        text: `Artist "${formData.name}" added successfully! (ID: ${artistId})`,
-      });
-
-      // Reset form
-      setFormData({
+  const { formData, loading, message, handleChange, handleSubmit } =
+    useAdminForm<ArtistFormData, any>({
+      initialData: {
         name: "",
         instagram_handle: "",
         gender: "",
@@ -108,30 +44,42 @@ export default function AdminAddArtist() {
         contact: "",
         city_id: "",
         shop_id: "",
-      });
-    } catch (error) {
-      setMessage({
-        type: "error",
-        text: error instanceof Error ? error.message : "Failed to add artist",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+      },
+      onSubmit: async data => {
+        return await addArtist(data);
+      },
+      transformData: formData => ({
+        name: formData.name,
+        instagram_handle: formData.instagram_handle || undefined,
+        gender: formData.gender || undefined,
+        url: formData.url || undefined,
+        contact: formData.contact || undefined,
+        city_id: parseInt(formData.city_id),
+        shop_id: formData.shop_id ? parseInt(formData.shop_id) : undefined,
+      }),
+      validateData: formData => {
+        if (!formData.name || !formData.city_id) {
+          return "Please fill in all required fields";
+        }
+        return null;
+      },
+      getSuccessMessage: (formData, artistId) =>
+        `Artist "${formData.name}" added successfully! (ID: ${artistId})`,
+    });
 
-  // Format city display name with state and country
-  const getCityDisplayName = (city: City) => {
-    const parts = [city.city_name];
-    if (city.state_name) parts.push(city.state_name);
-    if (city.country_name) parts.push(city.country_name);
-    return parts.join(", ");
-  };
+  // Use data loading error if present, otherwise use form message
+  const displayMessage = dataError || message;
 
   return (
     <AdminFormLayout title="Add Artist" loading={loadingData}>
       <form onSubmit={handleSubmit} className={styles.form}>
+        {displayMessage && (
+          <Message type={displayMessage.type} text={displayMessage.text} />
+        )}
         <FormGroup>
-          <Label htmlFor="name" required>Name</Label>
+          <Label htmlFor="name" required>
+            Name
+          </Label>
           <Input
             type="text"
             id="name"
@@ -192,7 +140,9 @@ export default function AdminAddArtist() {
         </FormGroup>
 
         <FormGroup>
-          <Label htmlFor="city_id" required>City</Label>
+          <Label htmlFor="city_id" required>
+            City
+          </Label>
           <Select
             id="city_id"
             name="city_id"
@@ -201,7 +151,7 @@ export default function AdminAddArtist() {
             required
           >
             <option value="">Select a city</option>
-            {cities.map((city) => (
+            {cities.map(city => (
               <option key={city.id} value={city.id}>
                 {getCityDisplayName(city)}
               </option>
@@ -218,15 +168,13 @@ export default function AdminAddArtist() {
             onChange={handleChange}
           >
             <option value="">No shop</option>
-            {shops.map((shop) => (
+            {shops.map(shop => (
               <option key={shop.id} value={shop.id}>
                 {shop.shop_name}
               </option>
             ))}
           </Select>
         </FormGroup>
-
-        {message && <Message type={message.type} text={message.text} />}
 
         <SubmitButton loading={loading} loadingText="Adding...">
           Add Artist
@@ -235,4 +183,3 @@ export default function AdminAddArtist() {
     </AdminFormLayout>
   );
 }
-
