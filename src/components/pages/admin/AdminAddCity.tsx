@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { addCity } from "../../../services/adminApi";
+import { addCity, fetchCountries } from "../../../services/adminApi";
 import AdminFormLayout from "./AdminFormLayout";
 import { FormGroup, Label, Input, Select, SubmitButton, Message } from "./AdminFormComponents";
 import { useAdminData } from "./useAdminData";
@@ -11,6 +11,7 @@ import styles from "./AdminForm.module.css";
 
 interface CityFormData {
   city_name: string;
+  country_id: string;
   state_id: string;
 }
 
@@ -20,6 +21,8 @@ export default function AdminAddCity() {
     loadCities: true,
   });
 
+  const [countries, setCountries] = useState<{ id: number; country_name: string }[]>([]);
+  const [loadingCountries, setLoadingCountries] = useState(true);
   const [citySearch, setCitySearch] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const cityInputRef = useRef<HTMLInputElement>(null);
@@ -27,6 +30,21 @@ export default function AdminAddCity() {
   
   // Debounce search input for better performance
   const debouncedCitySearch = useDebounce(citySearch, 300);
+
+  // Load countries
+  useEffect(() => {
+    const loadCountries = async () => {
+      try {
+        const countriesData = await fetchCountries();
+        setCountries(countriesData);
+      } catch (error) {
+        console.error("Failed to load countries:", error);
+      } finally {
+        setLoadingCountries(false);
+      }
+    };
+    loadCountries();
+  }, []);
 
   const {
     formData,
@@ -38,6 +56,7 @@ export default function AdminAddCity() {
   } = useAdminForm<CityFormData, any>({
     initialData: {
       city_name: "",
+      country_id: "",
       state_id: "",
     },
     onSubmit: async (data) => {
@@ -46,6 +65,8 @@ export default function AdminAddCity() {
     transformData: (formData) => ({
       city_name: formData.city_name,
       state_id: formData.state_id ? parseInt(formData.state_id) : null,
+      // Note: country_id is not stored directly on cities, only through states
+      // We keep it for filtering states, but don't send it to the API
     }),
     validateData: (formData) => {
       if (!formData.city_name) {
@@ -78,11 +99,30 @@ export default function AdminAddCity() {
   const handleSuggestionClick = (city: City) => {
     setFormData({
       city_name: city.city_name,
+      country_id: city.country_id ? city.country_id.toString() : "",
       state_id: city.state_id ? city.state_id.toString() : "",
     });
     setCitySearch(city.city_name);
     setShowSuggestions(false);
   };
+
+  // Filter states by selected country
+  const filteredStates = useMemo(() => {
+    if (!formData.country_id) return states;
+    const countryId = parseInt(formData.country_id);
+    return states.filter(state => state.country_id === countryId);
+  }, [states, formData.country_id]);
+
+  // When country changes, clear state selection if it's not in the filtered list
+  useEffect(() => {
+    if (formData.country_id && formData.state_id) {
+      const stateId = parseInt(formData.state_id);
+      const stateExists = filteredStates.some(state => state.id === stateId);
+      if (!stateExists) {
+        setFormData(prev => ({ ...prev, state_id: "" }));
+      }
+    }
+  }, [formData.country_id, filteredStates]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -116,14 +156,29 @@ export default function AdminAddCity() {
   }, [cities, debouncedCitySearch]);
 
   // Check if exact city name already exists (case-insensitive)
+  // Match by city name and optionally by state_id or country_id
   const exactCityMatch = cities.find(
-    (city) =>
-      city.city_name.toLowerCase() === formData.city_name.toLowerCase() &&
-      (!formData.state_id || !city.state_id || city.state_id === parseInt(formData.state_id))
+    (city) => {
+      const nameMatches = city.city_name.toLowerCase() === formData.city_name.toLowerCase();
+      if (!nameMatches) return false;
+      
+      // If state is selected, match by state_id
+      if (formData.state_id) {
+        return city.state_id === parseInt(formData.state_id);
+      }
+      
+      // If country is selected but no state, match by country_id and no state
+      if (formData.country_id && !formData.state_id) {
+        return !city.state_id && city.country_id === parseInt(formData.country_id);
+      }
+      
+      // If neither state nor country selected, match cities with no state
+      return !city.state_id;
+    }
   );
 
   return (
-    <AdminFormLayout title="Add City" loading={loadingData}>
+    <AdminFormLayout title="Add City" loading={loadingData || loadingCountries}>
       <form onSubmit={baseHandleSubmit} className={styles.form}>
         {displayMessage && <Message type={displayMessage.type} text={displayMessage.text} />}
         <FormGroup>
@@ -166,22 +221,48 @@ export default function AdminAddCity() {
         </FormGroup>
 
         <FormGroup>
+          <Label htmlFor="country_id">Country</Label>
+          <Select
+            id="country_id"
+            name="country_id"
+            value={formData.country_id}
+            onChange={handleChange}
+            disabled={loadingCountries}
+          >
+            <option value="">Select a country (optional)</option>
+            {countries.map((country) => (
+              <option key={country.id} value={country.id}>
+                {country.country_name}
+              </option>
+            ))}
+          </Select>
+          <p className={styles.helperText}>
+            Select a country to filter states, or leave blank
+          </p>
+        </FormGroup>
+
+        <FormGroup>
           <Label htmlFor="state_id">State/Province (optional)</Label>
           <Select
             id="state_id"
             name="state_id"
             value={formData.state_id}
             onChange={handleChange}
+            disabled={formData.country_id && filteredStates.length === 0}
           >
             <option value="">No state/province</option>
-            {states.map((state) => (
+            {filteredStates.map((state) => (
               <option key={state.id} value={state.id}>
                 {getStateDisplayName(state)}
               </option>
             ))}
           </Select>
           <p className={styles.helperText}>
-            Leave blank for countries without states (e.g., China)
+            {formData.country_id
+              ? filteredStates.length === 0
+                ? "No states found for this country. You can still add the city without a state."
+                : "Leave blank for countries without states or cities without state information"
+              : "Select a country first to filter states, or leave blank to add city without state"}
           </p>
         </FormGroup>
 
