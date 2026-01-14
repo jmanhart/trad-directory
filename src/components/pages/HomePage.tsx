@@ -33,15 +33,24 @@ export default function HomePage() {
 
   return (
     <div className={styles.container}>
-      <HeroMessage />
-      <SearchBar
-        onSearch={handleSearch}
-        suggestions={suggestions}
-        onSelectSuggestion={handleSelectSuggestion}
-      />
-
-      <RecentlyAdded limit={10} />
-      {error && <p className={styles.error}>{error}</p>}
+      <div className={styles.heroSection}>
+        <div className={styles.heroContent}>
+          <div className={styles.heroText}>
+            <h2 className={styles.logo}>Trad Directory</h2>
+            <HeroMessage />
+          </div>
+          <SearchBar
+            onSearch={handleSearch}
+            suggestions={suggestions}
+            onSelectSuggestion={handleSelectSuggestion}
+            size="large"
+          />
+          <div className={styles.recentSection}>
+            <RecentlyAdded limit={5} />
+            {error && <p className={styles.error}>{error}</p>}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

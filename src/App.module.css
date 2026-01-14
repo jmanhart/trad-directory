@@ -30,15 +30,17 @@
 
 .appContainer {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .mainContent {
   flex: 1;
-  padding: 20px;
+  padding: 0;
   margin-left: 250px; /* Default to expanded sidebar width */
   transition: margin-left 0.3s ease;
-  min-height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 /* Adjust margin when sidebar is collapsed */

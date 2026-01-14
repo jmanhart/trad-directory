@@ -1,10 +1,12 @@
 /* Default styles (dark mode as default) */
 .heroMessage {
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 400;
-  margin: 20px 0;
+  margin: 0;
   color: var(--color-text-secondary);
+  line-height: 1.5;
+  max-width: 800px;
 }
 
 .heroMessage strong {
@@ -20,5 +22,14 @@
 
   .heroMessage strong {
     color: #747bff; /* Match global accent color for hover */
+  }
+}
+
+@media (max-width: 768px) {
+  .heroMessage {
+    font-size: 0.9rem;
+    max-width: 100%;
+    padding: 0 8px;
+    line-height: 1.4;
   }
 }

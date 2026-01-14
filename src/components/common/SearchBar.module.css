@@ -25,6 +25,22 @@
   box-sizing: border-box;
 }
 
+/* Large size for homepage */
+.searchBar.large .inputWrapper {
+  max-width: 700px;
+}
+
+.searchBar.large .input {
+  padding: 18px 18px 18px 55px;
+  font-size: 19px;
+  border-radius: 44px;
+}
+
+.searchBar.large .icon {
+  left: 22px;
+  height: 26px;
+}
+
 .icon {
   position: absolute;
   left: 16px;
@@ -93,4 +109,22 @@ button:hover {
   background-color: var(--color-primary);
   color: var(--color-light);
   cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .searchBar.large .inputWrapper {
+    max-width: 100%;
+    padding: 0 8px;
+  }
+
+  .searchBar.large .input {
+    padding: 14px 14px 14px 45px;
+    font-size: 16px;
+    border-radius: 32px;
+  }
+
+  .searchBar.large .icon {
+    left: 18px;
+    height: 22px;
+  }
 }

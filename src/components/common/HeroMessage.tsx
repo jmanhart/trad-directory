@@ -52,8 +52,7 @@ export default function HeroMessage() {
     <h1 className={styles.heroMessage}>
       Discover <strong>{artistCount || 0}</strong> artists working at over{" "}
       <strong>{shopCount || 0}</strong> tattoo shops in{" "}
-      <strong>{countryCount || 0}</strong> countries worldwide. List grows
-      daily.
+      <strong>{countryCount || 0}</strong> countries worldwide.
     </h1>
   );
 }
