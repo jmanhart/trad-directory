@@ -53,6 +53,56 @@
   height: 20px;
 }
 
+/* Icon sizes */
+.iconSmall {
+  height: 16px;
+  width: 16px;
+  left: 12px;
+}
+
+.iconSmall svg {
+  width: 16px;
+  height: 16px;
+}
+
+.iconMedium {
+  height: 20px;
+  width: 20px;
+  left: 16px;
+}
+
+.iconMedium svg {
+  width: 20px;
+  height: 20px;
+}
+
+.iconLarge {
+  height: 24px;
+  width: 24px;
+  left: 20px;
+}
+
+.iconLarge svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* SearchBar sizes */
+.small .input {
+  padding: 8px 8px 8px 36px;
+  font-size: 14px;
+}
+
+.medium .input {
+  padding: 10px 10px 10px 40px;
+  font-size: 16px;
+}
+
+.large .input {
+  padding: 12px 12px 12px 48px;
+  font-size: 18px;
+}
+
 button {
   padding: 10px 15px;
   margin-left: 10px;

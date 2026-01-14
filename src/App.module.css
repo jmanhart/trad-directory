@@ -43,9 +43,19 @@
   box-sizing: border-box;
 }
 
-/* Adjust margin when sidebar is collapsed */
-.mainContent.sidebarCollapsed {
-  margin-left: 70px;
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .appContainer {
+    grid-template-columns: 1fr; /* Single column on mobile */
+  }
+
+  .appContainer.sidebarCollapsed {
+    grid-template-columns: 1fr; /* Single column on mobile */
+  }
+
+  .mainContent {
+    padding-bottom: 80px; /* Space for bottom navigation */
+  }
 }
 
 /* Remove sidebar margin on mobile */
