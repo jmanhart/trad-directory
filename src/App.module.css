@@ -46,6 +46,18 @@
   margin-left: 70px;
 }
 
+/* Remove sidebar margin on mobile */
+@media (max-width: 768px) {
+  .mainContent {
+    margin-left: 0 !important;
+    padding-bottom: 60px; /* Space for mobile bottom nav */
+  }
+
+  .mainContent.sidebarCollapsed {
+    margin-left: 0 !important;
+  }
+}
+
 .header {
   position: sticky;
   top: 0;
