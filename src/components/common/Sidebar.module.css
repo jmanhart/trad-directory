@@ -1,31 +1,23 @@
-/* Sidebar Variables */
-:root {
-  --sidebar-width-expanded: 250px;
-  --sidebar-width-collapsed: 60px;
-  --icon-size: 20px;
-  --icon-size-mobile: 24px;
-  --nav-gap: 0.25rem;
-  --nav-padding: 1rem;
-}
-
-/* Desktop Sidebar */
 .sidebar {
-  position: sticky;
+  position: fixed;
+  left: 0;
   top: 0;
   height: 100vh;
-  width: var(--sidebar-width-expanded);
   background-color: var(--color-surface);
   border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   transition: width 0.3s ease;
-  overflow: hidden;
   z-index: 1000;
-  align-self: start;
+  overflow-x: hidden;
+}
+
+.sidebar.expanded {
+  width: 250px;
 }
 
 .sidebar.collapsed {
-  width: var(--sidebar-width-collapsed);
+  width: 60px;
 }
 
 .navContainer {
@@ -35,62 +27,70 @@
   overflow: hidden;
 }
 
-.nav,
-.bottomNav {
+.logoIcon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.toggleButton {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0.5rem;
   display: flex;
-  flex-direction: column;
-  gap: var(--nav-gap);
-  padding: var(--nav-padding) 0;
-  margin: 0 .5em;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.toggleButton:hover {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
 }
 
 .nav {
   flex: 1;
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   overflow-y: auto;
 }
 
 .bottomNav {
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   border-top: 1px solid var(--color-border);
   margin-top: auto;
   flex-shrink: 0;
-}
-
-.logoItem {
-  width: 100%;
-  margin-bottom: 0.5rem;
 }
 
 .navItem {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.15rem 0.75rem;
+  padding: 0.75rem 1rem;
   color: var(--color-text-secondary);
   text-decoration: none;
-  min-height: 40px;
-  transition: opacity 0.3s ease;
+  transition: all 0.2s ease;
   white-space: nowrap;
-  border-radius: 9px;
-  overflow: hidden;
-  position: relative;
+  border-left: 3px solid transparent;
 }
 
-
-
 .navItem:hover {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-background);
   color: var(--color-text-primary);
 }
 
 .navItem.active {
-  background-color: var(--color-gray-200);
-  color: var(--color-gray-900);
-}
-
-/* Collapsed Sidebar Styles */
-.sidebar.collapsed .navItem {
-  padding: 0.15rem 0.75rem;
-  gap: 0;
+  background-color: var(--color-background);
+  color: var(--color-primary);
 }
 
 .icon {
@@ -98,11 +98,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: var(--icon-size);
-  height: var(--icon-size);
-  position: absolute;
-  left: 0.75rem;
-  transition: none;
+  width: 20px;
+  height: 20px;
 }
 
 .icon svg {
@@ -110,31 +107,12 @@
   height: 100%;
 }
 
-.logoIcon {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
 .label {
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
-  opacity: 1;
-  max-width: 200px;
-  transition: opacity 0s ease, max-width 0.3s ease;
-  white-space: nowrap;
-  margin-left: calc(var(--icon-size) + 0.75rem);
 }
 
-.sidebar.collapsed .label {
-  opacity: 0;
-  max-width: 0;
-  margin: 0;
-  padding: 0;
-}
-
-/* Mobile Bottom Navigation */
 .mobileBottomNav {
   display: none;
 }
@@ -154,7 +132,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--nav-gap);
+  gap: 0.25rem;
   padding: 0.5rem;
   color: var(--color-text-secondary);
   transition: color 0.2s ease;
@@ -173,8 +151,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--icon-size-mobile);
-  height: var(--icon-size-mobile);
+  width: 24px;
+  height: 24px;
 }
 
 .mobileIcon svg {
@@ -183,28 +161,29 @@
 }
 
 .mobileLabel {
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   text-align: center;
 }
 
-/* Mobile Styles */
 @media (max-width: 768px) {
   .sidebar {
-    display: none;
+    display: none !important;
   }
 
   .mobileBottomNav {
-    display: flex;
+    display: flex !important;
+    flex-direction: row;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
+    width: 100%;
     background-color: var(--color-surface);
     border-top: 1px solid var(--color-border);
     padding: 0.5rem 0;
-    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
     z-index: 1000;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
   }
 }
