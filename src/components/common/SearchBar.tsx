@@ -9,17 +9,21 @@ type Suggestion = {
   id?: number; // artist id or shop id when applicable
 };
 
+type SearchBarSize = "small" | "medium" | "large";
+
 interface SearchBarProps {
   onSearch: (query: string) => void;
   suggestions: Suggestion[];
   onSelectSuggestion?: (suggestion: Suggestion) => void;
+  size?: SearchBarSize;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({
+export default function SearchBar({
   onSearch,
   suggestions,
   onSelectSuggestion,
-}) => {
+  size = "medium",
+}: SearchBarProps) {
   const [query, setQuery] = useState("");
   const [filteredSuggestions, setFilteredSuggestions] = useState<Suggestion[]>(
     []
@@ -127,10 +131,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
     }
   };
 
+  const sizeClass = styles[size] || "";
+  const iconSizeClass = styles[`icon${size.charAt(0).toUpperCase() + size.slice(1)}`] || "";
+
   return (
-    <div className={styles.searchBar} ref={wrapperRef}>
+    <div className={`${styles.searchBar} ${sizeClass}`} ref={wrapperRef}>
       <div className={styles.inputWrapper}>
-        <span className={styles.icon}>
+        <span className={`${styles.icon} ${iconSizeClass}`}>
           <SearchIcon />
         </span>
         <input
@@ -174,6 +181,4 @@ const SearchBar: React.FC<SearchBarProps> = ({
       </div>
     </div>
   );
-};
-
-export default SearchBar;
+}
