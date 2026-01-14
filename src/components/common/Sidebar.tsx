@@ -60,6 +60,42 @@ export default function Sidebar() {
     return location.pathname.startsWith(path);
   };
 
+  // Mobile bottom app bar items (Search, Artists, Shops only)
+  const mobileMenuItems: SidebarItem[] = [
+    {
+      path: "/",
+      label: "Search",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
+        </svg>
+      ),
+    },
+    {
+      path: "/artists",
+      label: "Artists",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      ),
+    },
+    {
+      path: "/shops",
+      label: "Shops",
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+      ),
+    },
+  ];
+
   const renderNavItem = (item: SidebarItem) => {
     const active = isActive(item.path);
     const content = (
@@ -94,30 +130,6 @@ export default function Sidebar() {
     );
   };
 
-  // Mobile menu items (Search, Artists, Shops, About)
-  const mobileMenuItems: SidebarItem[] = [
-    {
-      path: "/",
-      label: "Search",
-      icon: <SearchIcon />,
-    },
-    {
-      path: "/artists",
-      label: "Artists",
-      icon: <ArtistsIcon />,
-    },
-    {
-      path: "/shops",
-      label: "Shops",
-      icon: <ShopsIcon />,
-    },
-    {
-      path: "/about",
-      label: "About",
-      icon: <AboutIcon />,
-    },
-  ];
-
   const renderMobileNavItem = (item: SidebarItem) => {
     const active = isActive(item.path);
     const content = (
@@ -151,11 +163,13 @@ export default function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className={`${styles.sidebar} ${isExpanded ? styles.expanded : styles.collapsed}`}>
+      <aside
+        className={`${styles.sidebar} ${isExpanded ? styles.expanded : styles.collapsed}`}
+      >
         <div className={styles.navContainer}>
           <nav className={styles.nav}>
             <div
-              className={styles.logoItem}
+              className={styles.navItem}
               onClick={() => {
                 setIsExpanded(!isExpanded);
                 // Navigate to home if not already there
@@ -165,7 +179,14 @@ export default function Sidebar() {
               }}
               style={{ cursor: "pointer" }}
             >
-              <SidebarLogo isExpanded={isExpanded} />
+              <span className={styles.icon}>
+                <img
+                  src="/logo.jpg"
+                  alt="Trad Directory"
+                  className={styles.logoIcon}
+                />
+              </span>
+              {isExpanded && <span className={styles.label}>Trad Directory</span>}
             </div>
             {mainMenuItems.map(renderNavItem)}
           </nav>

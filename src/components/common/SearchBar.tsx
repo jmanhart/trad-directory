@@ -23,7 +23,7 @@ export default function SearchBar({
   suggestions,
   onSelectSuggestion,
   size = "medium",
-}) => {
+}: SearchBarProps) {
   const [query, setQuery] = useState("");
   const [filteredSuggestions, setFilteredSuggestions] = useState<Suggestion[]>(
     []

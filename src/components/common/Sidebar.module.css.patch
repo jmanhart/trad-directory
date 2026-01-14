@@ -1,0 +1,21 @@
+﻿@media (max-width: 768px) {
+  .sidebar {
+    display: none !important;
+  }
+
+  .mobileBottomNav {
+    display: flex !important;
+    flex-direction: row;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background-color: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    padding: 0.5rem 0;
+    z-index: 1000;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+}

@@ -1,16 +1,6 @@
-/* Sidebar Variables */
-:root {
-  --sidebar-width-expanded: 250px;
-  --sidebar-width-collapsed: 60px;
-  --icon-size: 20px;
-  --icon-size-mobile: 24px;
-  --nav-gap: 0.25rem;
-  --nav-padding: 1rem;
-}
-
-/* Desktop Sidebar */
-.sidebar {
-  position: sticky;
+﻿.sidebar {
+  position: fixed;
+  left: 0;
   top: 0;
   height: 100vh;
   width: var(--sidebar-width-expanded);
@@ -83,14 +73,8 @@
 }
 
 .navItem.active {
-  background-color: var(--color-gray-200);
-  color: var(--color-gray-900);
-}
-
-/* Collapsed Sidebar Styles */
-.sidebar.collapsed .navItem {
-  padding: 0.15rem 0.75rem;
-  gap: 0;
+  background-color: var(--color-background);
+  color: var(--color-primary);
 }
 
 .icon {
@@ -127,14 +111,6 @@
   margin-left: calc(var(--icon-size) + 0.75rem);
 }
 
-.sidebar.collapsed .label {
-  opacity: 0;
-  max-width: 0;
-  margin: 0;
-  padding: 0;
-}
-
-/* Mobile Bottom Navigation */
 .mobileBottomNav {
   display: none;
 }
@@ -154,7 +130,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--nav-gap);
+  gap: 0.25rem;
   padding: 0.5rem;
   color: var(--color-text-secondary);
   transition: color 0.2s ease;
@@ -173,8 +149,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--icon-size-mobile);
-  height: var(--icon-size-mobile);
+  width: 24px;
+  height: 24px;
 }
 
 .mobileIcon svg {
@@ -183,28 +159,29 @@
 }
 
 .mobileLabel {
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   text-align: center;
 }
 
-/* Mobile Styles */
 @media (max-width: 768px) {
   .sidebar {
-    display: none;
+    display: none !important;
   }
 
   .mobileBottomNav {
-    display: flex;
+    display: flex !important;
+    flex-direction: row;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
+    width: 100%;
     background-color: var(--color-surface);
     border-top: 1px solid var(--color-border);
     padding: 0.5rem 0;
-    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
     z-index: 1000;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
   }
 }
