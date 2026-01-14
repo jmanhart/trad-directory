@@ -8,7 +8,7 @@ interface PillProps {
   icon?: React.ReactNode;
 }
 
-const Pill: React.FC<PillProps> = ({ label, count, onClick, icon }) => {
+export default function Pill({ label, count, onClick, icon }: PillProps) {
   return (
     <button type="button" className={styles.pill} onClick={onClick}>
       {icon && <span className={styles.icon}>{icon}</span>}
@@ -16,6 +16,4 @@ const Pill: React.FC<PillProps> = ({ label, count, onClick, icon }) => {
       {count !== undefined && <span className={styles.count}>{count}</span>}
     </button>
   );
-};
-
-export default Pill;
+}

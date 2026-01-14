@@ -11,7 +11,7 @@ interface ShopCardProps {
   };
 }
 
-const ShopCard: React.FC<ShopCardProps> = ({ shop }) => {
+export default function ShopCard({ shop }: ShopCardProps) {
   return (
     <div className={styles.card}>
       <h2>{shop.name}</h2>
@@ -20,6 +20,4 @@ const ShopCard: React.FC<ShopCardProps> = ({ shop }) => {
       </p>
     </div>
   );
-};
-
-export default ShopCard;
+}

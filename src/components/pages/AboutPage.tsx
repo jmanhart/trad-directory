@@ -2,7 +2,7 @@ import React from "react";
 import styles from "./AboutPage.module.css";
 import HeroMessage from "./../common/HeroMessage";
 
-const AboutPage: React.FC = () => {
+export default function AboutPage() {
   return (
     <div className={styles.container}>
       {/* <h1 className={styles.title}>Trad Tattoo Directory</h1>
@@ -31,6 +31,4 @@ const AboutPage: React.FC = () => {
       </p>
     </div>
   );
-};
-
-export default AboutPage;
+}

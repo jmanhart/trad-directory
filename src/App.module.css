@@ -2,167 +2,9 @@
 
 /* 
   ==============================================
-  THEME & COLOR DEFINITIONS
+  APP COMPONENT STYLES
   ==============================================
-  - Dark theme is the default.
-  - Light theme overrides are below in the @media query.
-*/
-:root {
-  /* Color Palette */
-  --color-background: #121212;
-  --color-surface: #1a1a1a;
-  --color-border: #333;
-
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #e0e0e0;
-  --color-text-tertiary: #bbbbbb;
-
-  --color-primary: #646cff;
-  --color-primary-hover: #535bf2;
-  --color-error: #d9534f;
-
-  /* Base Styles */
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color-scheme: light dark;
-  color: var(--color-text-primary);
-  background-color: var(--color-background);
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-light: #ffffff;
-    --color-dark: #000000;
-
-    --color-background: #ffffff;
-    --color-surface: #f9f9f9;
-    --color-border: #dadada;
-
-    --color-text-primary: #213547;
-    --color-text-secondary: #333333;
-    --color-text-tertiary: #555555;
-
-    --color-primary-hover: #747bff;
-
-    /* Grayscale Palette */
-    --color-gray-50: #f9fafb;
-    --color-gray-100: #f3f4f6;
-    --color-gray-200: #e5e7eb;
-    --color-gray-300: #d1d5db;
-    --color-gray-400: #9ca3af;
-    --color-gray-500: #6b7280;
-    --color-gray-600: #4b5563;
-    --color-gray-700: #374151;
-    --color-gray-800: #1f2937;
-    --color-gray-900: #111827;
-  }
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --color-light: #000000;
-    --color-dark: #ffffff;
-
-    --color-background: #ffffff;
-    --color-surface: #f9f9f9;
-    --color-border: #e0e0e0;
-
-    --color-text-primary: #213547;
-    --color-text-secondary: #333333;
-    --color-text-tertiary: #555555;
-
-    --color-primary-hover: #747bff;
-
-    --color-gray-50: #111827;
-    --color-gray-100: #1f2937;
-    --color-gray-200: #374151;
-    --color-gray-300: #4b5563;
-    --color-gray-400: #6b7280;
-    --color-gray-500: #9ca3af;
-    --color-gray-600: #d1d5db;
-    --color-gray-700: #e5e7eb;
-    --color-gray-800: #f3f4f6;
-    --color-gray-900: #f9fafb;
-  }
-}
-
-/* 
-  ==============================================
-  BASE & GLOBAL STYLES
-  ==============================================
-*/
-body {
-  padding: 0;
-  margin: 0;
-}
-
-a {
-  font-weight: 500;
-  color: var(--color-primary);
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: var(--color-primary-hover);
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-h3,
-h4 {
-  margin: 0 auto;
-  font-weight: bold;
-  unicode-bidi: isolate;
-}
-
-h3 {
-  font-size: 1.5em;
-}
-
-h4 {
-  font-size: 2em;
-}
-
-p {
-  font-size: 1em;
-  margin: 0 auto;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-
-button:hover {
-  border-color: var(--color-primary);
-}
-
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-/* 
-  ==============================================
-  LAYOUT & COMPONENT STYLES
-  ==============================================
+  Styles specific to the App component
 */
 .container {
   max-width: 1000px;
@@ -187,21 +29,37 @@ button:focus-visible {
 }
 
 .appContainer {
-  display: flex;
+  display: grid;
+  grid-template-columns: 250px 1fr; /* Sidebar width, then remaining space */
   min-height: 100vh;
+  transition: grid-template-columns 0.3s ease;
+}
+
+.appContainer.sidebarCollapsed {
+  grid-template-columns: 60px 1fr; /* Collapsed sidebar width */
 }
 
 .mainContent {
-  flex: 1;
   padding: 20px;
-  margin-left: 250px; /* Default to expanded sidebar width */
-  transition: margin-left 0.3s ease;
   min-height: 100vh;
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* Adjust margin when sidebar is collapsed */
-.mainContent.sidebarCollapsed {
-  margin-left: 70px;
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .appContainer {
+    grid-template-columns: 1fr; /* Single column on mobile */
+  }
+
+  .appContainer.sidebarCollapsed {
+    grid-template-columns: 1fr; /* Single column on mobile */
+  }
+
+  .mainContent {
+    padding-bottom: 80px; /* Space for bottom navigation */
+  }
 }
 
 .header {

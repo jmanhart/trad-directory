@@ -1,0 +1,109 @@
+/* 
+  ==============================================
+  CSS CUSTOM PROPERTIES (DESIGN TOKENS)
+  ==============================================
+  - Dark theme is the default.
+  - Light theme overrides are below in the @media query.
+*/
+
+:root {
+  /* Color Palette - Dark Theme (Default) */
+  --color-background: #121212;
+  --color-surface: #1a1a1a;
+  --color-border: #333;
+
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #e0e0e0;
+  --color-text-tertiary: #bbbbbb;
+
+  --color-primary: #646cff;
+  --color-primary-hover: #535bf2;
+  --color-error: #d9534f;
+
+  /* Spacing Scale */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Typography Scale */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+  --font-size-3xl: 3.2rem;
+
+  /* Base Typography */
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light dark;
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-light: #ffffff;
+    --color-dark: #000000;
+
+    --color-background: #ffffff;
+    --color-surface: #f9f9f9;
+    --color-border: #dadada;
+
+    --color-text-primary: #213547;
+    --color-text-secondary: #333333;
+    --color-text-tertiary: #555555;
+
+    --color-primary-hover: #747bff;
+
+    /* Grayscale Palette */
+    --color-gray-50: #f9fafb;
+    --color-gray-100: #f3f4f6;
+    --color-gray-200: #e5e7eb;
+    --color-gray-300: #d1d5db;
+    --color-gray-400: #9ca3af;
+    --color-gray-500: #6b7280;
+    --color-gray-600: #4b5563;
+    --color-gray-700: #374151;
+    --color-gray-800: #1f2937;
+    --color-gray-900: #111827;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-light: #000000;
+    --color-dark: #ffffff;
+
+    --color-background: #ffffff;
+    --color-surface: #f9f9f9;
+    --color-border: #e0e0e0;
+
+    --color-text-primary: #213547;
+    --color-text-secondary: #333333;
+    --color-text-tertiary: #555555;
+
+    --color-primary-hover: #747bff;
+
+    --color-gray-50: #111827;
+    --color-gray-100: #1f2937;
+    --color-gray-200: #374151;
+    --color-gray-300: #4b5563;
+    --color-gray-400: #6b7280;
+    --color-gray-500: #9ca3af;
+    --color-gray-600: #d1d5db;
+    --color-gray-700: #e5e7eb;
+    --color-gray-800: #f3f4f6;
+    --color-gray-900: #f9fafb;
+  }
+}

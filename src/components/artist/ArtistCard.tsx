@@ -21,7 +21,7 @@ interface ArtistCardProps {
   showTimestamp?: boolean;
 }
 
-const ArtistCard: React.FC<ArtistCardProps> = ({ artist, showTimestamp = false }) => {
+export default function ArtistCard({ artist, showTimestamp = false }: ArtistCardProps) {
   const location = useLocation();
   const artistInstagramUrl = artist.instagram_handle
     ? `https://www.instagram.com/${artist.instagram_handle}`
@@ -78,6 +78,4 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, showTimestamp = false }
       </div>
     </Link>
   );
-};
-
-export default ArtistCard;
+}

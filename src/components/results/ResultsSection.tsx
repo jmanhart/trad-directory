@@ -20,12 +20,12 @@ interface ResultsSectionProps {
   allArtists?: Artist[];
 }
 
-const ResultsSection: React.FC<ResultsSectionProps> = ({
+export default function ResultsSection({
   artists,
   hasSearched,
   showAllIfNoSearch = false,
   allArtists = [],
-}) => {
+}: ResultsSectionProps) {
   if (!hasSearched && !showAllIfNoSearch) {
     return null; // Don't render anything if no search has been performed and we don't want to show all
   }
@@ -60,6 +60,4 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
       )}
     </div>
   );
-};
-
-export default ResultsSection;
+}

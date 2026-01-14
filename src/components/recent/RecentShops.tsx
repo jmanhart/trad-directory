@@ -20,7 +20,7 @@ interface RecentShopsProps {
   limit?: number;
 }
 
-const RecentShops: React.FC<RecentShopsProps> = ({ limit = 6 }) => {
+export default function RecentShops({ limit = 6 }: RecentShopsProps) {
   const [shops, setShops] = useState<Shop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -131,7 +131,5 @@ const RecentShops: React.FC<RecentShopsProps> = ({ limit = 6 }) => {
       </div>
     </div>
   );
-};
-
-export default RecentShops;
+}
 

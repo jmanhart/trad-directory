@@ -29,7 +29,7 @@ interface Suggestion {
   id?: number;
 }
 
-const MainApp: React.FC = () => {
+export default function HomePage() {
   const navigate = useNavigate();
   const { suggestions, topCities, topCountries, error, loading } =
     useHomePageData();
@@ -95,6 +95,4 @@ const MainApp: React.FC = () => {
       {error && <p className={styles.error}>{error}</p>}
     </div>
   );
-};
-
-export default MainApp;
+}
