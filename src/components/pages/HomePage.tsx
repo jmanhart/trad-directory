@@ -36,7 +36,10 @@ export default function HomePage() {
       <div className={styles.heroSection}>
         <div className={styles.heroContent}>
           <div className={styles.heroText}>
-            <h2 className={styles.logo}>Trad Directory</h2>
+            <div className={styles.logo}>
+              <img src="/TRAD.svg" alt="TRAD" className={styles.logoSvg} />
+              <img src="/DIRECTORY.svg" alt="DIRECTORY" className={styles.logoSvg} />
+            </div>
             <HeroMessage />
           </div>
           <SearchBar
