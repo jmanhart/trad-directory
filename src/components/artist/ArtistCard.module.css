@@ -28,23 +28,82 @@
   display: block;
   margin: 0;
   width: 100%;
+  position: relative;
 }
 
 .card {
-  border: 1px solid var(--color-border);
+  /* 3D Box Effect Variables - Adjustable */
+  --card-bg: #ffffff;
+  --card-border: #000000;
+  --card-shadow-left: #ff0000;
+  --card-shadow-bottom: #8b0000;
+  --card-shadow-depth: 8px;
+
+  position: relative;
+  border: 2px solid var(--card-border);
   padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  background-color: var(--color-surface);
+  background-color: var(--card-bg);
   color: var(--color-text-secondary);
   display: flex;
   flex-direction: column;
   gap: 4px;
   min-width: 0; /* Allows card to shrink below content size */
+  box-sizing: border-box;
+  isolation: isolate;
+}
+
+/* Left side angular shadow - isometric perspective */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 9px;
+  left: -12px;
+  width: 10px;
+  height: 105%;
+  background-color: var(--card-shadow-left);
+  transform: skewY(-50deg);
+  transform-origin: top left;
+  z-index: -1;
+  border-left: 2px solid var(--card-border);
+  border-top: 3.5px solid var(--card-border);
+  border-bottom: 2px solid var(--card-border);
+  box-sizing: border-box;
+}
+
+/* Bottom side angular shadow - isometric perspective */
+.card::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: -1px;
+  width: 101%;
+  height: 14px;
+  background-color: var(--card-shadow-bottom);
+  transform: skewX(-40deg);
+  transform-origin: top left;
+  z-index: -1;
+  border-bottom: 2px solid var(--card-border);
+  border-left: 2px solid var(--card-border);
+  border-right: 2px solid var(--card-border);
+  border-top: 2px solid var(--card-border);
+  box-sizing: border-box;
+  border-radius: 3.5px;
 }
 
 .card:hover {
   border-color: var(--color-text-primary);
+}
+
+.card:hover::before {
+  border-right-color: var(--color-text-primary);
+  border-top-color: var(--color-text-primary);
+  border-bottom-color: var(--color-text-primary);
+}
+
+.card:hover::after {
+  border-bottom-color: var(--color-text-primary);
+  border-left-color: var(--color-text-primary);
+  border-right-color: var(--color-text-primary);
 }
 
 .header {
