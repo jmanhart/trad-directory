@@ -19,6 +19,8 @@
   --color-primary: #646cff;
   --color-primary-hover: #535bf2;
   --color-error: #d9534f;
+  --color-red: #FF0000;
+  --color-red-dark: #9C0101;
 
   /* Spacing Scale */
   --spacing-xs: 0.25rem;

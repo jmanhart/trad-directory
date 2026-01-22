@@ -37,10 +37,15 @@
 .mainContent {
   flex: 1;
   padding: 0;
-  margin-left: 250px; /* Default to expanded sidebar width */
+  margin-left: 60px; /* Default to collapsed sidebar width */
   transition: margin-left 0.3s ease;
   overflow-y: auto;
   box-sizing: border-box;
+}
+
+/* When sidebar is expanded, adjust main content margin */
+.appContainer:not(.sidebarCollapsed) .mainContent {
+  margin-left: 250px;
 }
 
 /* Remove sidebar margin on mobile */
