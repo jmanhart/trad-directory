@@ -1,0 +1,31 @@
+import React from "react";
+import styles from "./ArtistFilter.module.css";
+
+export type SortOption = "a-z" | "recently-added";
+
+interface ArtistFilterProps {
+  sortBy: SortOption;
+  onSortChange: (sort: SortOption) => void;
+}
+
+export default function ArtistFilter({
+  sortBy,
+  onSortChange,
+}: ArtistFilterProps) {
+  return (
+    <div className={styles.filterContainer}>
+      <label htmlFor="sort-select" className={styles.label}>
+        Sort by:
+      </label>
+      <select
+        id="sort-select"
+        value={sortBy}
+        onChange={(e) => onSortChange(e.target.value as SortOption)}
+        className={styles.select}
+      >
+        <option value="a-z">A-Z</option>
+        <option value="recently-added">Recently Added</option>
+      </select>
+    </div>
+  );
+}

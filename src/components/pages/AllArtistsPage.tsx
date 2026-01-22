@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchTattooShopsWithArtists, searchArtists } from "../../services/api";
 import ArtistCard from "../artist/ArtistCard";
 import SearchBar from "../common/SearchBar";
+import ArtistFilter, { type SortOption } from "../common/ArtistFilter";
 import { buildSuggestions, type Suggestion } from "../../utils/suggestions";
 import styles from "./AllArtistsPage.module.css";
 
@@ -15,14 +16,16 @@ interface Artist {
   city_name?: string;
   state_name?: string;
   country_name?: string;
+  created_at?: string | null;
 }
 
 export default function AllArtistsPage() {
   const navigate = useNavigate();
   const [artists, setArtists] = useState<Artist[]>([]);
-  const [filteredArtists, setFilteredArtists] = useState<Artist[]>([]);
+  const [searchResults, setSearchResults] = useState<Artist[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("a-z");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +35,6 @@ export default function AllArtistsPage() {
         setIsLoading(true);
         const data = await fetchTattooShopsWithArtists();
         setArtists(data);
-        setFilteredArtists(data);
         setSuggestions(buildSuggestions(data));
       } catch (err) {
         console.error("Error loading artists:", err);
@@ -50,7 +52,7 @@ export default function AllArtistsPage() {
       const performSearch = async () => {
         try {
           const results = await searchArtists(searchQuery);
-          setFilteredArtists(results);
+          setSearchResults(results);
         } catch (err) {
           console.error("Error searching artists:", err);
           setError("Failed to search artists");
@@ -58,9 +60,35 @@ export default function AllArtistsPage() {
       };
       performSearch();
     } else {
-      setFilteredArtists(artists);
+      setSearchResults([]);
     }
-  }, [searchQuery, artists]);
+  }, [searchQuery]);
+
+  // Apply sorting to the current artist list (either search results or all artists)
+  const filteredArtists = useMemo(() => {
+    const artistsToSort = searchQuery.trim() ? searchResults : artists;
+    
+    if (sortBy === "a-z") {
+      return [...artistsToSort].sort((a, b) => {
+        const nameA = (a.name || "").toLowerCase().trim();
+        const nameB = (b.name || "").toLowerCase().trim();
+        return nameA.localeCompare(nameB, undefined, { sensitivity: "base" });
+      });
+    } else if (sortBy === "recently-added") {
+      return [...artistsToSort].sort((a, b) => {
+        // If both have created_at, sort by most recent first
+        if (a.created_at && b.created_at) {
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
+        // If only one has created_at, prioritize it
+        if (a.created_at && !b.created_at) return -1;
+        if (!a.created_at && b.created_at) return 1;
+        // If neither has created_at, fall back to ID (newer IDs first)
+        return b.id - a.id;
+      });
+    }
+    return artistsToSort;
+  }, [artists, searchResults, searchQuery, sortBy]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -97,11 +125,14 @@ export default function AllArtistsPage() {
       <h1 className={styles.title}>All Artists</h1>
       
       <div className={styles.searchSection}>
-        <SearchBar
-          onSearch={handleSearch}
-          suggestions={suggestions}
-          onSelectSuggestion={handleSelectSuggestion}
-        />
+        <div className={styles.searchFilterRow}>
+          <SearchBar
+            onSearch={handleSearch}
+            suggestions={suggestions}
+            onSelectSuggestion={handleSelectSuggestion}
+          />
+          <ArtistFilter sortBy={sortBy} onSortChange={setSortBy} />
+        </div>
       </div>
 
       {searchQuery && (

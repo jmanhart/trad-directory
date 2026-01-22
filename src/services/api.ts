@@ -8,6 +8,7 @@ export async function fetchTattooShopsWithArtists() {
         id,
         name,
         instagram_handle,
+        created_at,
         city: cities (
           city_name,
           state: states (state_name),
