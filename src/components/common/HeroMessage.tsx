@@ -44,15 +44,11 @@ export default function HeroMessage() {
     fetchCounts();
   }, []);
 
-  if (loading) {
-    return <p className={styles.heroMessage}>Loading stats...</p>;
-  }
-
   return (
     <h1 className={styles.heroMessage}>
-      Discover <strong className={styles.metricNumber}>{artistCount || 0}</strong> artists working at over{" "}
-      <strong className={styles.metricNumber}>{shopCount || 0}</strong> tattoo shops in{" "}
-      <strong className={styles.metricNumber}>{countryCount || 0}</strong> countries worldwide.
+      Discover <strong className={styles.metricNumber}>{artistCount !== null ? artistCount : "--"}</strong> artists working at over{" "}
+      <strong className={styles.metricNumber}>{shopCount !== null ? shopCount : "--"}</strong> tattoo shops in{" "}
+      <strong className={styles.metricNumber}>{countryCount !== null ? countryCount : "--"}</strong> countries worldwide.
     </h1>
   );
 }
