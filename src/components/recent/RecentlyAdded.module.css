@@ -76,6 +76,7 @@
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .instagramLink {
@@ -99,8 +100,20 @@
 }
 
 .globeIcon {
-  width: 14px;
-  height: 14px;
+  width: 14px !important;
+  height: 14px !important;
+  max-width: 14px !important;
+  max-height: 14px !important;
+  flex-shrink: 0;
+  color: var(--color-text-tertiary, #999);
+  opacity: 0.8;
+}
+
+.itemIcon {
+  width: 14px !important;
+  height: 14px !important;
+  max-width: 14px !important;
+  max-height: 14px !important;
   flex-shrink: 0;
   color: var(--color-text-tertiary, #999);
   opacity: 0.8;
@@ -111,6 +124,20 @@
   font-weight: 500;
   color: var(--color-text-primary, #333);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.instagramHandle {
+  font-weight: 400;
+  color: var(--color-text-secondary, #666);
 }
 
 .city {
@@ -235,5 +262,18 @@
   }
   100% {
     background-position: -200% 0;
+  }
+}
+
+/* Mobile: Ensure proper truncation on smaller screens */
+@media (max-width: 768px) {
+  .content {
+    flex-wrap: nowrap;
+  }
+
+  .handle {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
