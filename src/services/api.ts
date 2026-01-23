@@ -597,6 +597,132 @@ export async function fetchAllCountries(): Promise<{ id: number; country_name: s
   }
 }
 
+// Fetch recently added countries (ordered by created_at or id descending, limit to most recent)
+export async function fetchRecentCountries(limit: number = 6) {
+  try {
+    let query = supabase
+      .from("countries")
+      .select(`
+        id,
+        country_name,
+        created_at
+      `)
+      .order("id", { ascending: false })
+      .limit(limit);
+
+    const { data, error } = await query;
+
+    // If error occurs, try without created_at field (it might not exist)
+    if (error) {
+      console.warn("Error fetching with created_at, retrying without it:", error.message);
+      const { data: dataWithoutTimestamp, error: errorWithoutTimestamp } = await supabase
+        .from("countries")
+        .select(`
+          id,
+          country_name
+        `)
+        .order("id", { ascending: false })
+        .limit(limit);
+
+      if (errorWithoutTimestamp) {
+        console.error("Error fetching recent countries:", errorWithoutTimestamp.message);
+        throw new Error(errorWithoutTimestamp.message);
+      }
+
+      return (dataWithoutTimestamp || []).map((country: any) => ({
+        id: country.id,
+        country_name: country.country_name,
+        created_at: null,
+      }));
+    }
+
+    return (data || []).map((country: any) => ({
+      id: country.id,
+      country_name: country.country_name,
+      created_at: country.created_at,
+    }));
+  } catch (err) {
+    console.error("Unhandled error in fetchRecentCountries:", err);
+    throw err;
+  }
+}
+
+// Fetch recently added cities (ordered by created_at or id descending, limit to most recent)
+export async function fetchRecentCities(limit: number = 6) {
+  try {
+    let query = supabase
+      .from("cities")
+      .select(`
+        id,
+        city_name,
+        created_at,
+        state: states (
+          state_name,
+          country: countries (country_name)
+        )
+      `)
+      .order("id", { ascending: false })
+      .limit(limit);
+
+    const { data, error } = await query;
+
+    // If error occurs, try without created_at field (it might not exist)
+    if (error) {
+      console.warn("Error fetching with created_at, retrying without it:", error.message);
+      const { data: dataWithoutTimestamp, error: errorWithoutTimestamp } = await supabase
+        .from("cities")
+        .select(`
+          id,
+          city_name,
+          state: states (
+            state_name,
+            country: countries (country_name)
+          )
+        `)
+        .order("id", { ascending: false })
+        .limit(limit);
+
+      if (errorWithoutTimestamp) {
+        console.error("Error fetching recent cities:", errorWithoutTimestamp.message);
+        throw new Error(errorWithoutTimestamp.message);
+      }
+
+      return (dataWithoutTimestamp || []).map((city: any) => {
+        const state = Array.isArray(city.state) ? city.state[0] : city.state;
+        const country = state?.country 
+          ? (Array.isArray(state.country) ? state.country[0] : state.country)
+          : null;
+
+        return {
+          id: city.id,
+          city_name: city.city_name,
+          state_name: state?.state_name || null,
+          country_name: country?.country_name || null,
+          created_at: null,
+        };
+      });
+    }
+
+    return (data || []).map((city: any) => {
+      const state = Array.isArray(city.state) ? city.state[0] : city.state;
+      const country = state?.country 
+        ? (Array.isArray(state.country) ? state.country[0] : state.country)
+        : null;
+
+      return {
+        id: city.id,
+        city_name: city.city_name,
+        state_name: state?.state_name || null,
+        country_name: country?.country_name || null,
+        created_at: city.created_at,
+      };
+    });
+  } catch (err) {
+    console.error("Unhandled error in fetchRecentCities:", err);
+    throw err;
+  }
+}
+
 // Fetch recently added tattoo shops (ordered by id descending, limit to most recent)
 export async function fetchRecentShops(limit: number = 6) {
   try {
