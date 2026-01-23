@@ -1,6 +1,68 @@
 import { supabase } from "./supabaseClient";
 import { createClient } from "@supabase/supabase-js";
 
+/**
+ * Safely extracts city, state, and country data from a city object/array
+ * Handles null cities, arrays with null elements, and nested state/country structures
+ */
+function extractLocationData(city: any): { city_name: string; state_name: string; country_name: string } {
+  let city_name = "N/A";
+  let state_name = "N/A";
+  let country_name = "N/A";
+  
+  if (!city || city === null || city === undefined) {
+    return { city_name, state_name, country_name };
+  }
+  
+  if (Array.isArray(city)) {
+    // Find first non-null city in array
+    const cityData = city.find((c: any) => c !== null && c !== undefined);
+    if (cityData && cityData !== null) {
+      city_name = cityData?.city_name || "N/A";
+      const state = cityData?.state;
+      if (state && state !== null && state !== undefined) {
+        const stateData = Array.isArray(state) 
+          ? (state.find((s: any) => s !== null && s !== undefined) || state[0])
+          : state;
+        if (stateData && stateData !== null && stateData !== undefined) {
+          state_name = stateData?.state_name || "N/A";
+          const country = stateData?.country;
+          if (country && country !== null && country !== undefined) {
+            const countryData = Array.isArray(country)
+              ? (country.find((c: any) => c !== null && c !== undefined) || country[0])
+              : country;
+            if (countryData && countryData !== null && countryData !== undefined) {
+              country_name = countryData?.country_name || "N/A";
+            }
+          }
+        }
+      }
+    }
+  } else if (typeof city === 'object') {
+    city_name = city?.city_name || "N/A";
+    const state = city?.state;
+    if (state && state !== null && state !== undefined) {
+      const stateData = Array.isArray(state) 
+        ? (state.find((s: any) => s !== null && s !== undefined) || state[0])
+        : state;
+      if (stateData && stateData !== null && stateData !== undefined) {
+        state_name = stateData?.state_name || "N/A";
+        const country = stateData?.country;
+        if (country && country !== null && country !== undefined) {
+          const countryData = Array.isArray(country)
+            ? (country.find((c: any) => c !== null && c !== undefined) || country[0])
+            : country;
+          if (countryData && countryData !== null && countryData !== undefined) {
+            country_name = countryData?.country_name || "N/A";
+          }
+        }
+      }
+    }
+  }
+  
+  return { city_name, state_name, country_name };
+}
+
 // Fetch all tattoo shops with their associated artists
 export async function fetchTattooShopsWithArtists() {
   try {
@@ -33,67 +95,25 @@ export async function fetchTattooShopsWithArtists() {
     return (data || []).map((artist: any) => {
       try {
         // Safely extract city data - handle null city for traveling artists
-        const city = artist.city;
-        let city_name = "N/A";
-        let state_name = "N/A";
-        let country_name = "N/A";
-        
-        if (city) {
-          if (Array.isArray(city)) {
-            const cityData = city[0];
-            if (cityData) {
-              city_name = cityData.city_name || "N/A";
-              const state = cityData.state;
-              if (state) {
-                const stateData = Array.isArray(state) ? state[0] : state;
-                if (stateData) {
-                  state_name = stateData.state_name || "N/A";
-                  const country = stateData.country;
-                  if (country) {
-                    const countryData = Array.isArray(country) ? country[0] : country;
-                    if (countryData) {
-                      country_name = countryData.country_name || "N/A";
-                    }
-                  }
-                }
-              }
-            }
-          } else {
-            city_name = city.city_name || "N/A";
-            const state = city.state;
-            if (state) {
-              const stateData = Array.isArray(state) ? state[0] : state;
-              if (stateData) {
-                state_name = stateData.state_name || "N/A";
-                const country = stateData.country;
-                if (country) {
-                  const countryData = Array.isArray(country) ? country[0] : country;
-                  if (countryData) {
-                    country_name = countryData.country_name || "N/A";
-                  }
-                }
-              }
-            }
-          }
-        }
+        const { city_name, state_name, country_name } = extractLocationData(artist?.city);
         
         return {
           ...artist,
-          is_traveling: artist.is_traveling || false,
+          is_traveling: artist?.is_traveling || false,
           city_name,
           state_name,
           country_name,
-          shop_id: artist.artist_shop?.[0]?.shop?.id || null,
-          shop_name: artist.artist_shop?.[0]?.shop?.shop_name || "N/A",
+          shop_id: artist?.artist_shop?.[0]?.shop?.id || null,
+          shop_name: artist?.artist_shop?.[0]?.shop?.shop_name || "N/A",
           shop_instagram_handle:
-            artist.artist_shop?.[0]?.shop?.instagram_handle || null,
+            artist?.artist_shop?.[0]?.shop?.instagram_handle || null,
         };
       } catch (mapError) {
-        console.error("Error mapping artist:", artist.id, mapError);
+        console.error("Error mapping artist:", artist?.id, mapError);
         // Return a safe fallback
         return {
           ...artist,
-          is_traveling: artist.is_traveling || false,
+          is_traveling: artist?.is_traveling || false,
           city_name: "N/A",
           state_name: "N/A",
           country_name: "N/A",
@@ -139,49 +159,7 @@ export async function fetchArtistById(id: number) {
     }
 
     // Safely extract city data - handle null city for traveling artists
-    const city = data.city;
-    let city_name = "N/A";
-    let state_name = "N/A";
-    let country_name = "N/A";
-    
-    if (city) {
-      if (Array.isArray(city)) {
-        const cityData = city[0];
-        if (cityData) {
-          city_name = cityData.city_name || "N/A";
-          const state = cityData.state;
-          if (state) {
-            const stateData = Array.isArray(state) ? state[0] : state;
-            if (stateData) {
-              state_name = stateData.state_name || "N/A";
-              const country = stateData.country;
-              if (country) {
-                const countryData = Array.isArray(country) ? country[0] : country;
-                if (countryData) {
-                  country_name = countryData.country_name || "N/A";
-                }
-              }
-            }
-          }
-        }
-      } else {
-        city_name = city.city_name || "N/A";
-        const state = city.state;
-        if (state) {
-          const stateData = Array.isArray(state) ? state[0] : state;
-          if (stateData) {
-            state_name = stateData.state_name || "N/A";
-            const country = stateData.country;
-            if (country) {
-              const countryData = Array.isArray(country) ? country[0] : country;
-              if (countryData) {
-                country_name = countryData.country_name || "N/A";
-              }
-            }
-          }
-        }
-      }
-    }
+    const { city_name, state_name, country_name } = extractLocationData(data?.city);
 
     return {
       ...data,
@@ -235,65 +213,20 @@ export async function fetchShopById(id: number) {
       throw new Error(error.message);
     }
 
+    // Safely extract shop city data
+    const { city_name: shopCityName, state_name: shopStateName, country_name: shopCountryName } = extractLocationData(data?.city);
+    
     return {
       ...data,
       instagram_handle: data.instagram_handle || null,
-      city_name: Array.isArray(data.city)
-        ? data.city[0]?.city_name
-        : data.city?.city_name || "N/A",
-      state_name: Array.isArray(data.city?.state)
-        ? data.city.state[0]?.state_name
-        : data.city.state?.state_name || "N/A",
-      country_name: Array.isArray(data.city?.country)
-        ? data.city.country[0]?.country_name
-        : data.city.country?.country_name || "N/A",
+      city_name: shopCityName,
+      state_name: shopStateName,
+      country_name: shopCountryName,
       artists: (data.artists || []).map((entry: any) => {
         try {
           const artist = entry.artist;
           // Safely extract city data - handle null city for traveling artists
-          const city = artist.city;
-          let city_name = "N/A";
-          let state_name = "N/A";
-          let country_name = "N/A";
-          
-          if (city) {
-            if (Array.isArray(city)) {
-              const cityData = city[0];
-              if (cityData) {
-                city_name = cityData.city_name || "N/A";
-                const state = cityData.state;
-                if (state) {
-                  const stateData = Array.isArray(state) ? state[0] : state;
-                  if (stateData) {
-                    state_name = stateData.state_name || "N/A";
-                    const country = stateData.country;
-                    if (country) {
-                      const countryData = Array.isArray(country) ? country[0] : country;
-                      if (countryData) {
-                        country_name = countryData.country_name || "N/A";
-                      }
-                    }
-                  }
-                }
-              }
-            } else {
-              city_name = city.city_name || "N/A";
-              const state = city.state;
-              if (state) {
-                const stateData = Array.isArray(state) ? state[0] : state;
-                if (stateData) {
-                  state_name = stateData.state_name || "N/A";
-                  const country = stateData.country;
-                  if (country) {
-                    const countryData = Array.isArray(country) ? country[0] : country;
-                    if (countryData) {
-                      country_name = countryData.country_name || "N/A";
-                    }
-                  }
-                }
-              }
-            }
-          }
+          const { city_name, state_name, country_name } = extractLocationData(artist?.city);
           
           return {
             id: artist.id,
@@ -428,49 +361,7 @@ export async function fetchRecentArtists(limit: number = 6) {
       return (dataWithoutTimestamp || []).map((artist: any) => {
         try {
           // Safely extract city data - handle null city for traveling artists
-          const city = artist.city;
-          let city_name = "N/A";
-          let state_name = "N/A";
-          let country_name = "N/A";
-          
-          if (city) {
-            if (Array.isArray(city)) {
-              const cityData = city[0];
-              if (cityData) {
-                city_name = cityData.city_name || "N/A";
-                const state = cityData.state;
-                if (state) {
-                  const stateData = Array.isArray(state) ? state[0] : state;
-                  if (stateData) {
-                    state_name = stateData.state_name || "N/A";
-                    const country = stateData.country;
-                    if (country) {
-                      const countryData = Array.isArray(country) ? country[0] : country;
-                      if (countryData) {
-                        country_name = countryData.country_name || "N/A";
-                      }
-                    }
-                  }
-                }
-              }
-            } else {
-              city_name = city.city_name || "N/A";
-              const state = city.state;
-              if (state) {
-                const stateData = Array.isArray(state) ? state[0] : state;
-                if (stateData) {
-                  state_name = stateData.state_name || "N/A";
-                  const country = stateData.country;
-                  if (country) {
-                    const countryData = Array.isArray(country) ? country[0] : country;
-                    if (countryData) {
-                      country_name = countryData.country_name || "N/A";
-                    }
-                  }
-                }
-              }
-            }
-          }
+          const { city_name, state_name, country_name } = extractLocationData(artist?.city);
           
           return {
             ...artist,
@@ -505,49 +396,7 @@ export async function fetchRecentArtists(limit: number = 6) {
     return (data || []).map((artist: any) => {
       try {
         // Safely extract city data - handle null city for traveling artists
-        const city = artist.city;
-        let city_name = "N/A";
-        let state_name = "N/A";
-        let country_name = "N/A";
-        
-        if (city) {
-          if (Array.isArray(city)) {
-            const cityData = city[0];
-            if (cityData) {
-              city_name = cityData.city_name || "N/A";
-              const state = cityData.state;
-              if (state) {
-                const stateData = Array.isArray(state) ? state[0] : state;
-                if (stateData) {
-                  state_name = stateData.state_name || "N/A";
-                  const country = stateData.country;
-                  if (country) {
-                    const countryData = Array.isArray(country) ? country[0] : country;
-                    if (countryData) {
-                      country_name = countryData.country_name || "N/A";
-                    }
-                  }
-                }
-              }
-            }
-          } else {
-            city_name = city.city_name || "N/A";
-            const state = city.state;
-            if (state) {
-              const stateData = Array.isArray(state) ? state[0] : state;
-              if (stateData) {
-                state_name = stateData.state_name || "N/A";
-                const country = stateData.country;
-                if (country) {
-                  const countryData = Array.isArray(country) ? country[0] : country;
-                  if (countryData) {
-                    country_name = countryData.country_name || "N/A";
-                  }
-                }
-              }
-            }
-          }
-        }
+        const { city_name, state_name, country_name } = extractLocationData(artist?.city);
         
         return {
           ...artist,
