@@ -1,4 +1,4 @@
-.container {
+.wrapper {
   width: 100%;
   max-width: 700px; /* Match search bar width */
   margin: 2rem auto 0;
@@ -14,10 +14,20 @@
   text-align: left;
 }
 
+.container {
+  width: 100%;
+  border: 3px solid #9C0101;
+  border-radius: 0;
+  background-color: var(--color-surface, #ffffff);
+  padding: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
 .feed {
   display: flex;
   flex-direction: column;
-  height: 400px; /* Fixed height - container stays same size, content scrolls */
+  height: 300px; /* Fixed height - container stays same size, content scrolls */
   overflow-y: auto;
   overflow-x: hidden;
   /* Minimal scrollbar styling to match search suggestions */
@@ -58,7 +68,7 @@
   text-decoration: none;
   color: inherit;
   display: block;
-  padding: 0.5rem 0;
+  padding: 0.5rem 0.5rem;
   transition: background-color 0.2s ease;
   border-bottom: 1px solid var(--color-border, #e0e0e0);
 }
@@ -68,7 +78,7 @@
 }
 
 .item:hover {
-  background-color: var(--color-surface-secondary, #f5f5f5);
+  background-color: var(--color-red-hover, rgba(255, 0, 0, 0.1));
 }
 
 .content {
@@ -76,6 +86,7 @@
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .instagramLink {
@@ -99,8 +110,20 @@
 }
 
 .globeIcon {
-  width: 14px;
-  height: 14px;
+  width: 14px !important;
+  height: 14px !important;
+  max-width: 14px !important;
+  max-height: 14px !important;
+  flex-shrink: 0;
+  color: var(--color-text-tertiary, #999);
+  opacity: 0.8;
+}
+
+.itemIcon {
+  width: 14px !important;
+  height: 14px !important;
+  max-width: 14px !important;
+  max-height: 14px !important;
   flex-shrink: 0;
   color: var(--color-text-tertiary, #999);
   opacity: 0.8;
@@ -111,6 +134,20 @@
   font-weight: 500;
   color: var(--color-text-primary, #333);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.instagramHandle {
+  font-weight: 400;
+  color: var(--color-text-secondary, #666);
 }
 
 .city {
@@ -235,5 +272,18 @@
   }
   100% {
     background-position: -200% 0;
+  }
+}
+
+/* Mobile: Ensure proper truncation on smaller screens */
+@media (max-width: 768px) {
+  .content {
+    flex-wrap: nowrap;
+  }
+
+  .handle {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }

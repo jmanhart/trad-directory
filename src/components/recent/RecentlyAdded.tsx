@@ -2,9 +2,10 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { fetchRecentArtists, fetchRecentShops, fetchRecentCountries } from "../../services/api";
 import { formatRelativeTime } from "../../utils/relativeTime";
-import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import InstagramLogoUrl from "/logo-instagram.svg";
 import GlobeIcon from "../../assets/icons/globeIcon";
+import ArtistsIcon from "../../assets/icons/artistsIcon";
+import ShopsIcon from "../../assets/icons/shopsIcon";
 import styles from "./RecentlyAdded.module.css";
 
 interface Artist {
@@ -214,20 +215,22 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
 
   if (isLoading) {
     return (
-      <div className={styles.container}>
+      <div className={styles.wrapper}>
         <h3 className={styles.label}>Recently Added</h3>
-        <div className={styles.feed}>
-          {/* Skeleton loader - show 5 placeholder items */}
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className={styles.skeletonItem}>
-              <div className={styles.skeletonIcon}></div>
-              <div className={styles.skeletonContent}>
-                <div className={styles.skeletonLine} style={{ width: "60%" }}></div>
-                <div className={styles.skeletonLine} style={{ width: "40%" }}></div>
+        <div className={styles.container}>
+          <div className={styles.feed}>
+            {/* Skeleton loader - show 5 placeholder items */}
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className={styles.skeletonItem}>
+                <div className={styles.skeletonIcon}></div>
+                <div className={styles.skeletonContent}>
+                  <div className={styles.skeletonLine} style={{ width: "60%" }}></div>
+                  <div className={styles.skeletonLine} style={{ width: "40%" }}></div>
+                </div>
+                <div className={styles.skeletonBadge}></div>
               </div>
-              <div className={styles.skeletonBadge}></div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -235,24 +238,14 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
 
   if (error) {
     return (
-      <div className={styles.container}>
-        <p className={styles.error}>{error}</p>
+      <div className={styles.wrapper}>
+        <h3 className={styles.label}>Recently Added</h3>
+        <div className={styles.container}>
+          <p className={styles.error}>{error}</p>
+        </div>
       </div>
     );
   }
-
-  const getTypeLabel = (type: FeedItemType): string => {
-    switch (type) {
-      case "artist":
-        return "ARTIST";
-      case "shop":
-        return "SHOP";
-      case "country":
-        return "COUNTRY";
-      default:
-        return "";
-    }
-  };
 
   const getItemUrl = (item: FeedItem): string => {
     switch (item.type) {
@@ -269,9 +262,10 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
   };
 
   return (
-    <div className={styles.container}>
+    <div className={styles.wrapper}>
       <h3 className={styles.label}>Recently Added</h3>
-      <div className={styles.feed}>
+      <div className={styles.container}>
+        <div className={styles.feed}>
         {feedItems.length === 0 ? (
           <p className={styles.empty}>No recent items</p>
         ) : (
@@ -280,70 +274,69 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
               ? `https://www.instagram.com/${item.instagram_handle}`
               : null;
             const itemUrl = getItemUrl(item);
-            
-            // For countries, don't show location separately since it's in the handle text
-            const displayLocation = item.type === "country"
-              ? null // Countries show location in the handle text
-              : formatArtistLocation({
-                  city_name: item.city_name,
-                  state_name: item.state_name,
-                  country_name: item.country_name,
-                  is_traveling: item.is_traveling,
-                });
 
             return (
               <React.Fragment key={`${item.type}-${item.id}`}>
                 <Link to={itemUrl} className={styles.item}>
                   <div className={styles.content}>
-                    {instagramUrl ? (
-                      <a
-                        href={instagramUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.instagramLink}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          window.open(instagramUrl, "_blank", "noopener,noreferrer");
-                        }}
-                      >
-                        <img
-                          src={InstagramLogoUrl}
-                          alt="Instagram"
-                          className={styles.instagramIcon}
-                        />
-                      </a>
+                    {item.type === "artist" ? (
+                      instagramUrl ? (
+                        <a
+                          href={instagramUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.instagramLink}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            window.open(instagramUrl, "_blank", "noopener,noreferrer");
+                          }}
+                        >
+                          <ArtistsIcon className={styles.itemIcon} />
+                        </a>
+                      ) : (
+                        <ArtistsIcon className={styles.itemIcon} />
+                      )
                     ) : item.type === "country" ? (
                       <GlobeIcon className={styles.globeIcon} />
+                    ) : item.type === "shop" ? (
+                      <ShopsIcon className={styles.itemIcon} />
                     ) : (
                       <span className={styles.iconPlaceholder} />
                     )}
                     <span className={styles.handle}>
-                      {item.instagram_handle 
-                        ? `@${item.instagram_handle}` 
-                        : item.type === "country"
-                        ? `${item.name} added`
-                        : item.name}
+                      {item.type === "shop" ? (
+                        <>
+                          <span className={styles.name}>{item.name}</span>
+                          {item.instagram_handle && (
+                            <span className={styles.instagramHandle}> @{item.instagram_handle}</span>
+                          )}
+                        </>
+                      ) : item.type === "country" ? (
+                        `${item.name} added to the directory`
+                      ) : item.type === "artist" ? (
+                        <>
+                          <span className={styles.name}>{item.name}</span>
+                          {item.instagram_handle && (
+                            <span className={styles.instagramHandle}> @{item.instagram_handle}</span>
+                          )}
+                        </>
+                      ) : (
+                        item.name
+                      )}
                     </span>
-                    {displayLocation && (
-                      <span className={styles.city}>
-                        {displayLocation}
-                      </span>
-                    )}
                     {item.created_at && (
                       <span className={styles.time}>
                         {formatRelativeTime(item.created_at)}
                       </span>
                     )}
-                    <span className={styles.typeBadge}>
-                      {getTypeLabel(item.type)}
-                    </span>
                   </div>
                 </Link>
               </React.Fragment>
             );
           })
         )}
+        </div>
       </div>
     </div>
   );
