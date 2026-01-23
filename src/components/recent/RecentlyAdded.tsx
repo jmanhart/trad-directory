@@ -216,7 +216,19 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
     return (
       <div className={styles.container}>
         <h3 className={styles.label}>Recently Added</h3>
-        <p className={styles.loading}>Loading...</p>
+        <div className={styles.feed}>
+          {/* Skeleton loader - show 5 placeholder items */}
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} className={styles.skeletonItem}>
+              <div className={styles.skeletonIcon}></div>
+              <div className={styles.skeletonContent}>
+                <div className={styles.skeletonLine} style={{ width: "60%" }}></div>
+                <div className={styles.skeletonLine} style={{ width: "40%" }}></div>
+              </div>
+              <div className={styles.skeletonBadge}></div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
