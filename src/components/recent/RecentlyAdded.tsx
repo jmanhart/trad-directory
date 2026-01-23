@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { fetchRecentArtists, fetchRecentShops, fetchRecentCountries, fetchRecentCities } from "../../services/api";
+import { fetchRecentArtists, fetchRecentShops, fetchRecentCountries } from "../../services/api";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import InstagramLogoUrl from "/logo-instagram.svg";
@@ -34,16 +34,8 @@ interface Country {
   created_at?: string | null;
 }
 
-interface City {
-  id: number;
-  city_name: string;
-  state_name?: string | null;
-  country_name?: string | null;
-  created_at?: string | null;
-}
-
 // Unified feed item type
-type FeedItemType = "artist" | "shop" | "location" | "country";
+type FeedItemType = "artist" | "shop" | "country";
 
 interface FeedItem {
   id: number;
@@ -68,7 +60,6 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
   const [artists, setArtists] = useState<Artist[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
   const [countries, setCountries] = useState<Country[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,17 +67,15 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
     async function loadRecentlyAdded() {
       try {
         setIsLoading(true);
-        const [artistsData, shopsData, countriesData, citiesData] = includeLocations
+        const [artistsData, shopsData, countriesData] = includeLocations
           ? await Promise.all([
               fetchRecentArtists(limit),
               fetchRecentShops(limit),
               fetchRecentCountries(limit),
-              fetchRecentCities(limit),
             ])
           : [
               await fetchRecentArtists(limit),
               await fetchRecentShops(limit),
-              [],
               [],
             ];
 
@@ -119,20 +108,9 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
             }))
           : [];
 
-        const transformedCities = citiesData.length > 0
-          ? citiesData.map((city: any) => ({
-              id: city.id,
-              city_name: city.city_name,
-              state_name: city.state_name || null,
-              country_name: city.country_name || null,
-              created_at: city.created_at,
-            }))
-          : [];
-
         setArtists(transformedArtists);
         setShops(transformedShops);
         setCountries(transformedCountries);
-        setCities(transformedCities);
       } catch (err) {
         console.error("Error loading recently added:", err);
         setError("Failed to load recently added");
@@ -223,30 +201,7 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
       });
     });
 
-    // Add cities
-    cities.forEach((city) => {
-      // Sort by created_at timestamp if available, otherwise use id (higher = newer)
-      let sortKey: number;
-      if (city.created_at) {
-        const timestamp = new Date(city.created_at).getTime();
-        sortKey = isNaN(timestamp) ? city.id : timestamp;
-      } else {
-        sortKey = city.id;
-      }
-
-      items.push({
-        id: city.id,
-        type: "location",
-        name: city.city_name,
-        instagram_handle: null,
-        city_name: city.city_name,
-        state_name: city.state_name,
-        country_name: city.country_name,
-        created_at: city.created_at,
-        is_traveling: false,
-        sortKey,
-      });
-    });
+    // Cities are not included in the recently added feed
 
     // Sort by sortKey descending (most recent first) - all types together
     // This ensures the most recent items show up regardless of type
@@ -255,7 +210,7 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
     // Return the top 'limit' items, sorted by most recent first
     // This means if a city/country was just added, it will show up at the top
     return sorted.slice(0, limit);
-  }, [artists, shops, countries, cities, limit]);
+  }, [artists, shops, countries, limit]);
 
   if (isLoading) {
     return (
@@ -280,8 +235,6 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
         return "ARTIST";
       case "shop":
         return "SHOP";
-      case "location":
-        return "LOCATION";
       case "country":
         return "COUNTRY";
       default:
@@ -295,12 +248,9 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
         return `/artist/${item.id}`;
       case "shop":
         return `/shop/${item.id}`;
-      case "location":
-        // Future: city/location pages - for now, search by city name
-        return `/?q=${encodeURIComponent(item.city_name || item.name)}`;
       case "country":
-        // Future: country pages - for now, search by country name
-        return `/?q=${encodeURIComponent(item.country_name || item.name)}`;
+        // Search by country name
+        return `/search-results?q=${encodeURIComponent(item.country_name || item.name)}`;
       default:
         return "#";
     }
@@ -319,16 +269,9 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
               : null;
             const itemUrl = getItemUrl(item);
             
-            // For countries and cities, show the name directly without location formatting
-            const displayLocation = item.type === "country" 
-              ? null // Countries don't need location display
-              : item.type === "location"
-              ? formatArtistLocation({
-                  city_name: item.city_name,
-                  state_name: item.state_name,
-                  country_name: item.country_name,
-                  is_traveling: false,
-                })
+            // For countries, don't show location separately since it's in the handle text
+            const displayLocation = item.type === "country"
+              ? null // Countries show location in the handle text
               : formatArtistLocation({
                   city_name: item.city_name,
                   state_name: item.state_name,
@@ -358,13 +301,17 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
                           className={styles.instagramIcon}
                         />
                       </a>
-                    ) : item.type === "location" || item.type === "country" ? (
+                    ) : item.type === "country" ? (
                       <GlobeIcon className={styles.globeIcon} />
                     ) : (
                       <span className={styles.iconPlaceholder} />
                     )}
                     <span className={styles.handle}>
-                      {item.instagram_handle ? `@${item.instagram_handle}` : item.name}
+                      {item.instagram_handle 
+                        ? `@${item.instagram_handle}` 
+                        : item.type === "country"
+                        ? `${item.name} added`
+                        : item.name}
                     </span>
                     {displayLocation && (
                       <span className={styles.city}>

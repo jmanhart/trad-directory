@@ -650,16 +650,15 @@ export async function fetchRecentCountries(limit: number = 6) {
 // Fetch recently added cities (ordered by created_at or id descending, limit to most recent)
 export async function fetchRecentCities(limit: number = 6) {
   try {
+    // Use the same pattern as fetchRecentArtists - country is nested directly under city
     let query = supabase
       .from("cities")
       .select(`
         id,
         city_name,
         created_at,
-        state: states (
-          state_name,
-          country: countries (country_name)
-        )
+        state: states (state_name),
+        country: countries (country_name)
       `)
       .order("id", { ascending: false })
       .limit(limit);
@@ -674,10 +673,8 @@ export async function fetchRecentCities(limit: number = 6) {
         .select(`
           id,
           city_name,
-          state: states (
-            state_name,
-            country: countries (country_name)
-          )
+          state: states (state_name),
+          country: countries (country_name)
         `)
         .order("id", { ascending: false })
         .limit(limit);
@@ -689,9 +686,17 @@ export async function fetchRecentCities(limit: number = 6) {
 
       return (dataWithoutTimestamp || []).map((city: any) => {
         const state = Array.isArray(city.state) ? city.state[0] : city.state;
-        const country = state?.country 
-          ? (Array.isArray(state.country) ? state.country[0] : state.country)
+        // Country is nested directly under city (same pattern as in fetchRecentArtists)
+        const country = city.country
+          ? (Array.isArray(city.country) ? city.country[0] : city.country)
           : null;
+
+        console.log("[fetchRecentCities] City extraction (no timestamp):", {
+          city_name: city.city_name,
+          state: state?.state_name,
+          country: country?.country_name,
+          rawCity: city,
+        });
 
         return {
           id: city.id,
@@ -705,9 +710,17 @@ export async function fetchRecentCities(limit: number = 6) {
 
     return (data || []).map((city: any) => {
       const state = Array.isArray(city.state) ? city.state[0] : city.state;
-      const country = state?.country 
-        ? (Array.isArray(state.country) ? state.country[0] : state.country)
+      // Country is nested directly under city (same pattern as in fetchRecentArtists)
+      const country = city.country
+        ? (Array.isArray(city.country) ? city.country[0] : city.country)
         : null;
+
+      console.log("[fetchRecentCities] City extraction:", {
+        city_name: city.city_name,
+        state: state?.state_name,
+        country: country?.country_name,
+        rawCity: city,
+      });
 
       return {
         id: city.id,
