@@ -135,6 +135,36 @@
   /* Better scrolling on mobile */
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  
+  /* Minimal scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* Webkit scrollbar styling for Chrome, Safari, Edge */
+.suggestionsList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.suggestionsList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.suggestionsList::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+  border: none;
+}
+
+.suggestionsList::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Hide scrollbar buttons (up/down arrows) */
+.suggestionsList::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+  width: 0;
 }
 
 .suggestionItem {
@@ -184,26 +214,28 @@
   border-bottom: none;
 }
 
-.suggestionItem:hover,
-.suggestionItem:focus-visible {
-  background-color: var(--color-primary-hover, rgba(100, 108, 255, 0.1));
+.suggestionItem:hover:not(.highlighted),
+.suggestionItem:focus-visible:not(.highlighted) {
+  background-color: var(--color-red-hover, rgba(255, 0, 0, 0.1));
   color: var(--color-text-primary);
   outline: none;
 }
 
-.suggestionItem:active {
-  background-color: var(--color-primary-hover, rgba(100, 108, 255, 0.2));
+.suggestionItem:active:not(.highlighted) {
+  background-color: rgba(255, 0, 0, 0.2);
 }
 
-.highlighted {
-  background-color: var(--color-primary, #646cff);
-  color: var(--color-light, #ffffff);
+/* Highlighted state - must be more specific to override hover */
+.suggestionItem.highlighted {
+  background-color: var(--color-red, #FF0000) !important;
+  color: var(--color-light, #ffffff) !important;
   cursor: pointer;
 }
 
-.highlighted:hover {
-  background-color: var(--color-primary, #646cff);
-  color: var(--color-light, #ffffff);
+.suggestionItem.highlighted:hover,
+.suggestionItem.highlighted:focus-visible {
+  background-color: var(--color-red-light, #FF3333) !important;
+  color: var(--color-light, #ffffff) !important;
 }
 
 .suggestionLabel {
