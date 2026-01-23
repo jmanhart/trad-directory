@@ -1,7 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import HomePage from "./components/pages/HomePage";
-import Sidebar from "./components/common/Sidebar";
-import { SidebarProvider, useSidebar } from "./contexts/SidebarContext";
 import AboutPage from "./components/pages/AboutPage";
 import ShopPage from "./components/pages/ShopPage";
 import SearchResults from "./components/pages/SearchResults";
@@ -20,6 +18,7 @@ import AdminAddCity from "./components/pages/admin/AdminAddCity";
 import AdminAddCountry from "./components/pages/admin/AdminAddCountry";
 import AdminAddArtistShopLink from "./components/pages/admin/AdminAddArtistShopLink";
 import AdminBrokenLinks from "./components/pages/admin/AdminBrokenLinks";
+import TopAppBar from "./components/common/TopAppBar";
 
 // Enhanced App component with Sentry error boundary
 const SentryApp = Sentry.withErrorBoundary(App, {
@@ -44,12 +43,13 @@ const SentryApp = Sentry.withErrorBoundary(App, {
 });
 
 function AppContent() {
-  const { isExpanded } = useSidebar();
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
   
   return (
-    <div className={`${styles.appContainer} ${!isExpanded ? styles.sidebarCollapsed : ""}`}>
-      <Sidebar />
-      <main className={styles.mainContent}>
+    <div className={styles.appContainer}>
+      <TopAppBar />
+      <main className={`${styles.mainContent} ${isHomePage ? styles.noScroll : ""}`}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/artists" element={<AllArtistsPage />} />
@@ -125,9 +125,7 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <SidebarProvider>
-        <AppContent />
-      </SidebarProvider>
+      <AppContent />
     </Router>
   );
 }

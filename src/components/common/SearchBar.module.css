@@ -43,7 +43,7 @@
 .searchBar.large .input {
   padding: 18px 18px 18px 55px;
   font-size: 19px;
-  border-radius: 44px;
+  border-radius: 8px;
 }
 
 .searchBar.large .icon {

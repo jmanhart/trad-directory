@@ -30,6 +30,7 @@
 
 .appContainer {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
 }
@@ -37,27 +38,12 @@
 .mainContent {
   flex: 1;
   padding: 0;
-  margin-left: 60px; /* Default to collapsed sidebar width */
-  transition: margin-left 0.3s ease;
   overflow-y: auto;
   box-sizing: border-box;
 }
 
-/* When sidebar is expanded, adjust main content margin */
-.appContainer:not(.sidebarCollapsed) .mainContent {
-  margin-left: 250px;
-}
-
-/* Remove sidebar margin on mobile */
-@media (max-width: 768px) {
-  .mainContent {
-    margin-left: 0 !important;
-    padding-bottom: 60px; /* Space for mobile bottom nav */
-  }
-
-  .mainContent.sidebarCollapsed {
-    margin-left: 0 !important;
-  }
+.mainContent.noScroll {
+  overflow: hidden;
 }
 
 .header {
