@@ -8,21 +8,22 @@
 
 :root {
   /* Color Palette - Dark Theme (Default) */
-  --color-background: #121212;
+  --color-background: #FFC4C4;
   --color-surface: #1a1a1a;
-  --color-border: #333;
+  --color-border: #9C0101;
 
   --color-text-primary: #ffffff;
   --color-text-secondary: #e0e0e0;
   --color-text-tertiary: #bbbbbb;
 
-  --color-primary: #646cff;
-  --color-primary-hover: #535bf2;
+  --color-primary: #9C0101;
+  --color-primary-hover: #9C0101;
   --color-error: #d9534f;
   --color-red: #FF0000;
   --color-red-light: #FF3333;
   --color-red-hover: rgba(255, 0, 0, 0.1);
   --color-red-dark: #9C0101;
+  --color-red-darker: #420000;
 
   /* Spacing Scale */
   --spacing-xs: 0.25rem;
@@ -60,15 +61,15 @@
     --color-light: #ffffff;
     --color-dark: #000000;
 
-    --color-background: #ffffff;
+    --color-background: #FFC4C4;
     --color-surface: #f9f9f9;
-    --color-border: #dadada;
+    --color-border: #9C0101;
 
     --color-text-primary: #213547;
     --color-text-secondary: #333333;
     --color-text-tertiary: #555555;
 
-    --color-primary-hover: #747bff;
+    --color-primary-hover: #9C0101;
 
     /* Grayscale Palette */
     --color-gray-50: #f9fafb;
@@ -89,15 +90,15 @@
     --color-light: #000000;
     --color-dark: #ffffff;
 
-    --color-background: #ffffff;
+    --color-background: #FFC4C4;
     --color-surface: #f9f9f9;
-    --color-border: #e0e0e0;
+    --color-border: #9C0101;
 
     --color-text-primary: #213547;
     --color-text-secondary: #333333;
     --color-text-tertiary: #555555;
 
-    --color-primary-hover: #747bff;
+    --color-primary-hover: #9C0101;
 
     --color-gray-50: #111827;
     --color-gray-100: #1f2937;

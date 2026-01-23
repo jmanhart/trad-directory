@@ -215,20 +215,22 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
 
   if (isLoading) {
     return (
-      <div className={styles.container}>
+      <div className={styles.wrapper}>
         <h3 className={styles.label}>Recently Added</h3>
-        <div className={styles.feed}>
-          {/* Skeleton loader - show 5 placeholder items */}
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className={styles.skeletonItem}>
-              <div className={styles.skeletonIcon}></div>
-              <div className={styles.skeletonContent}>
-                <div className={styles.skeletonLine} style={{ width: "60%" }}></div>
-                <div className={styles.skeletonLine} style={{ width: "40%" }}></div>
+        <div className={styles.container}>
+          <div className={styles.feed}>
+            {/* Skeleton loader - show 5 placeholder items */}
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className={styles.skeletonItem}>
+                <div className={styles.skeletonIcon}></div>
+                <div className={styles.skeletonContent}>
+                  <div className={styles.skeletonLine} style={{ width: "60%" }}></div>
+                  <div className={styles.skeletonLine} style={{ width: "40%" }}></div>
+                </div>
+                <div className={styles.skeletonBadge}></div>
               </div>
-              <div className={styles.skeletonBadge}></div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -236,8 +238,11 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
 
   if (error) {
     return (
-      <div className={styles.container}>
-        <p className={styles.error}>{error}</p>
+      <div className={styles.wrapper}>
+        <h3 className={styles.label}>Recently Added</h3>
+        <div className={styles.container}>
+          <p className={styles.error}>{error}</p>
+        </div>
       </div>
     );
   }
@@ -257,9 +262,10 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
   };
 
   return (
-    <div className={styles.container}>
+    <div className={styles.wrapper}>
       <h3 className={styles.label}>Recently Added</h3>
-      <div className={styles.feed}>
+      <div className={styles.container}>
+        <div className={styles.feed}>
         {feedItems.length === 0 ? (
           <p className={styles.empty}>No recent items</p>
         ) : (
@@ -330,6 +336,7 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
             );
           })
         )}
+        </div>
       </div>
     </div>
   );

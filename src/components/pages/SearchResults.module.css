@@ -62,7 +62,7 @@
 }
 
 .queryText {
-  color: #007bff;
+  color: #9C0101;
   font-weight: 700;
 }
 
@@ -94,7 +94,7 @@
 }
 
 .browseAllButton {
-  background: #007bff;
+  background: #9C0101;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -106,7 +106,7 @@
 }
 
 .browseAllButton:hover {
-  background: #0056b3;
+  background: #9C0101;
   transform: translateY(-1px);
 }
 

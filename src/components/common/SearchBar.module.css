@@ -17,7 +17,7 @@
 .input {
   width: 100%;
   padding: 10px 10px 10px 40px;
-  border: 1px solid var(--color-border);
+  border: 3px solid #9C0101;
   border-radius: 32px;
   font-size: 16px;
   background-color: var(--color-surface);
@@ -30,8 +30,8 @@
 
 .input:focus {
   outline: none;
-  border-color: var(--color-primary, #646cff);
-  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.1);
+  border-color: #FF0000;
+  box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.1);
 }
 
 /* Large size for homepage */
@@ -43,7 +43,7 @@
 .searchBar.large .input {
   padding: 18px 18px 18px 55px;
   font-size: 19px;
-  border-radius: 8px;
+  border-radius: 0px;
 }
 
 .searchBar.large .icon {
@@ -125,13 +125,15 @@
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border: 3px solid #FF0000;
+  border-radius: 0px;
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 4px 0;
   margin: 0;
   list-style-type: none;
+  box-sizing: border-box;
+  scrollbar-gutter: stable;
   /* Better scrolling on mobile */
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
@@ -214,10 +216,15 @@
   border-bottom: none;
 }
 
-.suggestionItem:hover:not(.highlighted),
+.suggestionItem:hover:not(.highlighted) {
+  background-color: var(--color-red-hover, rgba(255, 0, 0, 0.1));
+  color: var(--color-red, #FF0000);
+  outline: none;
+}
+
 .suggestionItem:focus-visible:not(.highlighted) {
   background-color: var(--color-red-hover, rgba(255, 0, 0, 0.1));
-  color: var(--color-text-primary);
+  color: var(--color-red, #FF0000);
   outline: none;
 }
 
@@ -225,17 +232,18 @@
   background-color: rgba(255, 0, 0, 0.2);
 }
 
-/* Highlighted state - must be more specific to override hover */
+/* Highlighted state - only for keyboard navigation (arrow keys) */
 .suggestionItem.highlighted {
-  background-color: var(--color-red, #FF0000) !important;
-  color: var(--color-light, #ffffff) !important;
+  background-color: transparent;
+  color: var(--color-text-primary);
+  font-weight: 500;
   cursor: pointer;
 }
 
-.suggestionItem.highlighted:hover,
 .suggestionItem.highlighted:focus-visible {
-  background-color: var(--color-red-light, #FF3333) !important;
-  color: var(--color-light, #ffffff) !important;
+  background-color: transparent;
+  color: var(--color-text-primary);
+  font-weight: 500;
 }
 
 .suggestionLabel {
@@ -252,8 +260,13 @@
   flex-shrink: 0;
 }
 
+.suggestionItem:hover:not(.highlighted) .suggestionDetail,
+.suggestionItem:focus-visible:not(.highlighted) .suggestionDetail {
+  color: var(--color-red, #FF0000);
+}
+
 .highlighted .suggestionDetail {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--color-text-tertiary);
 }
 
 .suggestionArtistCount {
@@ -313,7 +326,7 @@
   .searchBar.large .input {
     padding: 14px 14px 14px 45px;
     font-size: 16px;
-    border-radius: 32px;
+    border-radius: 0;
   }
 
   .searchBar.large .icon {
@@ -328,11 +341,12 @@
   .input {
     font-size: 16px; /* Prevents zoom on iOS */
     padding: 12px 12px 12px 40px;
+    border-radius: 0;
   }
 
   .suggestionsList {
     max-height: 60vh; /* Better for mobile screens */
-    border-radius: 8px;
+    border-radius: 0px;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
   }
 
@@ -352,6 +366,7 @@
   .input {
     padding: 10px 10px 10px 38px;
     font-size: 16px;
+    border-radius: 0;
   }
 
   .icon {

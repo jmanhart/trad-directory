@@ -1,4 +1,4 @@
-.container {
+.wrapper {
   width: 100%;
   max-width: 700px; /* Match search bar width */
   margin: 2rem auto 0;
@@ -12,6 +12,16 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   text-align: left;
+}
+
+.container {
+  width: 100%;
+  border: 3px solid #9C0101;
+  border-radius: 0;
+  background-color: var(--color-surface, #ffffff);
+  padding: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
 }
 
 .feed {
@@ -58,7 +68,7 @@
   text-decoration: none;
   color: inherit;
   display: block;
-  padding: 0.5rem 0;
+  padding: 0.5rem 0.5rem;
   transition: background-color 0.2s ease;
   border-bottom: 1px solid var(--color-border, #e0e0e0);
 }
@@ -68,7 +78,7 @@
 }
 
 .item:hover {
-  background-color: var(--color-surface-secondary, #f5f5f5);
+  background-color: var(--color-red-hover, rgba(255, 0, 0, 0.1));
 }
 
 .content {
