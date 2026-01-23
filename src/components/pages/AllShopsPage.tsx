@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchAllShops } from "../../services/api";
+import { formatArtistLocation } from "../../utils/formatArtistLocation";
+import SearchBar from "../common/SearchBar";
+import SortFilter, { type SortOption } from "../common/SortFilter";
+import { buildShopSuggestions, type Suggestion } from "../../utils/suggestions";
 import InstagramLogoUrl from "/logo-instagram.svg";
 import styles from "./AllShopsPage.module.css";
 
@@ -12,13 +16,16 @@ interface Shop {
   city_name?: string;
   state_name?: string;
   country_name?: string;
+  created_at?: string | null;
 }
 
 export default function AllShopsPage() {
   const navigate = useNavigate();
   const [shops, setShops] = useState<Shop[]>([]);
-  const [filteredShops, setFilteredShops] = useState<Shop[]>([]);
+  const [searchResults, setSearchResults] = useState<Shop[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("a-z");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +35,7 @@ export default function AllShopsPage() {
         setIsLoading(true);
         const data = await fetchAllShops();
         setShops(data);
-        setFilteredShops(data);
+        setSuggestions(buildShopSuggestions(data));
       } catch (err) {
         console.error("Error loading shops:", err);
         setError("Failed to load shops");
@@ -52,14 +59,50 @@ export default function AllShopsPage() {
           shop.country_name?.toLowerCase().includes(normalizedQuery) ||
           shop.address?.toLowerCase().includes(normalizedQuery)
       );
-      setFilteredShops(filtered);
+      setSearchResults(filtered);
     } else {
-      setFilteredShops(shops);
+      setSearchResults([]);
     }
   }, [searchQuery, shops]);
 
+  // Apply sorting to the current shop list (either search results or all shops)
+  const filteredShops = useMemo(() => {
+    const shopsToSort = searchQuery.trim() ? searchResults : shops;
+    
+    if (sortBy === "a-z") {
+      return [...shopsToSort].sort((a, b) => {
+        const nameA = (a.shop_name || "").toLowerCase().trim();
+        const nameB = (b.shop_name || "").toLowerCase().trim();
+        return nameA.localeCompare(nameB, undefined, { sensitivity: "base" });
+      });
+    } else if (sortBy === "recently-added") {
+      return [...shopsToSort].sort((a, b) => {
+        // If both have created_at, sort by most recent first
+        if (a.created_at && b.created_at) {
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
+        // If only one has created_at, prioritize it
+        if (a.created_at && !b.created_at) return -1;
+        if (!a.created_at && b.created_at) return 1;
+        // If neither has created_at, fall back to ID (newer IDs first)
+        return b.id - a.id;
+      });
+    }
+    return shopsToSort;
+  }, [shops, searchResults, searchQuery, sortBy]);
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+  };
+
+  const handleSelectSuggestion = (s: Suggestion) => {
+    if (s.type === "shop" && s.id) {
+      navigate(`/shop/${s.id}`, {
+        state: { fromSearch: true, previous: "/shops" },
+      });
+      return;
+    }
+    handleSearch(s.label);
   };
 
   if (isLoading) {
@@ -83,13 +126,14 @@ export default function AllShopsPage() {
       <h1 className={styles.title}>All Shops</h1>
       
       <div className={styles.searchSection}>
-        <input
-          type="text"
-          placeholder="Search shops by name, location, or Instagram..."
-          value={searchQuery}
-          onChange={(e) => handleSearch(e.target.value)}
-          className={styles.searchInput}
-        />
+        <div className={styles.searchFilterRow}>
+          <SearchBar
+            onSearch={handleSearch}
+            suggestions={suggestions}
+            onSelectSuggestion={handleSelectSuggestion}
+          />
+          <SortFilter sortBy={sortBy} onSortChange={setSortBy} />
+        </div>
       </div>
 
       {searchQuery && (
@@ -102,13 +146,12 @@ export default function AllShopsPage() {
 
       <div className={styles.grid}>
         {filteredShops.map((shop) => {
-          const location = [
-            shop.city_name,
-            shop.state_name,
-            shop.country_name,
-          ]
-            .filter(Boolean)
-            .join(", ") || "N/A";
+          const location = formatArtistLocation({
+            city_name: shop.city_name,
+            state_name: shop.state_name,
+            country_name: shop.country_name,
+            is_traveling: false,
+          }) || "N/A";
 
           const shopInstagramUrl = shop.instagram_handle
             ? `https://www.instagram.com/${shop.instagram_handle}`

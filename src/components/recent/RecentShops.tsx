@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { fetchRecentShops } from "../../services/api";
 import { formatRelativeTime } from "../../utils/relativeTime";
+import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import InstagramLogoUrl from "/logo-instagram.svg";
 import styles from "./RecentShops.module.css";
 
@@ -73,13 +74,12 @@ export default function RecentShops({ limit = 6 }: RecentShopsProps) {
             ? `https://www.instagram.com/${shop.instagram_handle}`
             : "#";
 
-          const location = [
-            shop.city_name,
-            shop.state_name,
-            shop.country_name,
-          ]
-            .filter(Boolean)
-            .join(", ") || "N/A";
+          const location = formatArtistLocation({
+            city_name: shop.city_name,
+            state_name: shop.state_name,
+            country_name: shop.country_name,
+            is_traveling: false,
+          }) || "N/A";
 
           return (
             <Link

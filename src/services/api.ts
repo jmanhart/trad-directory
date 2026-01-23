@@ -9,6 +9,7 @@ export async function fetchTattooShopsWithArtists() {
         name,
         instagram_handle,
         created_at,
+        is_traveling,
         city: cities (
           city_name,
           state: states (state_name),
@@ -24,22 +25,84 @@ export async function fetchTattooShopsWithArtists() {
       throw new Error(error.message);
     }
 
-    return (data || []).map((artist: any) => ({
-      ...artist,
-      city_name: Array.isArray(artist.city)
-        ? artist.city[0]?.city_name
-        : artist.city?.city_name || "N/A",
-      state_name: Array.isArray(artist.city?.state)
-        ? artist.city.state[0]?.state_name
-        : artist.city.state?.state_name || "N/A",
-      country_name: Array.isArray(artist.city?.country)
-        ? artist.city.country[0]?.country_name
-        : artist.city.country?.country_name || "N/A",
-      shop_id: artist.artist_shop?.[0]?.shop?.id || null,
-      shop_name: artist.artist_shop?.[0]?.shop?.shop_name || "N/A",
-      shop_instagram_handle:
-        artist.artist_shop?.[0]?.shop?.instagram_handle || null,
-    }));
+    if (!data) {
+      console.warn("No data returned from fetchTattooShopsWithArtists");
+      return [];
+    }
+
+    return (data || []).map((artist: any) => {
+      try {
+        // Safely extract city data - handle null city for traveling artists
+        const city = artist.city;
+        let city_name = "N/A";
+        let state_name = "N/A";
+        let country_name = "N/A";
+        
+        if (city) {
+          if (Array.isArray(city)) {
+            const cityData = city[0];
+            if (cityData) {
+              city_name = cityData.city_name || "N/A";
+              const state = cityData.state;
+              if (state) {
+                const stateData = Array.isArray(state) ? state[0] : state;
+                if (stateData) {
+                  state_name = stateData.state_name || "N/A";
+                  const country = stateData.country;
+                  if (country) {
+                    const countryData = Array.isArray(country) ? country[0] : country;
+                    if (countryData) {
+                      country_name = countryData.country_name || "N/A";
+                    }
+                  }
+                }
+              }
+            }
+          } else {
+            city_name = city.city_name || "N/A";
+            const state = city.state;
+            if (state) {
+              const stateData = Array.isArray(state) ? state[0] : state;
+              if (stateData) {
+                state_name = stateData.state_name || "N/A";
+                const country = stateData.country;
+                if (country) {
+                  const countryData = Array.isArray(country) ? country[0] : country;
+                  if (countryData) {
+                    country_name = countryData.country_name || "N/A";
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        return {
+          ...artist,
+          is_traveling: artist.is_traveling || false,
+          city_name,
+          state_name,
+          country_name,
+          shop_id: artist.artist_shop?.[0]?.shop?.id || null,
+          shop_name: artist.artist_shop?.[0]?.shop?.shop_name || "N/A",
+          shop_instagram_handle:
+            artist.artist_shop?.[0]?.shop?.instagram_handle || null,
+        };
+      } catch (mapError) {
+        console.error("Error mapping artist:", artist.id, mapError);
+        // Return a safe fallback
+        return {
+          ...artist,
+          is_traveling: artist.is_traveling || false,
+          city_name: "N/A",
+          state_name: "N/A",
+          country_name: "N/A",
+          shop_id: null,
+          shop_name: "N/A",
+          shop_instagram_handle: null,
+        };
+      }
+    });
   } catch (err) {
     console.error("Unhandled error in fetchTattooShopsWithArtists:", err);
     throw err;
@@ -56,6 +119,7 @@ export async function fetchArtistById(id: number) {
         id,
         name,
         instagram_handle,
+        is_traveling,
         city: cities (
           city_name,
           state: states (state_name),
@@ -74,17 +138,57 @@ export async function fetchArtistById(id: number) {
       throw new Error(error.message);
     }
 
+    // Safely extract city data - handle null city for traveling artists
+    const city = data.city;
+    let city_name = "N/A";
+    let state_name = "N/A";
+    let country_name = "N/A";
+    
+    if (city) {
+      if (Array.isArray(city)) {
+        const cityData = city[0];
+        if (cityData) {
+          city_name = cityData.city_name || "N/A";
+          const state = cityData.state;
+          if (state) {
+            const stateData = Array.isArray(state) ? state[0] : state;
+            if (stateData) {
+              state_name = stateData.state_name || "N/A";
+              const country = stateData.country;
+              if (country) {
+                const countryData = Array.isArray(country) ? country[0] : country;
+                if (countryData) {
+                  country_name = countryData.country_name || "N/A";
+                }
+              }
+            }
+          }
+        }
+      } else {
+        city_name = city.city_name || "N/A";
+        const state = city.state;
+        if (state) {
+          const stateData = Array.isArray(state) ? state[0] : state;
+          if (stateData) {
+            state_name = stateData.state_name || "N/A";
+            const country = stateData.country;
+            if (country) {
+              const countryData = Array.isArray(country) ? country[0] : country;
+              if (countryData) {
+                country_name = countryData.country_name || "N/A";
+              }
+            }
+          }
+        }
+      }
+    }
+
     return {
       ...data,
-      city_name: Array.isArray(data.city)
-        ? data.city[0]?.city_name
-        : data.city?.city_name || "N/A",
-      state_name: Array.isArray(data.city?.state)
-        ? data.city.state[0]?.state_name
-        : data.city.state?.state_name || "N/A",
-      country_name: Array.isArray(data.city?.country)
-        ? data.city.country[0]?.country_name
-        : data.city.country?.country_name || "N/A",
+      is_traveling: data.is_traveling || false,
+      city_name,
+      state_name,
+      country_name,
       shop_id: data.artist_shop?.[0]?.shop?.id || null,
       shop_name: data.artist_shop?.[0]?.shop?.shop_name || "N/A",
       shop_instagram_handle:
@@ -113,7 +217,7 @@ export async function fetchShopById(id: number) {
           country: countries (country_name)
         ),
         artists: artist_shop (
-          artist: artists (id, name, instagram_handle, city: cities (
+          artist: artists (id, name, instagram_handle, is_traveling, city: cities (
             city_name,
             state: states (state_name),
             country: countries (country_name)
@@ -144,24 +248,82 @@ export async function fetchShopById(id: number) {
         ? data.city.country[0]?.country_name
         : data.city.country?.country_name || "N/A",
       artists: (data.artists || []).map((entry: any) => {
-        const artist = entry.artist;
-        return {
-          id: artist.id,
-          name: artist.name,
-          instagram_handle: artist.instagram_handle || null,
-          city_name: Array.isArray(artist.city)
-            ? artist.city[0]?.city_name
-            : artist.city?.city_name || "N/A",
-          state_name: Array.isArray(artist.city?.state)
-            ? artist.city.state[0]?.state_name
-            : artist.city.state?.state_name || "N/A",
-          country_name: Array.isArray(artist.city?.country)
-            ? artist.city.country[0]?.country_name
-            : artist.city.country?.country_name || "N/A",
-          shop_id: artist.artist_shop?.[0]?.shop?.id || null,
-          shop_name: artist.artist_shop?.[0]?.shop?.shop_name || "N/A",
-          shop_instagram_handle: artist.artist_shop?.[0]?.shop?.instagram_handle || null,
-        };
+        try {
+          const artist = entry.artist;
+          // Safely extract city data - handle null city for traveling artists
+          const city = artist.city;
+          let city_name = "N/A";
+          let state_name = "N/A";
+          let country_name = "N/A";
+          
+          if (city) {
+            if (Array.isArray(city)) {
+              const cityData = city[0];
+              if (cityData) {
+                city_name = cityData.city_name || "N/A";
+                const state = cityData.state;
+                if (state) {
+                  const stateData = Array.isArray(state) ? state[0] : state;
+                  if (stateData) {
+                    state_name = stateData.state_name || "N/A";
+                    const country = stateData.country;
+                    if (country) {
+                      const countryData = Array.isArray(country) ? country[0] : country;
+                      if (countryData) {
+                        country_name = countryData.country_name || "N/A";
+                      }
+                    }
+                  }
+                }
+              }
+            } else {
+              city_name = city.city_name || "N/A";
+              const state = city.state;
+              if (state) {
+                const stateData = Array.isArray(state) ? state[0] : state;
+                if (stateData) {
+                  state_name = stateData.state_name || "N/A";
+                  const country = stateData.country;
+                  if (country) {
+                    const countryData = Array.isArray(country) ? country[0] : country;
+                    if (countryData) {
+                      country_name = countryData.country_name || "N/A";
+                    }
+                  }
+                }
+              }
+            }
+          }
+          
+          return {
+            id: artist.id,
+            name: artist.name,
+            instagram_handle: artist.instagram_handle || null,
+            is_traveling: artist.is_traveling || false,
+            city_name,
+            state_name,
+            country_name,
+            shop_id: artist.artist_shop?.[0]?.shop?.id || null,
+            shop_name: artist.artist_shop?.[0]?.shop?.shop_name || "N/A",
+            shop_instagram_handle: artist.artist_shop?.[0]?.shop?.instagram_handle || null,
+          };
+        } catch (mapError) {
+          console.error("Error mapping artist in shop:", entry.artist?.id, mapError);
+          // Return a safe fallback
+          const artist = entry.artist;
+          return {
+            id: artist?.id || 0,
+            name: artist?.name || "Unknown",
+            instagram_handle: artist?.instagram_handle || null,
+            is_traveling: artist?.is_traveling || false,
+            city_name: "N/A",
+            state_name: "N/A",
+            country_name: "N/A",
+            shop_id: null,
+            shop_name: "N/A",
+            shop_instagram_handle: null,
+          };
+        }
       }),
     };
   } catch (err) {
@@ -221,6 +383,7 @@ export async function fetchRecentArtists(limit: number = 6) {
         name,
         instagram_handle,
         created_at,
+        is_traveling,
         city: cities (
           city_name,
           state: states (state_name),
@@ -244,6 +407,7 @@ export async function fetchRecentArtists(limit: number = 6) {
           id,
           name,
           instagram_handle,
+          is_traveling,
           city: cities (
             city_name,
             state: states (state_name),
@@ -261,41 +425,156 @@ export async function fetchRecentArtists(limit: number = 6) {
         throw new Error(errorWithoutTimestamp.message);
       }
 
-      return (dataWithoutTimestamp || []).map((artist: any) => ({
-        ...artist,
-        created_at: null,
-        city_name: Array.isArray(artist.city)
-          ? artist.city[0]?.city_name
-          : artist.city?.city_name || "N/A",
-        state_name: Array.isArray(artist.city?.state)
-          ? artist.city.state[0]?.state_name
-          : artist.city.state?.state_name || "N/A",
-        country_name: Array.isArray(artist.city?.country)
-          ? artist.city.country[0]?.country_name
-          : artist.city.country?.country_name || "N/A",
-        shop_id: artist.artist_shop?.[0]?.shop?.id || null,
-        shop_name: artist.artist_shop?.[0]?.shop?.shop_name || "N/A",
-        shop_instagram_handle:
-          artist.artist_shop?.[0]?.shop?.instagram_handle || null,
-      }));
+      return (dataWithoutTimestamp || []).map((artist: any) => {
+        try {
+          // Safely extract city data - handle null city for traveling artists
+          const city = artist.city;
+          let city_name = "N/A";
+          let state_name = "N/A";
+          let country_name = "N/A";
+          
+          if (city) {
+            if (Array.isArray(city)) {
+              const cityData = city[0];
+              if (cityData) {
+                city_name = cityData.city_name || "N/A";
+                const state = cityData.state;
+                if (state) {
+                  const stateData = Array.isArray(state) ? state[0] : state;
+                  if (stateData) {
+                    state_name = stateData.state_name || "N/A";
+                    const country = stateData.country;
+                    if (country) {
+                      const countryData = Array.isArray(country) ? country[0] : country;
+                      if (countryData) {
+                        country_name = countryData.country_name || "N/A";
+                      }
+                    }
+                  }
+                }
+              }
+            } else {
+              city_name = city.city_name || "N/A";
+              const state = city.state;
+              if (state) {
+                const stateData = Array.isArray(state) ? state[0] : state;
+                if (stateData) {
+                  state_name = stateData.state_name || "N/A";
+                  const country = stateData.country;
+                  if (country) {
+                    const countryData = Array.isArray(country) ? country[0] : country;
+                    if (countryData) {
+                      country_name = countryData.country_name || "N/A";
+                    }
+                  }
+                }
+              }
+            }
+          }
+          
+          return {
+            ...artist,
+            created_at: null,
+            is_traveling: artist.is_traveling || false,
+            city_name,
+            state_name,
+            country_name,
+            shop_id: artist.artist_shop?.[0]?.shop?.id || null,
+            shop_name: artist.artist_shop?.[0]?.shop?.shop_name || "N/A",
+            shop_instagram_handle:
+              artist.artist_shop?.[0]?.shop?.instagram_handle || null,
+          };
+        } catch (mapError) {
+          console.error("Error mapping recent artist:", artist.id, mapError);
+          // Return a safe fallback
+          return {
+            ...artist,
+            created_at: null,
+            is_traveling: artist.is_traveling || false,
+            city_name: "N/A",
+            state_name: "N/A",
+            country_name: "N/A",
+            shop_id: null,
+            shop_name: "N/A",
+            shop_instagram_handle: null,
+          };
+        }
+      });
     }
 
-    return (data || []).map((artist: any) => ({
-      ...artist,
-      city_name: Array.isArray(artist.city)
-        ? artist.city[0]?.city_name
-        : artist.city?.city_name || "N/A",
-      state_name: Array.isArray(artist.city?.state)
-        ? artist.city.state[0]?.state_name
-        : artist.city.state?.state_name || "N/A",
-      country_name: Array.isArray(artist.city?.country)
-        ? artist.city.country[0]?.country_name
-        : artist.city.country?.country_name || "N/A",
-      shop_id: artist.artist_shop?.[0]?.shop?.id || null,
-      shop_name: artist.artist_shop?.[0]?.shop?.shop_name || "N/A",
-      shop_instagram_handle:
-        artist.artist_shop?.[0]?.shop?.instagram_handle || null,
-    }));
+    return (data || []).map((artist: any) => {
+      try {
+        // Safely extract city data - handle null city for traveling artists
+        const city = artist.city;
+        let city_name = "N/A";
+        let state_name = "N/A";
+        let country_name = "N/A";
+        
+        if (city) {
+          if (Array.isArray(city)) {
+            const cityData = city[0];
+            if (cityData) {
+              city_name = cityData.city_name || "N/A";
+              const state = cityData.state;
+              if (state) {
+                const stateData = Array.isArray(state) ? state[0] : state;
+                if (stateData) {
+                  state_name = stateData.state_name || "N/A";
+                  const country = stateData.country;
+                  if (country) {
+                    const countryData = Array.isArray(country) ? country[0] : country;
+                    if (countryData) {
+                      country_name = countryData.country_name || "N/A";
+                    }
+                  }
+                }
+              }
+            }
+          } else {
+            city_name = city.city_name || "N/A";
+            const state = city.state;
+            if (state) {
+              const stateData = Array.isArray(state) ? state[0] : state;
+              if (stateData) {
+                state_name = stateData.state_name || "N/A";
+                const country = stateData.country;
+                if (country) {
+                  const countryData = Array.isArray(country) ? country[0] : country;
+                  if (countryData) {
+                    country_name = countryData.country_name || "N/A";
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        return {
+          ...artist,
+          is_traveling: artist.is_traveling || false,
+          city_name,
+          state_name,
+          country_name,
+          shop_id: artist.artist_shop?.[0]?.shop?.id || null,
+          shop_name: artist.artist_shop?.[0]?.shop?.shop_name || "N/A",
+          shop_instagram_handle:
+            artist.artist_shop?.[0]?.shop?.instagram_handle || null,
+        };
+      } catch (mapError) {
+        console.error("Error mapping recent artist:", artist.id, mapError);
+        // Return a safe fallback
+        return {
+          ...artist,
+          is_traveling: artist.is_traveling || false,
+          city_name: "N/A",
+          state_name: "N/A",
+          country_name: "N/A",
+          shop_id: null,
+          shop_name: "N/A",
+          shop_instagram_handle: null,
+        };
+      }
+    });
   } catch (err) {
     console.error("Unhandled error in fetchRecentArtists:", err);
     throw err;
@@ -312,6 +591,7 @@ export async function fetchAllShops() {
         shop_name,
         instagram_handle,
         address,
+        created_at,
         city: cities (
           city_name,
           state: states (state_name),
@@ -330,6 +610,7 @@ export async function fetchAllShops() {
       shop_name: shop.shop_name,
       instagram_handle: shop.instagram_handle || null,
       address: shop.address || null,
+      created_at: shop.created_at || null,
       city_name: Array.isArray(shop.city)
         ? shop.city[0]?.city_name
         : shop.city?.city_name || "N/A",

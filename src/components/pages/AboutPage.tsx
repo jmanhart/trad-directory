@@ -7,11 +7,11 @@ export default function AboutPage() {
     <div className={styles.container}>
       {/* <h1 className={styles.title}>Trad Tattoo Directory</h1>
       <HeroMessage /> */}
-      <h2 className={styles.subtitle}>Why that fuck is this directory?</h2>
+      <h2 className={styles.subtitle}>What that fuck is this?</h2>
       <p className={styles.description}>
         Let’s be real...Instagram’s search fucking sucks. This directory exists
         to help people find solid traditional tattoo artists and shops by
-        location, and hopefully make the act of finding artists easy.
+        location, and hopefully make the act of finding artists easier.
       </p>
       <p className={styles.description}>
         <strong>Full transparency I'm not a tattoo artist.</strong> I don’t even

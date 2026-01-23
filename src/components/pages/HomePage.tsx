@@ -40,7 +40,7 @@ export default function HomePage() {
               <img src="/TRAD.svg" alt="TRAD" className={styles.logoSvg} />
               <img src="/DIRECTORY.svg" alt="DIRECTORY" className={styles.logoSvg} />
             </div>
-            <HeroMessage />
+          <HeroMessage />
           </div>
           <SearchBar
             onSearch={handleSearch}

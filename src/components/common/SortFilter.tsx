@@ -1,17 +1,17 @@
 import React from "react";
-import styles from "./ArtistFilter.module.css";
+import styles from "./SortFilter.module.css";
 
 export type SortOption = "a-z" | "recently-added";
 
-interface ArtistFilterProps {
+interface SortFilterProps {
   sortBy: SortOption;
   onSortChange: (sort: SortOption) => void;
 }
 
-export default function ArtistFilter({
+export default function SortFilter({
   sortBy,
   onSortChange,
-}: ArtistFilterProps) {
+}: SortFilterProps) {
   return (
     <div className={styles.filterContainer}>
       <label htmlFor="sort-select" className={styles.label}>

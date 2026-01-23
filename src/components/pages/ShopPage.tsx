@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchShopById } from "../../services/api";
+import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import ArtistCard from "../artist/ArtistCard";
 import styles from "./ShopPage.module.css";
 import InstagramLogoUrl from "/logo-instagram.svg";
@@ -88,13 +89,12 @@ export default function ShopPage() {
     ? `https://www.instagram.com/${shop.instagram_handle}`
     : null;
 
-  const locationString = [
-    shop.city_name,
-    shop.state_name,
-    shop.country_name,
-  ]
-    .filter(Boolean)
-    .join(", ") || "N/A";
+  const locationString = formatArtistLocation({
+    city_name: shop.city_name,
+    state_name: shop.state_name,
+    country_name: shop.country_name,
+    is_traveling: false,
+  }) || "N/A";
 
   return (
     <div className={styles.container}>

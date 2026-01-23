@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { fetchRecentArtists, fetchRecentShops } from "../../services/api";
 import { formatRelativeTime } from "../../utils/relativeTime";
+import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import InstagramLogoUrl from "/logo-instagram.svg";
 import styles from "./RecentlyAdded.module.css";
 
@@ -13,6 +14,7 @@ interface Artist {
   state_name?: string;
   country_name?: string;
   created_at?: string | null;
+  is_traveling?: boolean;
 }
 
 interface Shop {
@@ -54,6 +56,7 @@ export default function RecentlyAdded({ limit = 10 }: RecentlyAddedProps) {
           state_name: artist.state_name || null,
           country_name: artist.country_name || null,
           created_at: artist.created_at,
+          is_traveling: artist.is_traveling || false,
         }));
 
         const transformedShops = shopsData.map((shop: any) => ({
@@ -104,10 +107,6 @@ export default function RecentlyAdded({ limit = 10 }: RecentlyAddedProps) {
     );
   }
 
-  const getCityDisplay = (cityName?: string | null, stateName?: string | null) => {
-    if (!cityName) return "N/A";
-    return stateName ? `${cityName}, ${stateName}` : cityName;
-  };
 
   return (
     <div className={styles.container}>
@@ -156,7 +155,12 @@ export default function RecentlyAdded({ limit = 10 }: RecentlyAddedProps) {
                           {artist.instagram_handle ? `@${artist.instagram_handle}` : artist.name}
                         </span>
                         <span className={styles.city}>
-                          {getCityDisplay(artist.city_name, artist.state_name)}
+                          {formatArtistLocation({
+                            city_name: artist.city_name,
+                            state_name: artist.state_name,
+                            country_name: artist.country_name,
+                            is_traveling: artist.is_traveling,
+                          }) || "N/A"}
                         </span>
                         {artist.created_at && (
                           <span className={styles.time}>
@@ -217,7 +221,12 @@ export default function RecentlyAdded({ limit = 10 }: RecentlyAddedProps) {
                           {shop.instagram_handle ? `@${shop.instagram_handle}` : shop.shop_name}
                         </span>
                         <span className={styles.city}>
-                          {getCityDisplay(shop.city_name, shop.state_name)}
+                          {formatArtistLocation({
+                            city_name: shop.city_name,
+                            state_name: shop.state_name,
+                            country_name: shop.country_name,
+                            is_traveling: false,
+                          }) || "N/A"}
                         </span>
                         {shop.created_at && (
                           <span className={styles.time}>

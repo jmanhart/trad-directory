@@ -11,6 +11,7 @@ interface AddArtistData {
   state_name?: string;
   country_name?: string;
   shop_id?: number;
+  is_traveling?: boolean; // Indicates if artist is primarily traveling
 }
 
 /**
@@ -204,6 +205,10 @@ export default async function handler(req: any, res: any) {
 
     if (data.contact) {
       artistData.contact = data.contact;
+    }
+
+    if (data.is_traveling !== undefined) {
+      artistData.is_traveling = data.is_traveling;
     }
 
     const { data: newArtist, error: artistError } = await supabase

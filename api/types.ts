@@ -2,6 +2,7 @@ export interface Artist {
   id: number;
   name: string;
   instagram_handle?: string;
+  is_traveling?: boolean;
   city_name?: string;
   state_name?: string;
   country_name?: string;

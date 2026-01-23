@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchTattooShopsWithArtists, searchArtists } from "../../services/api";
 import ArtistCard from "../artist/ArtistCard";
 import SearchBar from "../common/SearchBar";
-import ArtistFilter, { type SortOption } from "../common/ArtistFilter";
+import SortFilter, { type SortOption } from "../common/SortFilter";
 import { buildSuggestions, type Suggestion } from "../../utils/suggestions";
 import styles from "./AllArtistsPage.module.css";
 
@@ -131,7 +131,7 @@ export default function AllArtistsPage() {
             suggestions={suggestions}
             onSelectSuggestion={handleSelectSuggestion}
           />
-          <ArtistFilter sortBy={sortBy} onSortChange={setSortBy} />
+          <SortFilter sortBy={sortBy} onSortChange={setSortBy} />
         </div>
       </div>
 

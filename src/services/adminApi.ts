@@ -9,6 +9,7 @@ interface AddArtistData {
   state_name?: string;
   country_name?: string;
   shop_id?: number;
+  is_traveling?: boolean;
 }
 
 /**

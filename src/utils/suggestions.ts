@@ -64,3 +64,49 @@ export function buildSuggestions(artists: Artist[]): Suggestion[] {
   return [...artistSuggestions, ...shopSuggestions, ...locationSuggestions];
 }
 
+export interface Shop {
+  id: number;
+  shop_name: string;
+  instagram_handle?: string | null;
+  city_name?: string;
+  state_name?: string;
+  country_name?: string;
+  address?: string | null;
+}
+
+/**
+ * Builds search suggestions from shop data
+ */
+export function buildShopSuggestions(shops: Shop[]): Suggestion[] {
+  // Shop suggestions with unique ids
+  const uniqueIds = Array.from(new Set(shops.map((s) => s.id)));
+  const shopSuggestions: Suggestion[] = uniqueIds.map((id) => {
+    const shop = shops.find((s) => s.id === id)!;
+    return {
+      label: shop.shop_name,
+      type: "shop" as const,
+      detail: shop?.instagram_handle ? `@${shop.instagram_handle}` : "",
+      id: shop.id,
+    };
+  });
+
+  // Location suggestions (unique cities, states, countries)
+  const uniqueLocations = Array.from(
+    new Set(
+      shops.flatMap((shop) => [
+        shop.city_name,
+        shop.state_name,
+        shop.country_name,
+      ])
+    )
+  ).filter(Boolean) as string[];
+  const locationSuggestions: Suggestion[] = uniqueLocations.map(
+    (location) => ({
+      label: location,
+      type: "location" as const,
+    })
+  );
+
+  return [...shopSuggestions, ...locationSuggestions];
+}
+

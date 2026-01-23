@@ -22,6 +22,7 @@ interface ArtistFormData {
   contact: string;
   city_id: string;
   shop_id: string;
+  is_traveling: boolean;
 }
 
 export default function AdminAddArtist() {
@@ -36,7 +37,7 @@ export default function AdminAddArtist() {
     loadShops: true,
   });
 
-  const { formData, loading, message, handleChange, handleSubmit } =
+  const { formData, setFormData, loading, message, handleChange, handleSubmit } =
     useAdminForm<ArtistFormData, any>({
       initialData: {
         name: "",
@@ -46,6 +47,7 @@ export default function AdminAddArtist() {
         contact: "",
         city_id: "",
         shop_id: "",
+        is_traveling: false,
       },
       onSubmit: async data => {
         return await addArtist(data);
@@ -58,6 +60,7 @@ export default function AdminAddArtist() {
         contact: formData.contact || undefined,
         city_id: parseInt(formData.city_id),
         shop_id: formData.shop_id ? parseInt(formData.shop_id) : undefined,
+        is_traveling: formData.is_traveling || undefined,
       }),
       validateData: formData => {
         if (!formData.name || !formData.city_id) {
@@ -188,6 +191,23 @@ export default function AdminAddArtist() {
               </option>
             ))}
           </Select>
+        </FormGroup>
+
+        <FormGroup>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Input
+              type="checkbox"
+              id="is_traveling"
+              name="is_traveling"
+              checked={formData.is_traveling}
+              onChange={(e) => {
+                setFormData((prev) => ({ ...prev, is_traveling: e.target.checked }));
+              }}
+            />
+            <Label htmlFor="is_traveling" style={{ margin: 0, cursor: "pointer" }}>
+              Traveling Artist
+            </Label>
+          </div>
         </FormGroup>
 
         <SubmitButton loading={loading} loadingText="Adding...">

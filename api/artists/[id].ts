@@ -55,6 +55,7 @@ export default async function handler(req: any, res: any) {
             id,
             name,
             instagram_handle,
+            is_traveling,
             city: cities (
               city_name,
               state: states (state_name),
@@ -88,6 +89,7 @@ export default async function handler(req: any, res: any) {
       id: artistData.id,
       name: artistData.name,
       instagram_handle: artistData.instagram_handle || null,
+      is_traveling: artistData.is_traveling || false,
       city_name: Array.isArray(artistData.city)
         ? artistData.city[0]?.city_name
         : (artistData.city as any)?.city_name || null,

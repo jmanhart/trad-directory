@@ -1,7 +1,7 @@
-import React from "react";
 import styles from "./ArtistCard.module.css";
 import { Link, useLocation } from "react-router-dom";
 import { formatRelativeTime } from "../../utils/relativeTime";
+import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import InstagramLogoUrl from "/logo-instagram.svg";
 
 interface Artist {
@@ -14,6 +14,7 @@ interface Artist {
   state_name?: string;
   country_name?: string;
   created_at?: string | null;
+  is_traveling?: boolean;
 }
 
 interface ArtistCardProps {
@@ -29,6 +30,14 @@ export default function ArtistCard({ artist, showTimestamp = false }: ArtistCard
 
   const fromSearch = location.pathname === "/search-results";
   const previous = `${location.pathname}${location.search || ""}`;
+
+  // Format location string using shared utility
+  const locationString = formatArtistLocation({
+    city_name: artist.city_name,
+    state_name: artist.state_name,
+    country_name: artist.country_name,
+    is_traveling: artist.is_traveling,
+  });
 
   return (
     <Link
@@ -67,14 +76,11 @@ export default function ArtistCard({ artist, showTimestamp = false }: ArtistCard
           </a>
         )}
 
-        <div className={styles.details}>
-          <p className={styles.shopName}>{artist.shop_name || "N/A"}</p>
-          <p className={styles.address}>
-            {[artist.city_name, artist.state_name, artist.country_name]
-              .filter(Boolean)
-              .join(", ") || "N/A"}
-          </p>
-        </div>
+        {(locationString || artist.is_traveling) && (
+          <div className={styles.details}>
+            <p className={styles.address}>{locationString}</p>
+          </div>
+        )}
       </div>
     </Link>
   );
