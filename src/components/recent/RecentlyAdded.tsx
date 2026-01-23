@@ -4,6 +4,7 @@ import { fetchRecentArtists, fetchRecentShops, fetchRecentCountries, fetchRecent
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import InstagramLogoUrl from "/logo-instagram.svg";
+import GlobeIcon from "../../assets/icons/globeIcon";
 import styles from "./RecentlyAdded.module.css";
 
 interface Artist {
@@ -247,33 +248,13 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
       });
     });
 
-    // Sort by sortKey descending (most recent first)
+    // Sort by sortKey descending (most recent first) - all types together
+    // This ensures the most recent items show up regardless of type
     const sorted = items.sort((a, b) => b.sortKey - a.sortKey);
     
-    // Prioritize artists and shops, limit total items to prevent scrolling
-    // Only include locations/countries if we have space after artists/shops
-    const prioritized: FeedItem[] = [];
-    const locations: FeedItem[] = [];
-    
-    sorted.forEach(item => {
-      if (item.type === "location" || item.type === "country") {
-        locations.push(item);
-      } else {
-        prioritized.push(item);
-      }
-    });
-    
-    // Take up to limit items, prioritizing artists/shops
-    const maxItems = limit;
-    const result = [...prioritized];
-    
-    // Only add locations/countries if we have space
-    const remaining = maxItems - result.length;
-    if (remaining > 0 && locations.length > 0) {
-      result.push(...locations.slice(0, remaining));
-    }
-    
-    return result.slice(0, maxItems);
+    // Return the top 'limit' items, sorted by most recent first
+    // This means if a city/country was just added, it will show up at the top
+    return sorted.slice(0, limit);
   }, [artists, shops, countries, cities, limit]);
 
   if (isLoading) {
@@ -377,6 +358,8 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
                           className={styles.instagramIcon}
                         />
                       </a>
+                    ) : item.type === "location" || item.type === "country" ? (
+                      <GlobeIcon className={styles.globeIcon} />
                     ) : (
                       <span className={styles.iconPlaceholder} />
                     )}
@@ -398,7 +381,6 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
                     </span>
                   </div>
                 </Link>
-                {index < feedItems.length - 1 && <div className={styles.divider} />}
               </React.Fragment>
             );
           })

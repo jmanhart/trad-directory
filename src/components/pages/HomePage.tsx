@@ -50,7 +50,7 @@ export default function HomePage() {
             debug={true}
           />
           <div className={styles.recentSection}>
-            <RecentlyAdded limit={5} />
+            <RecentlyAdded limit={30} includeLocations={true} />
             {error && <p className={styles.error}>{error}</p>}
           </div>
         </div>
