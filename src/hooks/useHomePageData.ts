@@ -3,11 +3,11 @@ import {
   fetchTattooShopsWithArtists,
   fetchTopCitiesByArtistCount,
 } from "../services/api";
-import { buildSuggestions, type Suggestion } from "../utils/suggestions";
 import { calculateTopCountries } from "../utils/statistics";
+import { useSearchSuggestions } from "./useSearchSuggestions";
 
 interface HomePageData {
-  suggestions: Suggestion[];
+  suggestions: ReturnType<typeof useSearchSuggestions>["suggestions"];
   topCities: Array<{ city_name: string; count: number }>;
   topCountries: Array<{ country_name: string; count: number }>;
   error: string | null;
@@ -15,7 +15,10 @@ interface HomePageData {
 }
 
 export function useHomePageData(): HomePageData {
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  // Use centralized search suggestions hook
+  const { suggestions, loading: suggestionsLoading, error: suggestionsError } =
+    useSearchSuggestions({ autoFetch: true, debug: false });
+
   const [error, setError] = useState<string | null>(null);
   const [topCities, setTopCities] = useState<
     Array<{ city_name: string; count: number }>
@@ -31,14 +34,13 @@ export function useHomePageData(): HomePageData {
         setLoading(true);
         setError(null);
 
-        // Fetch both in parallel
+        // Fetch cities data and calculate countries
         const [artistsData, citiesData] = await Promise.all([
           fetchTattooShopsWithArtists(),
           fetchTopCitiesByArtistCount(5),
         ]);
 
         if (artistsData) {
-          setSuggestions(buildSuggestions(artistsData));
           setTopCountries(calculateTopCountries(artistsData, 5));
         }
 
@@ -60,8 +62,8 @@ export function useHomePageData(): HomePageData {
     suggestions,
     topCities,
     topCountries,
-    error,
-    loading,
+    error: error || suggestionsError,
+    loading: loading || suggestionsLoading,
   };
 }
 

@@ -1,96 +1,44 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import SearchBar from "./SearchBar";
+import { useSearchSuggestions } from "../../hooks/useSearchSuggestions";
+import { type Suggestion } from "../../utils/suggestions";
 import styles from "./Header.module.css";
-
-interface Suggestion {
-  label: string;
-  type: "artist" | "shop" | "location";
-  detail?: string;
-  id?: number;
-}
 
 export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [nameToId, setNameToId] = useState<Map<string, number>>(new Map());
-  const [handleToId, setHandleToId] = useState<Map<string, number>>(new Map());
-
-  // Ref to prevent duplicate API calls
-  const hasFetchedSuggestions = useRef(false);
-
   const isHomePage = location.pathname === "/";
   const showSearchBar = !isHomePage;
 
+  // Use centralized search suggestions hook
+  const { suggestions } = useSearchSuggestions({
+    autoFetch: showSearchBar,
+    debug: false,
+  });
+
+  const [nameToId, setNameToId] = useState<Map<string, number>>(new Map());
+  const [handleToId, setHandleToId] = useState<Map<string, number>>(new Map());
+
+  // Build lookup maps from suggestions
   useEffect(() => {
-    if (showSearchBar && !hasFetchedSuggestions.current) {
-      hasFetchedSuggestions.current = true;
-      fetchSuggestions();
-    }
-  }, [showSearchBar]);
+    const nameMap = new Map<string, number>();
+    const handleMap = new Map<string, number>();
 
-  const fetchSuggestions = async () => {
-    try {
-      const { fetchTattooShopsWithArtists } = await import(
-        "../../services/api"
-      );
-      const data = await fetchTattooShopsWithArtists();
-
-      if (data) {
-        const artistSuggestions: Suggestion[] = data.map((artist: any) => ({
-          label: artist.name,
-          type: "artist" as const,
-          detail: artist?.instagram_handle ? `@${artist.instagram_handle}` : "",
-          id: artist.id,
-        }));
-
-        const shopSuggestions: Suggestion[] = Array.from(
-          new Set(
-            data
-              .filter((a: any) => a.shop_name && a.shop_name !== "N/A")
-              .map((a: any) => a.shop_name as string)
-          )
-        ).map((name) => ({ label: name, type: "shop" as const }));
-
-        const locationSuggestions: Suggestion[] = Array.from(
-          new Set(
-            data.flatMap((a: any) => [
-              a.city_name,
-              a.state_name,
-              a.country_name,
-            ])
-          )
-        )
-          .filter(Boolean)
-          .map((location) => ({
-            label: location as string,
-            type: "location" as const,
-          }));
-
-        setSuggestions([
-          ...artistSuggestions,
-          ...shopSuggestions,
-          ...locationSuggestions,
-        ]);
-
-        // Build fast lookup maps
-        const nameMap = new Map<string, number>();
-        const handleMap = new Map<string, number>();
-        for (const a of data) {
-          if (a.name) nameMap.set(a.name, a.id);
-          if (a.instagram_handle)
-            handleMap.set(String(a.instagram_handle), a.id);
+    suggestions.forEach((suggestion) => {
+      if (suggestion.type === "artist" && suggestion.id) {
+        nameMap.set(suggestion.label, suggestion.id);
+        if (suggestion.detail?.startsWith("@")) {
+          handleMap.set(suggestion.detail.slice(1), suggestion.id);
         }
-        setNameToId(nameMap);
-        setHandleToId(handleMap);
       }
-    } catch (error) {
-      console.error("Error fetching suggestions for header search:", error);
-    }
-  };
+    });
+
+    setNameToId(nameMap);
+    setHandleToId(handleMap);
+  }, [suggestions]);
 
   const handleHeaderSearch = (query: string) => {
     if (query.trim()) {

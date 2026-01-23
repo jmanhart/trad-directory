@@ -13,6 +13,7 @@ export interface Suggestion {
   type: "artist" | "shop" | "location";
   detail?: string;
   id?: number;
+  artistCount?: number; // Number of artists in this location (for location suggestions)
 }
 
 /**
@@ -44,21 +45,43 @@ export function buildSuggestions(artists: Artist[]): Suggestion[] {
     type: "shop" as const,
   }));
 
-  // Location suggestions (unique cities, states, countries)
-  const uniqueLocations = Array.from(
-    new Set(
-      artists.flatMap((artist) => [
+  // Location suggestions (unique cities, states, countries) with artist counts
+  const locationCounts = new Map<string, number>();
+  
+  artists.forEach((artist) => {
+    // Count artists per city
+    if (artist.city_name && artist.city_name !== "N/A") {
+      locationCounts.set(
         artist.city_name,
+        (locationCounts.get(artist.city_name) || 0) + 1
+      );
+    }
+    // Count artists per state
+    if (artist.state_name && artist.state_name !== "N/A") {
+      locationCounts.set(
         artist.state_name,
+        (locationCounts.get(artist.state_name) || 0) + 1
+      );
+    }
+    // Count artists per country
+    if (artist.country_name && artist.country_name !== "N/A") {
+      locationCounts.set(
         artist.country_name,
-      ])
-    )
-  ).filter(Boolean) as string[];
+        (locationCounts.get(artist.country_name) || 0) + 1
+      );
+    }
+  });
+
+  const uniqueLocations = Array.from(locationCounts.keys());
   const locationSuggestions: Suggestion[] = uniqueLocations.map(
-    (location) => ({
-      label: location,
-      type: "location" as const,
-    })
+    (location) => {
+      const count = locationCounts.get(location) || 0;
+      return {
+        label: location,
+        type: "location" as const,
+        artistCount: count,
+      };
+    }
   );
 
   return [...artistSuggestions, ...shopSuggestions, ...locationSuggestions];
