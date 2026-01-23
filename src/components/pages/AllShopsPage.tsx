@@ -190,9 +190,6 @@ export default function AllShopsPage() {
                 )}
 
                 <div className={styles.details}>
-                  {shop.address && (
-                    <p className={styles.address}>{shop.address}</p>
-                  )}
                   <p className={styles.location}>{location}</p>
                 </div>
               </div>
