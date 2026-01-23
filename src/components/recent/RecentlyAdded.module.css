@@ -17,7 +17,7 @@
 .feed {
   display: flex;
   flex-direction: column;
-  height: 400px; /* Fixed height - container stays same size, content scrolls */
+  height: 300px; /* Fixed height - container stays same size, content scrolls */
   overflow-y: auto;
   overflow-x: hidden;
   /* Minimal scrollbar styling to match search suggestions */
