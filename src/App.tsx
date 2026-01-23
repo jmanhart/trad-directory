@@ -8,6 +8,7 @@ import SearchResults from "./components/pages/SearchResults";
 import LogoTypePlayground from "./components/logo/LogoTypePlayground";
 import AllArtistsPage from "./components/pages/AllArtistsPage";
 import AllShopsPage from "./components/pages/AllShopsPage";
+import UnitedStatesMapPage from "./components/pages/UnitedStatesMapPage";
 import styles from "./App.module.css";
 import { Sentry } from "./utils/sentry";
 import ArtistPage from "./components/pages/ArtistPage";
@@ -54,6 +55,7 @@ function AppContent() {
             <Route path="/artists" element={<AllArtistsPage />} />
             <Route path="/shops" element={<AllShopsPage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/united-states" element={<UnitedStatesMapPage />} />
             <Route path="/shop/:shopId" element={<ShopPage />} />
             <Route path="/search-results" element={<SearchResults />} />
             <Route path="/logo-type" element={<LogoTypePlayground />} />

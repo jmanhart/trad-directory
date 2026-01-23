@@ -1,7 +1,7 @@
 /**
  * Mapping of US state names to their two-letter abbreviations
  */
-const US_STATE_ABBREVIATIONS: Record<string, string> = {
+export const US_STATE_ABBREVIATIONS: Record<string, string> = {
   "Alabama": "AL",
   "Alaska": "AK",
   "Arizona": "AZ",
