@@ -27,7 +27,7 @@
 
 @media (max-width: 768px) {
   .heroMessage {
-    font-size: 0.9rem;
+    font-size: 1.2rem;
     max-width: 100%;
     padding: 0 8px;
     line-height: 1.4;

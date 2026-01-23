@@ -115,7 +115,9 @@
 }
 
 .suggestionsList {
-  position: relative;
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
   width: 100%;
   min-width: 0;
   max-width: 100%;
@@ -128,7 +130,7 @@
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 4px 0;
-  margin: 8px 0 0 0;
+  margin: 0;
   list-style-type: none;
   /* Better scrolling on mobile */
   -webkit-overflow-scrolling: touch;
@@ -300,7 +302,12 @@
 @media (max-width: 768px) {
   .searchBar.large .inputWrapper {
     max-width: 100%;
-    padding: 0 8px;
+    padding: 0 0;
+  }
+
+  .searchBar.large .suggestionsList {
+    left: 8px;
+    width: calc(100% - 16px);
   }
 
   .searchBar.large .input {
