@@ -40,17 +40,19 @@ export default function HomePage() {
               <img src="/TRAD.svg" alt="TRAD" className={styles.logoSvg} />
               <img src="/DIRECTORY.svg" alt="DIRECTORY" className={styles.logoSvg} />
             </div>
+
           <HeroMessage />
           </div>
           <SearchBar
-            onSearch={handleSearch}
-            suggestions={suggestions}
-            onSelectSuggestion={handleSelectSuggestion}
-            size="large"
-            debug={true}
-          />
+              onSearch={handleSearch}
+              suggestions={suggestions}
+              onSelectSuggestion={handleSelectSuggestion}
+              size="large"
+              debug={false}
+            />
+
           <div className={styles.recentSection}>
-            <RecentlyAdded limit={5} />
+            <RecentlyAdded limit={30} includeLocations={true} />
             {error && <p className={styles.error}>{error}</p>}
           </div>
         </div>
