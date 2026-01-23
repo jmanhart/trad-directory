@@ -5,13 +5,13 @@ import styles from "./TopAppBar.module.css";
 export default function TopAppBar() {
   return (
     <header className={styles.topAppBar}>
-      <div className={styles.logoContainer}>
+      <Link to="/" className={styles.logoContainer}>
         <img 
           src="/TD-LOGO.svg" 
           alt="Logo" 
           className={styles.logo}
         />
-      </div>
+      </Link>
       <nav className={styles.nav}>
         <Link to="/about" className={styles.navLink}>
           About
