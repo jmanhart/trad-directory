@@ -47,6 +47,7 @@ export default function HomePage() {
             suggestions={suggestions}
             onSelectSuggestion={handleSelectSuggestion}
             size="large"
+            debug={true}
           />
           <div className={styles.recentSection}>
             <RecentlyAdded limit={5} />

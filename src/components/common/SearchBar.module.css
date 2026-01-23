@@ -23,6 +23,15 @@
   background-color: var(--color-surface);
   color: var(--color-text-primary);
   box-sizing: border-box;
+  -webkit-appearance: none; /* Remove iOS default styling */
+  appearance: none;
+  touch-action: manipulation; /* Better touch performance */
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary, #646cff);
+  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.1);
 }
 
 /* Large size for homepage */
@@ -51,6 +60,7 @@
   display: flex;
   align-items: center;
   height: 20px;
+  z-index: 1;
 }
 
 /* Icon sizes */
@@ -103,64 +113,192 @@
   font-size: 18px;
 }
 
-button {
-  padding: 10px 15px;
-  margin-left: 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  color: var(--button-text-color, #213547);
-  background-color: var(--button-bg-color, #f9f9f9);
-}
-
-button:hover {
-  background-color: var(--button-hover-bg-color, #e6e6e6);
-}
-
 .suggestionsList {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(100% + 8px); /* 4px gap below input */
+  top: calc(100% + 8px);
   width: 100%;
   min-width: 0;
   max-width: none;
   max-height: 400px;
   overflow-y: auto;
+  overflow-x: hidden;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 4px 4px 4px 4px;
-  z-index: 10;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  padding: 0;
+  border-radius: 8px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px 0;
   margin: 0;
   list-style-type: none;
+  /* Better scrolling on mobile */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  
+  /* Minimal scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* Webkit scrollbar styling for Chrome, Safari, Edge */
+.suggestionsList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.suggestionsList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.suggestionsList::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+  border: none;
+}
+
+.suggestionsList::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Hide scrollbar buttons (up/down arrows) */
+.suggestionsList::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+  width: 0;
 }
 
 .suggestionItem {
-  padding: 10px;
+  padding: 4px 16px;
+  text-align: left;
   cursor: pointer;
   font-size: 16px;
   color: var(--color-text-secondary);
   border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  /* Better touch targets on mobile */
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.suggestionIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.suggestionIcon {
+  width: 20px;
+  height: 20px;
+  color: inherit;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.suggestionItem:hover .suggestionIcon,
+.suggestionItem:focus-visible .suggestionIcon {
+  opacity: 1;
+}
+
+.highlighted .suggestionIcon {
+  opacity: 1;
+  color: var(--color-light, #ffffff);
 }
 
 .suggestionItem:last-child {
   border-bottom: none;
 }
 
-.suggestionItem:hover {
-  background-color: var(--color-primary-hover);
-  color: var(--color-light);
+.suggestionItem:hover:not(.highlighted),
+.suggestionItem:focus-visible:not(.highlighted) {
+  background-color: var(--color-red-hover, rgba(255, 0, 0, 0.1));
+  color: var(--color-text-primary);
+  outline: none;
 }
 
-.highlighted {
-  background-color: var(--color-primary);
-  color: var(--color-light);
+.suggestionItem:active:not(.highlighted) {
+  background-color: rgba(255, 0, 0, 0.2);
+}
+
+/* Highlighted state - must be more specific to override hover */
+.suggestionItem.highlighted {
+  background-color: var(--color-red, #FF0000) !important;
+  color: var(--color-light, #ffffff) !important;
   cursor: pointer;
 }
 
+.suggestionItem.highlighted:hover,
+.suggestionItem.highlighted:focus-visible {
+  background-color: var(--color-red-light, #FF3333) !important;
+  color: var(--color-light, #ffffff) !important;
+}
+
+.suggestionLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestionDetail {
+  color: var(--color-text-tertiary);
+  font-size: 0.9em;
+  flex-shrink: 0;
+}
+
+.highlighted .suggestionDetail {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.suggestionArtistCount {
+  color: var(--color-text-tertiary);
+  font-size: 0.85em;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: 12px;
+  white-space: nowrap;
+}
+
+.highlighted .suggestionArtistCount {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.suggestionTypeBadge {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.highlighted .suggestionTypeBadge {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Type-specific styling for easier debugging */
+.suggestionTypeArtist {
+  /* Can add specific styling for artists */
+}
+
+.suggestionTypeShop {
+  /* Can add specific styling for shops */
+}
+
+.suggestionTypeLocation {
+  /* Can add specific styling for locations */
+}
+
+/* Mobile optimizations */
 @media (max-width: 768px) {
   .searchBar.large .inputWrapper {
     max-width: 100%;
@@ -177,4 +315,87 @@ button:hover {
     left: 18px;
     height: 22px;
   }
+
+  .inputWrapper {
+    max-width: 100%;
+  }
+
+  .input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px 12px 12px 40px;
+  }
+
+  .suggestionsList {
+    max-height: 60vh; /* Better for mobile screens */
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .suggestionItem {
+    padding: 14px 16px;
+    font-size: 16px;
+    min-height: 48px; /* Larger touch targets */
+  }
+
+  .suggestionDetail {
+    font-size: 0.85em;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .input {
+    padding: 10px 10px 10px 38px;
+    font-size: 16px;
+  }
+
+  .icon {
+    left: 14px;
+  }
+
+  .suggestionsList {
+    max-height: 50vh;
+  }
+
+  .suggestionItem {
+    padding: 12px 14px;
+  }
+}
+
+/* Debug mode styling */
+.searchBar[data-debug="true"] {
+  /* Debug outline removed - uncomment to re-enable for debugging */
+  /* outline: 2px dashed rgba(100, 108, 255, 0.3); */
+  /* outline-offset: 2px; */
+}
+
+.searchBar[data-debug="true"] .suggestionsList {
+  /* Debug outline removed - uncomment to re-enable for debugging */
+  /* outline: 2px dashed rgba(255, 0, 0, 0.3); */
+}
+
+/* Keep open mode - for styling/testing */
+.searchBar.keepOpen .suggestionsList,
+.searchBar[data-keep-open="true"] .suggestionsList {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* CSS-only way to force dropdown open via dev tools */
+/* Add this class to .searchBar in dev tools: .force-open-dropdown */
+.force-open-dropdown .suggestionsList,
+.searchBar.force-open-dropdown .suggestionsList {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  position: absolute !important;
+  z-index: 10000 !important;
+}
+
+/* Show suggestions even when empty query if keepOpen */
+.searchBar[data-keep-open="true"] .suggestionsList {
+  display: block;
 }

@@ -74,7 +74,15 @@ export default async function handler(req: any, res: any) {
         }
 
         // Transform the data and filter based on query
-        const normalizedQuery = query.toLowerCase().replace(/^@/, "");
+        const normalizedQuery = query.toLowerCase().trim().replace(/^@/, "");
+
+        if (!normalizedQuery) {
+          return {
+            results: [],
+            count: 0,
+            query,
+          };
+        }
 
         const allResults: Artist[] = (artists || []).map((artist: any) => ({
           id: artist.id,
@@ -95,15 +103,24 @@ export default async function handler(req: any, res: any) {
             artist.artist_shop?.[0]?.shop?.instagram_handle || null,
         }));
 
-        // Filter results based on query
-        const results = allResults.filter(
-          (artist) =>
-            artist.name?.toLowerCase().includes(normalizedQuery) ||
-            artist.instagram_handle?.toLowerCase().includes(normalizedQuery) ||
-            artist.city_name?.toLowerCase().includes(normalizedQuery) ||
-            artist.state_name?.toLowerCase().includes(normalizedQuery) ||
-            artist.country_name?.toLowerCase().includes(normalizedQuery)
-        );
+        // Filter results based on query - exclude "N/A" values
+        const results = allResults.filter((artist) => {
+          const cityName = artist.city_name?.toLowerCase();
+          const stateName = artist.state_name?.toLowerCase();
+          const countryName = artist.country_name?.toLowerCase();
+          const shopName = artist.shop_name?.toLowerCase();
+          const artistName = artist.name?.toLowerCase();
+          const instagramHandle = artist.instagram_handle?.toLowerCase();
+
+          return (
+            (artistName && artistName.includes(normalizedQuery)) ||
+            (instagramHandle && instagramHandle.includes(normalizedQuery)) ||
+            (cityName && cityName !== "n/a" && cityName.includes(normalizedQuery)) ||
+            (stateName && stateName !== "n/a" && stateName.includes(normalizedQuery)) ||
+            (countryName && countryName !== "n/a" && countryName.includes(normalizedQuery)) ||
+            (shopName && shopName !== "n/a" && shopName.includes(normalizedQuery))
+          );
+        });
 
         return {
           results,

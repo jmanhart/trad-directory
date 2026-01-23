@@ -1,13 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import styles from "./SearchBar.module.css";
 import SearchIcon from "../../assets/icons/searchIcon";
-
-type Suggestion = {
-  label: string;
-  type: "artist" | "shop" | "location";
-  detail?: string;
-  id?: number; // artist id or shop id when applicable
-};
+import ArtistsIcon from "../../assets/icons/artistsIcon";
+import ShopsIcon from "../../assets/icons/shopsIcon";
+import GlobeIcon from "../../assets/icons/globeIcon";
+import { type Suggestion } from "../../utils/suggestions";
 
 type SearchBarSize = "small" | "medium" | "large";
 
@@ -16,57 +13,168 @@ interface SearchBarProps {
   suggestions: Suggestion[];
   onSelectSuggestion?: (suggestion: Suggestion) => void;
   size?: SearchBarSize;
+  /** Enable debug mode for easier testing and styling */
+  debug?: boolean;
+  /** Placeholder text */
+  placeholder?: string;
+  /** Keep suggestions dropdown open for styling/testing - prevents auto-close */
+  keepOpen?: boolean;
 }
 
+/**
+ * Centralized search bar component for artists, shops, and locations.
+ * Features:
+ * - Mobile-optimized touch interactions
+ * - Keyboard navigation (arrow keys, enter, escape)
+ * - Debug mode for easier testing
+ * - Grouped suggestions by type
+ */
 export default function SearchBar({
   onSearch,
   suggestions,
   onSelectSuggestion,
   size = "medium",
+  debug = false,
+  placeholder = "Search by artist, shop, city, or country...",
+  keepOpen = false,
 }: SearchBarProps) {
-  const [query, setQuery] = useState("");
-  const [filteredSuggestions, setFilteredSuggestions] = useState<Suggestion[]>(
-    []
-  );
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [query, setQuery] = useState(keepOpen ? "test" : "");
+  const [showSuggestions, setShowSuggestions] = useState(keepOpen);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const suggestionRefs = useRef<(HTMLLIElement | null)[]>([]);
 
-  useEffect(() => {
-    if (query) {
-      const normalizedQuery = query.toLowerCase().replace(/^@/, "");
-      const filtered = suggestions.filter(
-        (suggestion) =>
-          suggestion.label.toLowerCase().includes(normalizedQuery) ||
-          suggestion.detail?.toLowerCase().includes(normalizedQuery)
-      );
-      setFilteredSuggestions(filtered);
-      setShowSuggestions(true);
-      setHighlightedIndex(filtered.length ? 0 : -1);
-    } else {
-      setFilteredSuggestions([]);
-      setShowSuggestions(false);
-      setHighlightedIndex(-1);
+  // Filter and group suggestions by type
+  const filteredSuggestions = useMemo(() => {
+    // If keepOpen is true and no query, show all suggestions (or first 20 for performance)
+    if (keepOpen && !query.trim()) {
+      const allSuggestions = suggestions.slice(0, 20);
+      const grouped: Record<string, Suggestion[]> = {
+        artist: [],
+        shop: [],
+        location: [],
+      };
+      allSuggestions.forEach((suggestion) => {
+        grouped[suggestion.type]?.push(suggestion);
+      });
+      return [
+        ...grouped.artist,
+        ...grouped.shop,
+        ...grouped.location,
+      ];
     }
-  }, [query, suggestions]);
 
+    // If no query, return empty (unless keepOpen is true, handled above)
+    if (!query.trim()) return [];
+
+    // Normalize query for filtering
+    const normalizedQuery = query.toLowerCase().trim().replace(/^@/, "");
+    
+    if (!normalizedQuery) return [];
+
+    // Filter suggestions that match the query
+    const filtered = suggestions.filter((suggestion) => {
+      const labelMatch = suggestion.label.toLowerCase().includes(normalizedQuery);
+      const detailMatch = suggestion.detail?.toLowerCase().includes(normalizedQuery);
+      return labelMatch || detailMatch;
+    });
+    
+    // Debug: Log filtering results for location suggestions
+    if (normalizedQuery.length >= 2) {
+      const allLocationSuggestions = suggestions.filter(s => s.type === "location");
+      const locationMatches = filtered.filter(s => s.type === "location");
+      
+      // Check for specific countries
+      const hasUnitedStates = allLocationSuggestions.some(s => s.label.toLowerCase().includes('united states'));
+      const hasUnitedKingdom = allLocationSuggestions.some(s => s.label.toLowerCase().includes('united kingdom'));
+      const hasCanada = allLocationSuggestions.some(s => s.label.toLowerCase().includes('canada'));
+      
+      const matchesUnitedStates = locationMatches.some(s => s.label.toLowerCase().includes('united states'));
+      const matchesUnitedKingdom = locationMatches.some(s => s.label.toLowerCase().includes('united kingdom'));
+      const matchesCanada = locationMatches.some(s => s.label.toLowerCase().includes('canada'));
+      
+      console.log(`[SearchBar] Filtering for "${normalizedQuery}":`, {
+        totalSuggestions: suggestions.length,
+        totalLocationSuggestions: allLocationSuggestions.length,
+        filteredCount: filtered.length,
+        locationMatches: locationMatches.length,
+        hasUnitedStates,
+        hasUnitedKingdom,
+        hasCanada,
+        matchesUnitedStates,
+        matchesUnitedKingdom,
+        matchesCanada,
+        sampleAllLocations: allLocationSuggestions.slice(0, 10).map(s => s.label),
+        sampleLocationMatches: locationMatches.slice(0, 10).map(s => s.label),
+      });
+    }
+
+    // Group by type for better organization
+    const grouped: Record<string, Suggestion[]> = {
+      artist: [],
+      shop: [],
+      location: [],
+    };
+
+    filtered.forEach((suggestion) => {
+      grouped[suggestion.type]?.push(suggestion);
+    });
+
+    // Flatten with artists first, then shops, then locations
+    return [
+      ...grouped.artist,
+      ...grouped.shop,
+      ...grouped.location,
+    ];
+  }, [query, suggestions, keepOpen]);
+
+  // Debug logging
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    if (debug) {
+      const locationSuggestions = suggestions.filter(s => s.type === "location");
+      const countrySuggestions = filteredSuggestions.filter(s => s.type === "location");
+      
+      console.log("[SearchBar] State:", {
+        query,
+        totalSuggestions: suggestions.length,
+        totalLocationSuggestions: locationSuggestions.length,
+        filteredSuggestionsCount: filteredSuggestions.length,
+        filteredLocationSuggestions: countrySuggestions.length,
+        showSuggestions,
+        highlightedIndex,
+        keepOpen,
+        sampleLocationSuggestions: locationSuggestions.slice(0, 5),
+        sampleFilteredSuggestions: filteredSuggestions.slice(0, 5),
+      });
+    }
+  }, [query, suggestions.length, filteredSuggestions.length, showSuggestions, highlightedIndex, debug, keepOpen, filteredSuggestions, suggestions]);
+
+  // Handle click outside to close suggestions (disabled when keepOpen is true)
+  useEffect(() => {
+    if (keepOpen) return; // Don't close when keepOpen is enabled
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (
         wrapperRef.current &&
         !wrapperRef.current.contains(event.target as Node)
       ) {
         setShowSuggestions(false);
+        setHighlightedIndex(-1);
       }
     };
 
+    // Support both mouse and touch events for mobile
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
-  }, []);
+  }, [keepOpen]);
 
+  // Auto-scroll highlighted suggestion into view
   useEffect(() => {
     if (highlightedIndex >= 0 && suggestionRefs.current[highlightedIndex]) {
       suggestionRefs.current[highlightedIndex]?.scrollIntoView({
@@ -76,47 +184,70 @@ export default function SearchBar({
     }
   }, [highlightedIndex]);
 
+  // Update highlighted index when filteredSuggestions change
+  useEffect(() => {
+    if (query.trim() && filteredSuggestions.length > 0) {
+      setHighlightedIndex(0);
+    } else if (query.trim()) {
+      setHighlightedIndex(-1);
+    }
+  }, [query, filteredSuggestions.length]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
+    const newQuery = e.target.value;
+    setQuery(newQuery);
+    
+    // Always show suggestions when there's a query
+    if (newQuery.trim()) {
+      setShowSuggestions(true);
+      // Highlight will be updated by useEffect when filteredSuggestions updates
+    } else if (keepOpen) {
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+      setHighlightedIndex(-1);
+    }
   };
 
-  const selectSuggestion = (s: Suggestion) => {
-    // Debug selected suggestion payload
-    // eslint-disable-next-line no-console
-    console.debug("SearchBar selectSuggestion:", s);
-    setQuery(s.label);
-    setShowSuggestions(false);
+  const selectSuggestion = (suggestion: Suggestion) => {
+    if (debug) {
+      console.debug("[SearchBar] Selected suggestion:", suggestion);
+    }
+
+    setQuery(suggestion.label);
+    
+    // Don't close if keepOpen is enabled
+    if (!keepOpen) {
+      setShowSuggestions(false);
+      setHighlightedIndex(-1);
+    }
+
     if (onSelectSuggestion) {
-      onSelectSuggestion(s);
+      onSelectSuggestion(suggestion);
     } else {
-      onSearch(s.label);
+      onSearch(suggestion.label);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (
-      e.key === "ArrowDown" &&
-      showSuggestions &&
-      filteredSuggestions.length > 0
-    ) {
+    if (e.key === "ArrowDown" && showSuggestions && filteredSuggestions.length > 0) {
       e.preventDefault();
       setHighlightedIndex((prev) =>
         prev < filteredSuggestions.length - 1 ? prev + 1 : 0
       );
       return;
     }
-    if (
-      e.key === "ArrowUp" &&
-      showSuggestions &&
-      filteredSuggestions.length > 0
-    ) {
+
+    if (e.key === "ArrowUp" && showSuggestions && filteredSuggestions.length > 0) {
       e.preventDefault();
       setHighlightedIndex((prev) =>
         prev > 0 ? prev - 1 : filteredSuggestions.length - 1
       );
       return;
     }
+
     if (e.key === "Enter") {
+      e.preventDefault();
       if (showSuggestions && filteredSuggestions.length > 0) {
         const index = highlightedIndex >= 0 ? highlightedIndex : 0;
         selectSuggestion(filteredSuggestions[index]);
@@ -126,34 +257,93 @@ export default function SearchBar({
       }
       return;
     }
+
     if (e.key === "Escape") {
-      setShowSuggestions(false);
+      if (!keepOpen) {
+        setShowSuggestions(false);
+        setHighlightedIndex(-1);
+        inputRef.current?.blur();
+      }
+    }
+  };
+
+  const handleInputFocus = () => {
+    // Always show suggestions when focused if there's a query or if keepOpen is true
+    if (query.trim() || keepOpen) {
+      setShowSuggestions(true);
     }
   };
 
   const sizeClass = styles[size] || "";
-  const iconSizeClass = styles[`icon${size.charAt(0).toUpperCase() + size.slice(1)}`] || "";
+  const iconSizeClass =
+    styles[`icon${size.charAt(0).toUpperCase() + size.slice(1)}`] || "";
+
+  // Get suggestion type label for display
+  const getTypeLabel = (type: Suggestion["type"]) => {
+    switch (type) {
+      case "artist":
+        return "Artist";
+      case "shop":
+        return "Shop";
+      case "location":
+        return "Location";
+      default:
+        return "";
+    }
+  };
+
+  // Get icon for suggestion type
+  const getSuggestionIcon = (type: Suggestion["type"]) => {
+    switch (type) {
+      case "artist":
+        return <ArtistsIcon className={styles.suggestionIcon} />;
+      case "shop":
+        return <ShopsIcon className={styles.suggestionIcon} />;
+      case "location":
+        return <GlobeIcon className={styles.suggestionIcon} />;
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className={`${styles.searchBar} ${sizeClass}`} ref={wrapperRef}>
+    <div
+      className={`${styles.searchBar} ${sizeClass} ${keepOpen ? styles.keepOpen : ""}`}
+      ref={wrapperRef}
+      data-debug={debug ? "true" : undefined}
+      data-keep-open={keepOpen ? "true" : undefined}
+      data-testid="search-bar"
+    >
       <div className={styles.inputWrapper}>
-        <span className={`${styles.icon} ${iconSizeClass}`}>
+        <span className={`${styles.icon} ${iconSizeClass}`} aria-hidden="true">
           <SearchIcon />
         </span>
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={handleInputChange}
-          placeholder="Search by artist, shop, city, or country..."
-          className={styles.input}
           onKeyDown={handleKeyDown}
+          onFocus={handleInputFocus}
+          placeholder={placeholder}
+          className={styles.input}
+          aria-label="Search"
+          aria-autocomplete="list"
+          aria-expanded={showSuggestions}
+          aria-controls="search-suggestions"
+          data-testid="search-input"
         />
 
         {showSuggestions && filteredSuggestions.length > 0 && (
-          <ul className={styles.suggestionsList}>
+          <ul
+            id="search-suggestions"
+            className={styles.suggestionsList}
+            role="listbox"
+            data-testid="search-suggestions"
+          >
             {filteredSuggestions.map((suggestion, index) => (
               <li
-                key={`${suggestion.type}-${suggestion.id ?? suggestion.label}`}
+                key={`${suggestion.type}-${suggestion.id ?? suggestion.label}-${index}`}
                 ref={(el) => {
                   if (el) suggestionRefs.current[index] = el;
                 }}
@@ -161,18 +351,38 @@ export default function SearchBar({
                   e.preventDefault();
                   selectSuggestion(suggestion);
                 }}
-                onClick={(e) => {
+                onTouchEnd={(e) => {
                   e.preventDefault();
                   selectSuggestion(suggestion);
                 }}
                 className={`${styles.suggestionItem} ${
                   index === highlightedIndex ? styles.highlighted : ""
-                }`}
-                id={`suggestion-${index}`}
+                } ${styles[`suggestionType${suggestion.type.charAt(0).toUpperCase() + suggestion.type.slice(1)}`]}`}
+                role="option"
+                aria-selected={index === highlightedIndex}
+                data-suggestion-type={suggestion.type}
+                data-suggestion-id={suggestion.id}
+                data-testid={`suggestion-${suggestion.type}-${index}`}
               >
-                {suggestion.label}
+                <span className={styles.suggestionIconWrapper}>
+                  {getSuggestionIcon(suggestion.type)}
+                </span>
+                <span className={styles.suggestionLabel}>{suggestion.label}</span>
                 {suggestion.detail && (
-                  <span className={styles.detail}> ({suggestion.detail})</span>
+                  <span className={styles.suggestionDetail}>
+                    {" "}
+                    {suggestion.detail}
+                  </span>
+                )}
+                {suggestion.type === "location" && suggestion.artistCount !== undefined && (
+                  <span className={styles.suggestionArtistCount}>
+                    {suggestion.artistCount} {suggestion.artistCount === 1 ? "artist" : "artists"}
+                  </span>
+                )}
+                {debug && (
+                  <span className={styles.suggestionTypeBadge}>
+                    {getTypeLabel(suggestion.type)}
+                  </span>
                 )}
               </li>
             ))}

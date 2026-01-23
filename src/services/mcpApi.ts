@@ -145,16 +145,30 @@ export async function searchArtists(query: string) {
     console.warn("MCP search failed, falling back to client-side search");
     // Fallback to client-side search using original API
     const allArtists = await fallbackToSupabase();
-    const normalizedQuery = query.toLowerCase().replace(/^@/, "");
-    const filtered = allArtists.filter(
-      (artist: any) =>
-        artist.name?.toLowerCase().includes(normalizedQuery) ||
-        artist.instagram_handle?.toLowerCase().includes(normalizedQuery) ||
-        artist.shop_name?.toLowerCase().includes(normalizedQuery) ||
-        artist.city_name?.toLowerCase().includes(normalizedQuery) ||
-        artist.state_name?.toLowerCase().includes(normalizedQuery) ||
-        artist.country_name?.toLowerCase().includes(normalizedQuery)
-    );
+    const normalizedQuery = query.toLowerCase().trim().replace(/^@/, "");
+    
+    if (!normalizedQuery) {
+      return [];
+    }
+
+    const filtered = allArtists.filter((artist: any) => {
+      // Skip artists with "N/A" location values
+      const cityName = artist.city_name?.toLowerCase();
+      const stateName = artist.state_name?.toLowerCase();
+      const countryName = artist.country_name?.toLowerCase();
+      const shopName = artist.shop_name?.toLowerCase();
+      const artistName = artist.name?.toLowerCase();
+      const instagramHandle = artist.instagram_handle?.toLowerCase();
+
+      return (
+        (artistName && artistName.includes(normalizedQuery)) ||
+        (instagramHandle && instagramHandle.includes(normalizedQuery)) ||
+        (cityName && cityName !== "n/a" && cityName.includes(normalizedQuery)) ||
+        (stateName && stateName !== "n/a" && stateName.includes(normalizedQuery)) ||
+        (countryName && countryName !== "n/a" && countryName.includes(normalizedQuery)) ||
+        (shopName && shopName !== "n/a" && shopName.includes(normalizedQuery))
+      );
+    });
     return filtered;
   }
 }
