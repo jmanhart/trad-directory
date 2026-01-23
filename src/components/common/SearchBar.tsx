@@ -47,7 +47,7 @@ export default function SearchBar({
 
   // Filter and group suggestions by type
   const filteredSuggestions = useMemo(() => {
-    // If keepOpen is true, show all suggestions (or first 20 for performance)
+    // If keepOpen is true and no query, show all suggestions (or first 20 for performance)
     if (keepOpen && !query.trim()) {
       const allSuggestions = suggestions.slice(0, 20);
       const grouped: Record<string, Suggestion[]> = {
@@ -65,14 +65,50 @@ export default function SearchBar({
       ];
     }
 
+    // If no query, return empty (unless keepOpen is true, handled above)
     if (!query.trim()) return [];
 
-    const normalizedQuery = query.toLowerCase().replace(/^@/, "");
-    const filtered = suggestions.filter(
-      (suggestion) =>
-        suggestion.label.toLowerCase().includes(normalizedQuery) ||
-        suggestion.detail?.toLowerCase().includes(normalizedQuery)
-    );
+    // Normalize query for filtering
+    const normalizedQuery = query.toLowerCase().trim().replace(/^@/, "");
+    
+    if (!normalizedQuery) return [];
+
+    // Filter suggestions that match the query
+    const filtered = suggestions.filter((suggestion) => {
+      const labelMatch = suggestion.label.toLowerCase().includes(normalizedQuery);
+      const detailMatch = suggestion.detail?.toLowerCase().includes(normalizedQuery);
+      return labelMatch || detailMatch;
+    });
+    
+    // Debug: Log filtering results for location suggestions
+    if (normalizedQuery.length >= 2) {
+      const allLocationSuggestions = suggestions.filter(s => s.type === "location");
+      const locationMatches = filtered.filter(s => s.type === "location");
+      
+      // Check for specific countries
+      const hasUnitedStates = allLocationSuggestions.some(s => s.label.toLowerCase().includes('united states'));
+      const hasUnitedKingdom = allLocationSuggestions.some(s => s.label.toLowerCase().includes('united kingdom'));
+      const hasCanada = allLocationSuggestions.some(s => s.label.toLowerCase().includes('canada'));
+      
+      const matchesUnitedStates = locationMatches.some(s => s.label.toLowerCase().includes('united states'));
+      const matchesUnitedKingdom = locationMatches.some(s => s.label.toLowerCase().includes('united kingdom'));
+      const matchesCanada = locationMatches.some(s => s.label.toLowerCase().includes('canada'));
+      
+      console.log(`[SearchBar] Filtering for "${normalizedQuery}":`, {
+        totalSuggestions: suggestions.length,
+        totalLocationSuggestions: allLocationSuggestions.length,
+        filteredCount: filtered.length,
+        locationMatches: locationMatches.length,
+        hasUnitedStates,
+        hasUnitedKingdom,
+        hasCanada,
+        matchesUnitedStates,
+        matchesUnitedKingdom,
+        matchesCanada,
+        sampleAllLocations: allLocationSuggestions.slice(0, 10).map(s => s.label),
+        sampleLocationMatches: locationMatches.slice(0, 10).map(s => s.label),
+      });
+    }
 
     // Group by type for better organization
     const grouped: Record<string, Suggestion[]> = {
@@ -96,14 +132,23 @@ export default function SearchBar({
   // Debug logging
   useEffect(() => {
     if (debug) {
-      console.debug("[SearchBar] State:", {
+      const locationSuggestions = suggestions.filter(s => s.type === "location");
+      const countrySuggestions = filteredSuggestions.filter(s => s.type === "location");
+      
+      console.log("[SearchBar] State:", {
         query,
-        suggestionsCount: filteredSuggestions.length,
+        totalSuggestions: suggestions.length,
+        totalLocationSuggestions: locationSuggestions.length,
+        filteredSuggestionsCount: filteredSuggestions.length,
+        filteredLocationSuggestions: countrySuggestions.length,
         showSuggestions,
         highlightedIndex,
+        keepOpen,
+        sampleLocationSuggestions: locationSuggestions.slice(0, 5),
+        sampleFilteredSuggestions: filteredSuggestions.slice(0, 5),
       });
     }
-  }, [query, filteredSuggestions.length, showSuggestions, highlightedIndex, debug]);
+  }, [query, suggestions.length, filteredSuggestions.length, showSuggestions, highlightedIndex, debug, keepOpen, filteredSuggestions, suggestions]);
 
   // Handle click outside to close suggestions (disabled when keepOpen is true)
   useEffect(() => {
@@ -139,17 +184,25 @@ export default function SearchBar({
     }
   }, [highlightedIndex]);
 
+  // Update highlighted index when filteredSuggestions change
+  useEffect(() => {
+    if (query.trim() && filteredSuggestions.length > 0) {
+      setHighlightedIndex(0);
+    } else if (query.trim()) {
+      setHighlightedIndex(-1);
+    }
+  }, [query, filteredSuggestions.length]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
     setQuery(newQuery);
     
-    if (keepOpen) {
-      // Always show suggestions when keepOpen is true
+    // Always show suggestions when there's a query
+    if (newQuery.trim()) {
       setShowSuggestions(true);
-      setHighlightedIndex(filteredSuggestions.length > 0 ? 0 : -1);
-    } else if (newQuery.trim()) {
+      // Highlight will be updated by useEffect when filteredSuggestions updates
+    } else if (keepOpen) {
       setShowSuggestions(true);
-      setHighlightedIndex(filteredSuggestions.length > 0 ? 0 : -1);
     } else {
       setShowSuggestions(false);
       setHighlightedIndex(-1);
@@ -215,7 +268,8 @@ export default function SearchBar({
   };
 
   const handleInputFocus = () => {
-    if (query.trim() && filteredSuggestions.length > 0) {
+    // Always show suggestions when focused if there's a query or if keepOpen is true
+    if (query.trim() || keepOpen) {
       setShowSuggestions(true);
     }
   };
@@ -280,7 +334,7 @@ export default function SearchBar({
           data-testid="search-input"
         />
 
-        {(showSuggestions || keepOpen) && filteredSuggestions.length > 0 && (
+        {showSuggestions && filteredSuggestions.length > 0 && (
           <ul
             id="search-suggestions"
             className={styles.suggestionsList}
@@ -320,7 +374,7 @@ export default function SearchBar({
                     {suggestion.detail}
                   </span>
                 )}
-                {suggestion.type === "location" && suggestion.artistCount !== undefined && suggestion.artistCount > 0 && (
+                {suggestion.type === "location" && suggestion.artistCount !== undefined && (
                   <span className={styles.suggestionArtistCount}>
                     {suggestion.artistCount} {suggestion.artistCount === 1 ? "artist" : "artists"}
                   </span>

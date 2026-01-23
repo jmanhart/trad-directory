@@ -332,12 +332,14 @@
 
 /* Debug mode styling */
 .searchBar[data-debug="true"] {
-  outline: 2px dashed rgba(100, 108, 255, 0.3);
-  outline-offset: 2px;
+  /* Debug outline removed - uncomment to re-enable for debugging */
+  /* outline: 2px dashed rgba(100, 108, 255, 0.3); */
+  /* outline-offset: 2px; */
 }
 
 .searchBar[data-debug="true"] .suggestionsList {
-  outline: 2px dashed rgba(255, 0, 0, 0.3);
+  /* Debug outline removed - uncomment to re-enable for debugging */
+  /* outline: 2px dashed rgba(255, 0, 0, 0.3); */
 }
 
 /* Keep open mode - for styling/testing */

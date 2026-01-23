@@ -74,6 +74,8 @@ function SearchResults() {
   const performSearch = async (query: string) => {
     try {
       setIsLoading(true);
+      console.log(`[SearchResults] Performing search for: "${query}"`);
+      
       addBreadcrumb("Search performed on results page", "search", "info", {
         query,
         timestamp: new Date().toISOString(),
@@ -81,11 +83,13 @@ function SearchResults() {
       });
 
       const results = await searchArtists(query);
+      console.log(`[SearchResults] Search completed. Found ${results.length} results for "${query}"`);
+      
       setFilteredResults(results);
       setHasSearched(true);
     } catch (error) {
       setError("Error searching artists.");
-      console.error("Search error:", error);
+      console.error("[SearchResults] Search error:", error);
       captureException(error as Error, {
         component: "SearchResults",
         action: "perform_search",

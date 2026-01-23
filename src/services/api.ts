@@ -19,6 +19,8 @@ function extractLocationData(city: any): { city_name: string; state_name: string
     const cityData = city.find((c: any) => c !== null && c !== undefined);
     if (cityData && cityData !== null) {
       city_name = cityData?.city_name || "N/A";
+      
+      // Extract state (nested under city)
       const state = cityData?.state;
       if (state && state !== null && state !== undefined) {
         const stateData = Array.isArray(state) 
@@ -26,20 +28,24 @@ function extractLocationData(city: any): { city_name: string; state_name: string
           : state;
         if (stateData && stateData !== null && stateData !== undefined) {
           state_name = stateData?.state_name || "N/A";
-          const country = stateData?.country;
-          if (country && country !== null && country !== undefined) {
-            const countryData = Array.isArray(country)
-              ? (country.find((c: any) => c !== null && c !== undefined) || country[0])
-              : country;
-            if (countryData && countryData !== null && countryData !== undefined) {
-              country_name = countryData?.country_name || "N/A";
-            }
-          }
+        }
+      }
+      
+      // Extract country (nested directly under city, NOT under state!)
+      const country = cityData?.country;
+      if (country && country !== null && country !== undefined) {
+        const countryData = Array.isArray(country)
+          ? (country.find((c: any) => c !== null && c !== undefined) || country[0])
+          : country;
+        if (countryData && countryData !== null && countryData !== undefined) {
+          country_name = countryData?.country_name || "N/A";
         }
       }
     }
   } else if (typeof city === 'object') {
     city_name = city?.city_name || "N/A";
+    
+    // Extract state (nested under city)
     const state = city?.state;
     if (state && state !== null && state !== undefined) {
       const stateData = Array.isArray(state) 
@@ -47,15 +53,17 @@ function extractLocationData(city: any): { city_name: string; state_name: string
         : state;
       if (stateData && stateData !== null && stateData !== undefined) {
         state_name = stateData?.state_name || "N/A";
-        const country = stateData?.country;
-        if (country && country !== null && country !== undefined) {
-          const countryData = Array.isArray(country)
-            ? (country.find((c: any) => c !== null && c !== undefined) || country[0])
-            : country;
-          if (countryData && countryData !== null && countryData !== undefined) {
-            country_name = countryData?.country_name || "N/A";
-          }
-        }
+      }
+    }
+    
+    // Extract country (nested directly under city, NOT under state!)
+    const country = city?.country;
+    if (country && country !== null && country !== undefined) {
+      const countryData = Array.isArray(country)
+        ? (country.find((c: any) => c !== null && c !== undefined) || country[0])
+        : country;
+      if (countryData && countryData !== null && countryData !== undefined) {
+        country_name = countryData?.country_name || "N/A";
       }
     }
   }
@@ -92,7 +100,7 @@ export async function fetchTattooShopsWithArtists() {
       return [];
     }
 
-    return (data || []).map((artist: any) => {
+    const mappedArtists = (data || []).map((artist: any) => {
       try {
         // Safely extract city data - handle null city for traveling artists
         const { city_name, state_name, country_name } = extractLocationData(artist?.city);
@@ -123,6 +131,45 @@ export async function fetchTattooShopsWithArtists() {
         };
       }
     });
+    
+    // Debug: Check country extraction - always log to help diagnose
+    {
+      const countriesFound = new Set(
+        mappedArtists
+          .map(a => a.country_name)
+          .filter(c => c && c !== "N/A")
+      );
+      const artistsWithCountry = mappedArtists.filter(a => a.country_name && a.country_name !== "N/A").length;
+      const artistsWithoutCountry = mappedArtists.length - artistsWithCountry;
+      
+      // Sample a few artists to see their country_name values
+      const sampleArtists = mappedArtists
+        .filter(a => a.country_name && a.country_name !== "N/A")
+        .slice(0, 5)
+        .map(a => ({ id: a.id, name: a.name, country: a.country_name }));
+      
+      console.log('[fetchTattooShopsWithArtists] Country extraction:', {
+        totalArtists: mappedArtists.length,
+        artistsWithCountry,
+        artistsWithoutCountry,
+        uniqueCountries: Array.from(countriesFound).slice(0, 15),
+        sampleArtistsWithCountry: sampleArtists,
+      });
+      
+      // Check for specific countries the user mentioned
+      const checkCountries = ['United States', 'United Kingdom', 'Canada'];
+      checkCountries.forEach(countryName => {
+        const count = mappedArtists.filter(a => 
+          a.country_name && 
+          a.country_name.trim().toLowerCase() === countryName.toLowerCase()
+        ).length;
+        if (count > 0) {
+          console.log(`[fetchTattooShopsWithArtists] Found ${count} artists in "${countryName}"`);
+        }
+      });
+    }
+    
+    return mappedArtists;
   } catch (err) {
     console.error("Unhandled error in fetchTattooShopsWithArtists:", err);
     throw err;
@@ -291,18 +338,65 @@ export async function searchArtists(query: string) {
   const allArtists = await fetchTattooShopsWithArtists();
 
   // Transform the data and filter based on query
-  const normalizedQuery = query.toLowerCase().replace(/^@/, "");
+  const normalizedQuery = query.toLowerCase().trim().replace(/^@/, "");
 
-  // Filter results based on query
-  return allArtists.filter(
-    artist =>
-      artist.name?.toLowerCase().includes(normalizedQuery) ||
-      artist.instagram_handle?.toLowerCase().includes(normalizedQuery) ||
-      artist.city_name?.toLowerCase().includes(normalizedQuery) ||
-      artist.state_name?.toLowerCase().includes(normalizedQuery) ||
-      artist.country_name?.toLowerCase().includes(normalizedQuery) ||
-      artist.shop_name?.toLowerCase().includes(normalizedQuery)
-  );
+  if (!normalizedQuery) {
+    return [];
+  }
+
+  // Filter results based on query - prioritize exact location matches
+  const filtered = allArtists.filter((artist) => {
+    // Skip artists with "N/A" location values
+    const cityName = artist.city_name?.toLowerCase().trim();
+    const stateName = artist.state_name?.toLowerCase().trim();
+    const countryName = artist.country_name?.toLowerCase().trim();
+    const shopName = artist.shop_name?.toLowerCase().trim();
+    const artistName = artist.name?.toLowerCase().trim();
+    const instagramHandle = artist.instagram_handle?.toLowerCase().trim();
+
+    return (
+      (artistName && artistName.includes(normalizedQuery)) ||
+      (instagramHandle && instagramHandle.includes(normalizedQuery)) ||
+      (cityName && cityName !== "n/a" && cityName.includes(normalizedQuery)) ||
+      (stateName && stateName !== "n/a" && stateName.includes(normalizedQuery)) ||
+      (countryName && countryName !== "n/a" && countryName.includes(normalizedQuery)) ||
+      (shopName && shopName !== "n/a" && shopName.includes(normalizedQuery))
+    );
+  });
+
+  // Debug logging for country searches - always log to help diagnose
+  if (normalizedQuery.length > 2) {
+    const countryMatches = filtered.filter(a => 
+      a.country_name?.toLowerCase().trim().includes(normalizedQuery)
+    );
+    
+    // Get all unique countries from artist data
+    const allCountries = new Set(
+      allArtists
+        .map(a => a.country_name?.toLowerCase().trim())
+        .filter(Boolean)
+        .filter(c => c !== "n/a")
+    );
+    
+    console.log(`[searchArtists] Searching for "${normalizedQuery}":`, {
+      totalArtists: allArtists.length,
+      filteredResults: filtered.length,
+      countryMatches: countryMatches.length,
+      artistsWithCountry: allArtists.filter(a => a.country_name && a.country_name !== "N/A").length,
+      uniqueCountriesInData: Array.from(allCountries).slice(0, 10),
+      sampleArtists: allArtists
+        .filter(a => a.country_name && a.country_name.toLowerCase().trim().includes(normalizedQuery))
+        .slice(0, 3)
+        .map(a => ({ id: a.id, name: a.name, country: a.country_name })),
+    });
+    
+    if (countryMatches.length === 0 && Array.from(allCountries).some(c => c.includes(normalizedQuery))) {
+      console.warn(`[searchArtists] WARNING: Country "${normalizedQuery}" exists in data but search returned 0 results!`);
+      console.warn(`[searchArtists] This suggests a filtering issue. Sample countries in data:`, Array.from(allCountries).slice(0, 10));
+    }
+  }
+
+  return filtered;
 }
 
 // Fetch recently added artists (ordered by id descending, limit to most recent)
@@ -472,6 +566,33 @@ export async function fetchAllShops() {
     }));
   } catch (err) {
     console.error("Unhandled error in fetchAllShops:", err);
+    throw err;
+  }
+}
+
+// Fetch all countries
+export async function fetchAllCountries(): Promise<{ id: number; country_name: string }[]> {
+  try {
+    const { data, error } = await supabase
+      .from("countries")
+      .select("id, country_name")
+      .order("country_name");
+
+    if (error) {
+      console.error("Error fetching countries:", error.message);
+      throw new Error(error.message);
+    }
+
+    const countries = (data || []).map((country: any) => ({
+      id: country.id,
+      country_name: country.country_name,
+    }));
+    
+    console.log(`[fetchAllCountries] Fetched ${countries.length} countries:`, countries.slice(0, 10).map(c => c.country_name));
+    
+    return countries;
+  } catch (err) {
+    console.error("Unhandled error in fetchAllCountries:", err);
     throw err;
   }
 }
