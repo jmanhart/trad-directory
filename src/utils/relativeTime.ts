@@ -25,9 +25,9 @@ export function formatRelativeTime(date: Date | string | null | undefined): stri
   if (diffInSeconds < 60) {
     return "Just now";
   } else if (diffInMinutes < 60) {
-    return `${diffInMinutes} ${diffInMinutes === 1 ? "minute" : "minutes"} ago`;
+    return `${diffInMinutes} ${diffInMinutes === 1 ? "min" : "mins"} ago`;
   } else if (diffInHours < 24) {
-    return `${diffInHours} ${diffInHours === 1 ? "hour" : "hours"} ago`;
+    return `${diffInHours} ${diffInHours === 1 ? "hr" : "hrs"} ago`;
   } else if (diffInDays < 7) {
     return `${diffInDays} ${diffInDays === 1 ? "day" : "days"} ago`;
   } else if (diffInWeeks < 4) {

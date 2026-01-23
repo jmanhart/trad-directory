@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { fetchRecentArtists, fetchRecentShops, fetchRecentCountries } from "../../services/api";
 import { formatRelativeTime } from "../../utils/relativeTime";
-import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import InstagramLogoUrl from "/logo-instagram.svg";
 import GlobeIcon from "../../assets/icons/globeIcon";
 import styles from "./RecentlyAdded.module.css";
@@ -280,16 +279,6 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
               ? `https://www.instagram.com/${item.instagram_handle}`
               : null;
             const itemUrl = getItemUrl(item);
-            
-            // For countries, don't show location separately since it's in the handle text
-            const displayLocation = item.type === "country"
-              ? null // Countries show location in the handle text
-              : formatArtistLocation({
-                  city_name: item.city_name,
-                  state_name: item.state_name,
-                  country_name: item.country_name,
-                  is_traveling: item.is_traveling,
-                });
 
             return (
               <React.Fragment key={`${item.type}-${item.id}`}>
@@ -325,11 +314,6 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
                         ? `${item.name} added`
                         : item.name}
                     </span>
-                    {displayLocation && (
-                      <span className={styles.city}>
-                        {displayLocation}
-                      </span>
-                    )}
                     {item.created_at && (
                       <span className={styles.time}>
                         {formatRelativeTime(item.created_at)}
