@@ -308,7 +308,9 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
                       <span className={styles.iconPlaceholder} />
                     )}
                     <span className={styles.handle}>
-                      {item.instagram_handle 
+                      {item.type === "shop"
+                        ? item.name
+                        : item.instagram_handle 
                         ? `@${item.instagram_handle}` 
                         : item.type === "country"
                         ? `${item.name} added`
