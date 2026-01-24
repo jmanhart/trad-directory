@@ -1,11 +1,11 @@
 /* Default styles (dark mode as default) */
 .heroMessage {
   text-align: center;
-  font-size: 1.25rem;
+  font-size: 2rem;
   font-weight: 600;
   margin: 0;
-  color: var(--color-text-secondary);
-  line-height: 1.5;
+  color: var(--color-red-dark);
+  line-height: 1.15;
   max-width: 800px;
 }
 
@@ -15,6 +15,21 @@
 
 .metricNumber {
   color: var(--color-red);
+  text-decoration: underline;
+}
+
+.metricNumberNoUnderline {
+  color: var(--color-red);
+}
+
+.metricLink {
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s ease;
+}
+
+.metricLink:hover {
+  opacity: 0.8;
 }
 
 /* Light mode styles */

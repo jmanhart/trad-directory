@@ -1,10 +1,10 @@
 .container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 60px 20px;
   color: var(--color-text-secondary);
-  background-color: var(--color-background);
-  border-radius: 8px;
+  /* background-color: var(--color-background); */
+  border-radius: var(--border-radius);
 }
 
 .title {

@@ -1,0 +1,36 @@
+<svg
+  viewBox="0 0 320 120"
+  preserveAspectRatio="none"
+  xmlns="http://www.w3.org/2000/svg"
+  aria-hidden="true"
+>
+  <!-- bottom face -->
+  <path
+    d="M12 104 L308 104 L296 116 L0 116 Z"
+    fill="var(--card-bottom)"
+    stroke="var(--card-stroke)"
+    stroke-width="2"
+    stroke-linejoin="bevel"
+  />
+
+  <!-- left face -->
+  <path
+    d="M0 12 L12 0 L12 104 L0 116 Z"
+    fill="var(--card-side)"
+    stroke="var(--card-stroke)"
+    stroke-width="2"
+    stroke-linejoin="bevel"
+  />
+
+  <!-- front face -->
+  <rect
+    x="12"
+    y="0"
+    width="296"
+    height="104"
+    fill="var(--card-face)"
+    stroke="var(--card-stroke)"
+    stroke-width="2"
+    stroke-linejoin="bevel"
+  />
+</svg>

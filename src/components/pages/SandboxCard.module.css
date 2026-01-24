@@ -1,0 +1,64 @@
+.card {
+  /* Colors - easily customizable */
+  --card-face: #fff;
+  --card-side: #e60000;
+  --card-bottom: #b30000;
+  --card-stroke: #000;
+  
+  /* Stroke width */
+  --card-stroke-width: 2;
+  
+  /* Calculated offset for positioning (12px / 320px = 3.75%) */
+  --extrusion-offset: 3.75%;
+
+  position: relative;
+  box-sizing: border-box;
+}
+
+.cardFrame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  /* Maintain aspect ratio: viewBox is 320x120 = 2.67:1 */
+  /* Height will be calculated automatically to maintain aspect ratio */
+  z-index: 0;
+  pointer-events: none;
+}
+
+.frontFace {
+  position: absolute;
+  top: 0;
+  left: var(--extrusion-offset);
+  right: var(--extrusion-offset);
+  bottom: calc(var(--extrusion-offset) * 1.11); /* Bottom face height proportion */
+  background: var(--card-face);
+  border: 2px solid var(--card-stroke);
+  border-bottom: none; /* Bottom border handled by SVG */
+  z-index: 0;
+  box-sizing: border-box;
+}
+
+.cardContent {
+  position: relative;
+  z-index: 1;
+  /* Align with front face: offset by extrusion depth */
+  padding: 16px calc(var(--extrusion-offset) + 16px) 0;
+  box-sizing: border-box;
+  
+  height: 100%;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  color: var(--color-text-primary, #000);
+}
+
+.description {
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0;
+  color: var(--color-text-secondary, #666);
+}

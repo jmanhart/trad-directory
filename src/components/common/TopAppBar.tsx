@@ -1,17 +1,23 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import styles from "./TopAppBar.module.css";
+import InstagramIcon from "../../assets/icons/instagramIcon";
 
 export default function TopAppBar() {
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
+
   return (
     <header className={styles.topAppBar}>
-      <Link to="/" className={styles.logoContainer}>
-        <img 
-          src="/TD-LOGO.svg" 
-          alt="Logo" 
-          className={styles.logo}
-        />
-      </Link>
+      <div className={styles.spacer}></div>
+      {!isHomePage && (
+        <Link to="/" className={styles.logoContainer}>
+          <img 
+            src="/FULL-LOGO.svg" 
+            alt="TRAD" 
+            className={styles.logo}
+          />
+        </Link>
+      )}
       <nav className={styles.nav}>
         <Link to="/about" className={styles.navLink}>
           About
@@ -21,8 +27,9 @@ export default function TopAppBar() {
           target="_blank"
           rel="noopener noreferrer"
           className={styles.navLink}
+          aria-label="Instagram"
         >
-          Instagram
+          <InstagramIcon className={styles.instagramIcon} />
         </a>
       </nav>
     </header>

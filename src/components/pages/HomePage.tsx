@@ -37,11 +37,13 @@ export default function HomePage() {
         <div className={styles.heroContent}>
           <div className={styles.heroText}>
             <div className={styles.logo}>
-              <img src="/TRAD.svg" alt="TRAD" className={styles.logoSvg} />
-              <img src="/DIRECTORY.svg" alt="DIRECTORY" className={styles.logoSvg} />
+              <img 
+                src="/FULL-LOGO.svg" 
+                alt="TRAD DIRECTORY" 
+                className={styles.logoSvg}
+              />
             </div>
-
-          <HeroMessage />
+            <HeroMessage />
           </div>
           <SearchBar
               onSearch={handleSearch}

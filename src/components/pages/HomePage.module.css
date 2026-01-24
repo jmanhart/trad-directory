@@ -40,7 +40,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  /* gap: 1rem; */
 }
 
 .logo {
@@ -48,11 +48,11 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  margin: 0;
+  margin: 0 0 0.75rem 0;
 }
 
 .logoSvg {
-  height: 6rem;
+  height: 5rem;
   width: auto;
 }
 
@@ -132,7 +132,7 @@
   }
 
   .logoSvg {
-    height: 2.5rem;
+    height: 3.5rem;
   }
 
   .recentSection {

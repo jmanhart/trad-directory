@@ -2,19 +2,19 @@
   ==============================================
   CSS CUSTOM PROPERTIES (DESIGN TOKENS)
   ==============================================
-  - Dark theme is the default.
-  - Light theme overrides are below in the @media query.
 */
 
 :root {
-  /* Color Palette - Dark Theme (Default) */
+  /* Color Palette */
   --color-background: #FFC4C4;
-  --color-surface: #1a1a1a;
+  --color-surface: #f9f9f9;
   --color-border: #9C0101;
+  --border-width: 1.5px;
+  --border-radius: 4px;
 
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #e0e0e0;
-  --color-text-tertiary: #bbbbbb;
+  --color-text-primary: #9C0101;
+  --color-text-secondary: #9C0101;
+  --color-text-tertiary: #9C0101;
 
   --color-primary: #9C0101;
   --color-primary-hover: #9C0101;
@@ -24,6 +24,18 @@
   --color-red-hover: rgba(255, 0, 0, 0.1);
   --color-red-dark: #9C0101;
   --color-red-darker: #420000;
+
+  /* Grayscale Palette */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
 
   /* Spacing Scale */
   --spacing-xs: 0.25rem;
@@ -46,7 +58,6 @@
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light dark;
   color: var(--color-text-primary);
   background-color: var(--color-background);
 
@@ -54,61 +65,4 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-light: #ffffff;
-    --color-dark: #000000;
-
-    --color-background: #FFC4C4;
-    --color-surface: #f9f9f9;
-    --color-border: #9C0101;
-
-    --color-text-primary: #213547;
-    --color-text-secondary: #333333;
-    --color-text-tertiary: #555555;
-
-    --color-primary-hover: #9C0101;
-
-    /* Grayscale Palette */
-    --color-gray-50: #f9fafb;
-    --color-gray-100: #f3f4f6;
-    --color-gray-200: #e5e7eb;
-    --color-gray-300: #d1d5db;
-    --color-gray-400: #9ca3af;
-    --color-gray-500: #6b7280;
-    --color-gray-600: #4b5563;
-    --color-gray-700: #374151;
-    --color-gray-800: #1f2937;
-    --color-gray-900: #111827;
-  }
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --color-light: #000000;
-    --color-dark: #ffffff;
-
-    --color-background: #FFC4C4;
-    --color-surface: #f9f9f9;
-    --color-border: #9C0101;
-
-    --color-text-primary: #213547;
-    --color-text-secondary: #333333;
-    --color-text-tertiary: #555555;
-
-    --color-primary-hover: #9C0101;
-
-    --color-gray-50: #111827;
-    --color-gray-100: #1f2937;
-    --color-gray-200: #374151;
-    --color-gray-300: #4b5563;
-    --color-gray-400: #6b7280;
-    --color-gray-500: #9ca3af;
-    --color-gray-600: #d1d5db;
-    --color-gray-700: #e5e7eb;
-    --color-gray-800: #f3f4f6;
-    --color-gray-900: #f9fafb;
-  }
 }

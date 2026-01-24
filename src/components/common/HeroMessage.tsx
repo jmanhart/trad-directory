@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "./../../services/supabaseClient";
 import styles from "./HeroMessage.module.css";
 
@@ -46,9 +47,16 @@ export default function HeroMessage() {
 
   return (
     <h1 className={styles.heroMessage}>
-      Discover <strong className={styles.metricNumber}>{artistCount !== null ? artistCount : "--"}</strong> artists working at over{" "}
-      <strong className={styles.metricNumber}>{shopCount !== null ? shopCount : "--"}</strong> tattoo shops in{" "}
-      <strong className={styles.metricNumber}>{countryCount !== null ? countryCount : "--"}</strong> countries worldwide.
+      Discover{" "}
+      <Link to="/artists" className={styles.metricLink}>
+        <strong className={styles.metricNumber}>{artistCount !== null ? artistCount : "--"}</strong>
+      </Link>{" "}
+      artists working at over{" "}
+      <Link to="/shops" className={styles.metricLink}>
+        <strong className={styles.metricNumber}>{shopCount !== null ? shopCount : "--"}</strong>
+      </Link>{" "}
+      tattoo shops in{" "}
+      <strong className={styles.metricNumberNoUnderline}>{countryCount !== null ? countryCount : "--"}</strong> countries worldwide.
     </h1>
   );
 }

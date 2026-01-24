@@ -17,8 +17,8 @@
 .input {
   width: 100%;
   padding: 10px 10px 10px 40px;
-  border: 3px solid #9C0101;
-  border-radius: 32px;
+  border: var(--border-width) solid #9C0101;
+  border-radius: var(--border-radius);
   font-size: 16px;
   background-color: var(--color-surface);
   color: var(--color-text-primary);
@@ -43,7 +43,7 @@
 .searchBar.large .input {
   padding: 18px 18px 18px 55px;
   font-size: 19px;
-  border-radius: 0px;
+  border-radius: var(--border-radius);
 }
 
 .searchBar.large .icon {
@@ -125,7 +125,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--color-surface);
-  border: 3px solid #FF0000;
+  border: var(--border-width) solid #FF0000;
   border-radius: 0px;
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -197,14 +197,15 @@
 .suggestionIcon {
   width: 20px;
   height: 20px;
-  color: inherit;
+  color: var(--color-red-dark);
   flex-shrink: 0;
   opacity: 0.8;
 }
 
-.suggestionItem:hover .suggestionIcon,
-.suggestionItem:focus-visible .suggestionIcon {
+.suggestionItem:hover:not(.highlighted) .suggestionIcon,
+.suggestionItem:focus-visible:not(.highlighted) .suggestionIcon {
   opacity: 1;
+  color: var(--color-red);
 }
 
 .highlighted .suggestionIcon {
@@ -307,8 +308,14 @@
   /* Can add specific styling for shops */
 }
 
-.suggestionTypeLocation {
-  /* Can add specific styling for locations */
+.suggestionTypeLocation .suggestionIcon {
+  color: var(--color-red-dark) !important;
+  fill: var(--color-red-dark) !important;
+}
+
+.suggestionTypeLocation:hover:not(.highlighted) .suggestionIcon {
+  color: var(--color-red) !important;
+  fill: var(--color-red) !important;
 }
 
 /* Mobile optimizations */
@@ -326,7 +333,7 @@
   .searchBar.large .input {
     padding: 14px 14px 14px 45px;
     font-size: 16px;
-    border-radius: 0;
+    border-radius: var(--border-radius);
   }
 
   .searchBar.large .icon {
@@ -341,7 +348,7 @@
   .input {
     font-size: 16px; /* Prevents zoom on iOS */
     padding: 12px 12px 12px 40px;
-    border-radius: 0;
+    border-radius: var(--border-radius);
   }
 
   .suggestionsList {
@@ -366,7 +373,7 @@
   .input {
     padding: 10px 10px 10px 38px;
     font-size: 16px;
-    border-radius: 0;
+    border-radius: var(--border-radius);
   }
 
   .icon {

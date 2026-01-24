@@ -1,6 +1,6 @@
 .wrapper {
   width: 100%;
-  max-width: 700px; /* Match search bar width */
+  max-width: 525px;
   margin: 2rem auto 0;
 }
 
@@ -16,8 +16,8 @@
 
 .container {
   width: 100%;
-  border: 3px solid #9C0101;
-  border-radius: 0;
+  border: var(--border-width) solid #9C0101;
+  border-radius: var(--border-radius);
   background-color: var(--color-surface, #ffffff);
   padding: 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -27,10 +27,9 @@
 .feed {
   display: flex;
   flex-direction: column;
-  height: 300px; /* Fixed height - container stays same size, content scrolls */
+  height: 156px;
   overflow-y: auto;
   overflow-x: hidden;
-  /* Minimal scrollbar styling to match search suggestions */
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
