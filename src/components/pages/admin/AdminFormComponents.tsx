@@ -27,9 +27,12 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   // All standard input props are inherited
 }
 
-export function Input({ className, ...props }: InputProps) {
-  return <input className={`${styles.input} ${className || ""}`} {...props} />;
-}
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, ...props }, ref) => {
+    return <input ref={ref} className={`${styles.input} ${className || ""}`} {...props} />;
+  }
+);
+Input.displayName = "Input";
 
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   children: React.ReactNode;

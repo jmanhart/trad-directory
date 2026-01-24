@@ -6,6 +6,12 @@
   padding: 2rem;
 }
 
+/* Override for full-width pages */
+:global(.admin-full-width) .container {
+  max-width: 100%;
+  padding: 2rem;
+}
+
 .backLink {
   display: inline-block;
   margin-bottom: 1rem;
@@ -208,4 +214,20 @@
 
 .selectedInfo strong {
   color: var(--color-text-primary);
+}
+
+/* Section styles for multi-step forms */
+.section {
+  padding: 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background-color: var(--color-surface);
+  margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 1rem 0;
 }
