@@ -21,6 +21,7 @@ import AdminBrokenLinks from "./components/pages/admin/AdminBrokenLinks";
 import AdminNewAdding from "./components/pages/admin/AdminNewAdding";
 import AdminAllData from "./components/pages/admin/AdminAllData";
 import TopAppBar from "./components/common/TopAppBar";
+import AdminTopAppBar from "./components/common/AdminTopAppBar";
 
 // Enhanced App component with Sentry error boundary
 const SentryApp = Sentry.withErrorBoundary(App, {
@@ -47,10 +48,11 @@ const SentryApp = Sentry.withErrorBoundary(App, {
 function AppContent() {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
+  const isAdminRoute = location.pathname.startsWith("/admin");
   
   return (
     <div className={styles.appContainer}>
-      <TopAppBar />
+      {isAdminRoute ? <AdminTopAppBar /> : <TopAppBar />}
       <main className={`${styles.mainContent} ${isHomePage ? styles.noScroll : ""}`}>
           <Routes>
             <Route path="/" element={<HomePage />} />
@@ -66,7 +68,7 @@ function AppContent() {
               path="/admin"
               element={
                 <ProtectedRoute>
-                  <AdminPage />
+                  <AdminAllData />
                 </ProtectedRoute>
               }
             />

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Message, MessageWithRetry, Input, FormGroup, Label, Select } from "./AdminFormComponents";
-import { updateArtist, fetchArtistById, updateShop, fetchShopById } from "../../../services/adminApi";
+import { updateArtist, fetchArtistById, updateShop, fetchShopById, fetchCountries } from "../../../services/adminApi";
 import { useAdminData } from "./useAdminData";
 import { getCityDisplayName } from "./adminUtils";
 import styles from "./AdminAllData.module.css";
@@ -59,6 +59,7 @@ export default function AdminAllData() {
   const [activeTab, setActiveTab] = useState<TabType>("artists");
   const [artists, setArtists] = useState<Artist[]>([]);
   const [allShops, setAllShops] = useState<Shop[]>([]);
+  const [countries, setCountries] = useState<{ id: number; country_name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ type: "error"; text: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,12 +85,30 @@ export default function AdminAllData() {
   });
 
   useEffect(() => {
-    if (activeTab === "artists") {
+    // Load stats and initial data on mount
+    loadStats();
+    loadArtists();
+    loadShops(false); // Load shops silently for stats
+  }, []);
+
+  useEffect(() => {
+    // Reload data when switching tabs if needed
+    if (activeTab === "artists" && artists.length === 0) {
       loadArtists();
-    } else if (activeTab === "shops") {
-      loadShops();
+    } else if (activeTab === "shops" && allShops.length === 0) {
+      loadShops(true); // Show loading when on shops tab
     }
   }, [activeTab]);
+
+  const loadStats = async () => {
+    try {
+      const countriesData = await fetchCountries();
+      setCountries(countriesData);
+    } catch (err) {
+      console.error("Error loading stats:", err);
+      // Don't set error state for stats, just log it
+    }
+  };
 
   const loadArtists = async () => {
     try {
@@ -119,10 +138,12 @@ export default function AdminAllData() {
     }
   };
 
-  const loadShops = async () => {
+  const loadShops = async (showLoading = false) => {
     try {
-      setLoading(true);
-      setError(null);
+      if (showLoading) {
+        setLoading(true);
+        setError(null);
+      }
       
       const apiUrl = import.meta.env.VITE_API_URL || "/api/listAllShops";
       const response = await fetch(apiUrl);
@@ -137,12 +158,16 @@ export default function AdminAllData() {
       const result = await response.json();
       setAllShops(result.shops || []);
     } catch (err) {
-      setError({
-        type: "error",
-        text: `Failed to load shops: ${err instanceof Error ? err.message : "Unknown error"}`,
-      });
+      if (showLoading) {
+        setError({
+          type: "error",
+          text: `Failed to load shops: ${err instanceof Error ? err.message : "Unknown error"}`,
+        });
+      }
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -433,11 +458,41 @@ export default function AdminAllData() {
     }
   };
 
+  // Calculate stats
+  const stats = useMemo(() => {
+    return {
+      totalArtists: artists.length,
+      totalShops: allShops.length,
+      totalCountries: countries.length,
+      totalCities: cities.length,
+    };
+  }, [artists.length, allShops.length, countries.length, cities.length]);
+
   return (
     <div className={styles.pageContainer}>
       <div className={styles.container}>
-        <Link to="/admin" className={styles.backLink}>← Back to Admin</Link>
         <h1 className={styles.title}>ALL DATA</h1>
+        
+        {/* Stats Cards */}
+        <div className={styles.statsGrid}>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Total Artists</div>
+            <div className={styles.statValue}>{stats.totalArtists.toLocaleString()}</div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Total Shops</div>
+            <div className={styles.statValue}>{stats.totalShops.toLocaleString()}</div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Total Countries</div>
+            <div className={styles.statValue}>{stats.totalCountries.toLocaleString()}</div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Total Cities</div>
+            <div className={styles.statValue}>{stats.totalCities.toLocaleString()}</div>
+          </div>
+        </div>
+
         {/* Tabs */}
         <div className={styles.tabs}>
           <button
