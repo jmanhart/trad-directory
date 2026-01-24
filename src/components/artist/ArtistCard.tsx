@@ -2,7 +2,7 @@ import styles from "./ArtistCard.module.css";
 import { Link, useLocation } from "react-router-dom";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
-import InstagramLogoUrl from "/logo-instagram.svg";
+import InstagramIcon from "../../assets/icons/instagramIcon";
 
 interface Artist {
   id: number;
@@ -67,10 +67,9 @@ export default function ArtistCard({ artist, showTimestamp = false }: ArtistCard
               window.open(artistInstagramUrl, '_blank', 'noopener,noreferrer');
             }}
           >
-            <img
-              src={InstagramLogoUrl}
-              alt="Instagram"
+            <InstagramIcon
               className={styles.instagramIcon}
+              aria-hidden="true"
             />
             @{artist.instagram_handle}
           </a>

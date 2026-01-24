@@ -14,9 +14,6 @@ export default function SortFilter({
 }: SortFilterProps) {
   return (
     <div className={styles.filterContainer}>
-      <label htmlFor="sort-select" className={styles.label}>
-        Sort by:
-      </label>
       <select
         id="sort-select"
         value={sortBy}

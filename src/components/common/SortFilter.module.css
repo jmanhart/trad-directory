@@ -5,12 +5,6 @@
   flex-shrink: 0;
 }
 
-.label {
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-}
-
 .select {
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--color-border);

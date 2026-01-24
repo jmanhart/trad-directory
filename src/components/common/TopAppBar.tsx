@@ -7,13 +7,17 @@ export default function TopAppBar() {
   const isHomePage = location.pathname === "/";
 
   return (
-    <header className={styles.topAppBar}>
-      <div className={styles.spacer}></div>
+    <header className={`${styles.topAppBar} ${!isHomePage ? styles.withBorder : ""}`}>
       {!isHomePage && (
         <Link to="/" className={styles.logoContainer}>
           <img 
-            src="/FULL-LOGO.svg" 
+            src="/TRAD-3.svg" 
             alt="TRAD" 
+            className={styles.logo}
+          />
+          <img 
+            src="/DIRECTORY-3.svg" 
+            alt="DIRECTORY" 
             className={styles.logo}
           />
         </Link>
