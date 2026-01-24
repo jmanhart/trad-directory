@@ -279,6 +279,129 @@ export async function fetchArtists(): Promise<
   }
 }
 
+interface UpdateArtistData {
+  id: number;
+  name?: string;
+  instagram_handle?: string;
+  gender?: string;
+  url?: string;
+  contact?: string;
+  city_id?: number;
+  shop_id?: number;
+  is_traveling?: boolean;
+}
+
+/**
+ * Update an artist in the database via the server-side API
+ */
+export async function updateArtist(data: UpdateArtistData): Promise<void> {
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || "/api/updateArtist";
+
+    const response = await fetch(apiUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+  } catch (error) {
+    console.error("Error updating artist:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch a single artist by ID with full details
+ */
+export async function fetchArtistById(id: number): Promise<any> {
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || `/api/artists/${id}`;
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.details || errorData.error || `Failed to fetch artist: ${response.status}`
+      );
+    }
+
+    const result = await response.json();
+    return result.result;
+  } catch (error) {
+    console.error("Error fetching artist:", error);
+    throw error;
+  }
+}
+
+interface UpdateShopData {
+  id: number;
+  shop_name?: string;
+  instagram_handle?: string;
+  address?: string;
+  contact?: string;
+  phone_number?: string;
+  website_url?: string;
+  city_id?: number;
+}
+
+/**
+ * Update a shop in the database via the server-side API
+ */
+export async function updateShop(data: UpdateShopData): Promise<void> {
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || "/api/updateShop";
+
+    const response = await fetch(apiUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+  } catch (error) {
+    console.error("Error updating shop:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch a single shop by ID with full details
+ */
+export async function fetchShopById(id: number): Promise<any> {
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || `/api/shops/${id}`;
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.details || errorData.error || `Failed to fetch shop: ${response.status}`
+      );
+    }
+
+    const result = await response.json();
+    return result.result;
+  } catch (error) {
+    console.error("Error fetching shop:", error);
+    throw error;
+  }
+}
+
 interface AddArtistShopLinkData {
   artist_id: number;
   shop_id: number;
