@@ -18,7 +18,10 @@ import AdminAddCity from "./components/pages/admin/AdminAddCity";
 import AdminAddCountry from "./components/pages/admin/AdminAddCountry";
 import AdminAddArtistShopLink from "./components/pages/admin/AdminAddArtistShopLink";
 import AdminBrokenLinks from "./components/pages/admin/AdminBrokenLinks";
+import AdminNewAdding from "./components/pages/admin/AdminNewAdding";
+import AdminAllData from "./components/pages/admin/AdminAllData";
 import TopAppBar from "./components/common/TopAppBar";
+import AdminTopAppBar from "./components/common/AdminTopAppBar";
 
 // Enhanced App component with Sentry error boundary
 const SentryApp = Sentry.withErrorBoundary(App, {
@@ -45,10 +48,11 @@ const SentryApp = Sentry.withErrorBoundary(App, {
 function AppContent() {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
+  const isAdminRoute = location.pathname.startsWith("/admin");
   
   return (
     <div className={styles.appContainer}>
-      <TopAppBar />
+      {isAdminRoute ? <AdminTopAppBar /> : <TopAppBar />}
       <main className={`${styles.mainContent} ${isHomePage ? styles.noScroll : ""}`}>
           <Routes>
             <Route path="/" element={<HomePage />} />
@@ -64,7 +68,7 @@ function AppContent() {
               path="/admin"
               element={
                 <ProtectedRoute>
-                  <AdminPage />
+                  <AdminAllData />
                 </ProtectedRoute>
               }
             />
@@ -113,6 +117,22 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <AdminBrokenLinks />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/new-adding"
+              element={
+                <ProtectedRoute>
+                  <AdminNewAdding />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/all-data"
+              element={
+                <ProtectedRoute>
+                  <AdminAllData />
                 </ProtectedRoute>
               }
             />

@@ -1,5 +1,3 @@
-import Redis from "ioredis";
-
 // Cache configuration
 const CACHE_TTL = {
   SEARCH_RESULTS: 900, // 15 minutes
@@ -9,26 +7,48 @@ const CACHE_TTL = {
   POPULAR_SEARCHES: 3600, // 1 hour
 };
 
+// Try to import Redis, but make it optional
+let Redis: any = null;
+let redisAvailable = false;
+
+try {
+  Redis = require("ioredis");
+  redisAvailable = true;
+} catch (error) {
+  console.warn("Redis (ioredis) not available, caching disabled:", error);
+  redisAvailable = false;
+}
+
 // Initialize Redis/Valkey client
-let redisClient: Redis | null = null;
+let redisClient: any = null;
 
 function getRedisClient() {
+  if (!redisAvailable) {
+    return null;
+  }
+  
   if (!redisClient) {
-    const redisUrl =
-      process.env.REDIS_URL ||
-      process.env.VALKEY_URL ||
-      "redis://localhost:6379";
-    redisClient = new Redis(redisUrl, {
-      connectTimeout: 5000,
-      lazyConnect: true,
-      retryDelayOnFailover: 100,
-      maxRetriesPerRequest: 3,
-    });
+    try {
+      const redisUrl =
+        process.env.REDIS_URL ||
+        process.env.VALKEY_URL ||
+        "redis://localhost:6379";
+      redisClient = new Redis(redisUrl, {
+        connectTimeout: 5000,
+        lazyConnect: true,
+        retryDelayOnFailover: 100,
+        maxRetriesPerRequest: 3,
+      });
 
-    // Handle connection errors gracefully
-    redisClient.on("error", (err) => {
-      console.warn("Redis/Valkey connection error:", err.message);
-    });
+      // Handle connection errors gracefully
+      redisClient.on("error", (err: any) => {
+        console.warn("Redis/Valkey connection error:", err.message);
+      });
+    } catch (error) {
+      console.warn("Failed to initialize Redis client:", error);
+      redisAvailable = false;
+      return null;
+    }
   }
   return redisClient;
 }
@@ -38,6 +58,9 @@ export class CacheManager {
   private client = getRedisClient();
 
   async get<T>(key: string): Promise<T | null> {
+    if (!this.client) {
+      return null; // Cache not available
+    }
     try {
       const value = await this.client.get(key);
       return value ? JSON.parse(value) : null;
@@ -48,6 +71,9 @@ export class CacheManager {
   }
 
   async set(key: string, value: any, ttlSeconds: number): Promise<boolean> {
+    if (!this.client) {
+      return false; // Cache not available
+    }
     try {
       await this.client.setex(key, ttlSeconds, JSON.stringify(value));
       return true;
@@ -58,6 +84,9 @@ export class CacheManager {
   }
 
   async del(key: string): Promise<boolean> {
+    if (!this.client) {
+      return false; // Cache not available
+    }
     try {
       await this.client.del(key);
       return true;
@@ -125,11 +154,19 @@ export async function invalidateArtistCache(artistId: string | number) {
 
 export async function invalidateSearchCache() {
   const cache = new CacheManager();
+  const client = getRedisClient();
+  if (!client) {
+    return; // Cache not available
+  }
   // Get all search keys and delete them
   // Note: This is a simplified approach. In production, you'd want to use SCAN
-  const keys = await cache.client.keys("search:artists:*");
-  if (keys.length > 0) {
-    await cache.client.del(...keys);
+  try {
+    const keys = await client.keys("search:artists:*");
+    if (keys.length > 0) {
+      await client.del(...keys);
+    }
+  } catch (error) {
+    console.warn("Error invalidating search cache:", error);
   }
 }
 

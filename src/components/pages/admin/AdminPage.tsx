@@ -8,6 +8,11 @@ export default function AdminPage() {
       <p className={styles.subtitle}>Select an action to continue</p>
       
       <div className={styles.buttonGrid}>
+        <Link to="/admin/new-adding" className={styles.actionButton}>
+          <span className={styles.buttonIcon}>➕</span>
+          <span className={styles.buttonText}>New Adding</span>
+        </Link>
+        
         <Link to="/admin/add-artist" className={styles.actionButton}>
           <span className={styles.buttonIcon}>👤</span>
           <span className={styles.buttonText}>Add Artist</span>
@@ -36,6 +41,11 @@ export default function AdminPage() {
         <Link to="/admin/broken-links" className={styles.actionButton}>
           <span className={styles.buttonIcon}>🔍</span>
           <span className={styles.buttonText}>Check Broken Links</span>
+        </Link>
+        
+        <Link to="/admin/all-data" className={styles.actionButton}>
+          <span className={styles.buttonIcon}>📊</span>
+          <span className={styles.buttonText}>ALL DATA</span>
         </Link>
       </div>
     </div>
