@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "./../../services/supabaseClient";
+import { trackHeroMessageClick } from "../../utils/analytics";
 import styles from "./HeroMessage.module.css";
 
 export default function HeroMessage() {
@@ -48,11 +49,25 @@ export default function HeroMessage() {
   return (
     <h1 className={styles.heroMessage}>
       Discover{" "}
-      <Link to="/artists" className={styles.metricLink}>
+      <Link 
+        to="/artists" 
+        className={styles.metricLink}
+        onClick={() => trackHeroMessageClick({ 
+          link_type: 'artists',
+          metric_value: artistCount || undefined 
+        })}
+      >
         <strong className={styles.metricNumber}>{artistCount !== null ? artistCount : "--"}</strong>
       </Link>{" "}
       artists working at over{" "}
-      <Link to="/shops" className={styles.metricLink}>
+      <Link 
+        to="/shops" 
+        className={styles.metricLink}
+        onClick={() => trackHeroMessageClick({ 
+          link_type: 'shops',
+          metric_value: shopCount || undefined 
+        })}
+      >
         <strong className={styles.metricNumber}>{shopCount !== null ? shopCount : "--"}</strong>
       </Link>{" "}
       tattoo shops in{" "}

@@ -4,6 +4,7 @@ import { searchArtists } from "../../services/api";
 import ResultsSection from "../results/ResultsSection";
 import SearchResultsDisplay from "../results/SearchResultsDisplay";
 // import SearchBar from "../common/SearchBar";
+import { trackSearch } from "../../utils/analytics";
 import styles from "./SearchResults.module.css";
 import { addBreadcrumb, captureException, Sentry } from "../../utils/sentry";
 
@@ -84,6 +85,14 @@ function SearchResults() {
 
       const results = await searchArtists(query);
       console.log(`[SearchResults] Search completed. Found ${results.length} results for "${query}"`);
+      
+      // Track search in analytics
+      trackSearch({
+        search_term: query,
+        search_location: 'search_results',
+        results_count: results.length,
+        has_results: results.length > 0,
+      });
       
       setFilteredResults(results);
       setHasSearched(true);

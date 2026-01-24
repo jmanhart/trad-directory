@@ -22,6 +22,7 @@ import AdminNewAdding from "./components/pages/admin/AdminNewAdding";
 import AdminAllData from "./components/pages/admin/AdminAllData";
 import TopAppBar from "./components/common/TopAppBar";
 import AdminTopAppBar from "./components/common/AdminTopAppBar";
+import { usePageTracking } from "./hooks/usePageTracking";
 
 // Enhanced App component with Sentry error boundary
 const SentryApp = Sentry.withErrorBoundary(App, {
@@ -49,6 +50,9 @@ function AppContent() {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
   const isAdminRoute = location.pathname.startsWith("/admin");
+  
+  // Track page views on route changes
+  usePageTracking();
   
   return (
     <div className={styles.appContainer}>

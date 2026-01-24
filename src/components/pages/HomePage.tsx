@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useHomePageData } from "../../hooks/useHomePageData";
 import { createSearchHandler } from "../../utils/navigation";
 import { type Suggestion } from "../../utils/suggestions";
+import { trackSearch } from "../../utils/analytics";
 import SearchBar from "../common/SearchBar";
 import HeroMessage from "../common/HeroMessage";
 import styles from "./HomePage.module.css";
@@ -11,7 +12,14 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { suggestions, error, loading } = useHomePageData();
 
-  const handleSearch = createSearchHandler(navigate);
+  const baseSearchHandler = createSearchHandler(navigate);
+  const handleSearch = (query: string) => {
+    trackSearch({
+      search_term: query,
+      search_location: 'home',
+    });
+    baseSearchHandler(query);
+  };
 
   const handleSelectSuggestion = (s: Suggestion) => {
     if (s.type === "artist" && s.id) {

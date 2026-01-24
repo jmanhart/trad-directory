@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import SearchBar from "./SearchBar";
 import { useSearchSuggestions } from "../../hooks/useSearchSuggestions";
 import { type Suggestion } from "../../utils/suggestions";
+import { trackSearch } from "../../utils/analytics";
 import styles from "./Header.module.css";
 
 export default function Header() {
@@ -42,6 +43,10 @@ export default function Header() {
 
   const handleHeaderSearch = (query: string) => {
     if (query.trim()) {
+      trackSearch({
+        search_term: query.trim(),
+        search_location: 'header',
+      });
       navigate(`/search-results?q=${encodeURIComponent(query.trim())}`);
     }
   };
