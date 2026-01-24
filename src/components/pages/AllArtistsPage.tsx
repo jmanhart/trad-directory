@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchTattooShopsWithArtists, searchArtists } from "../../services/api";
+import { trackSearch } from "../../utils/analytics";
 import ArtistCard from "../artist/ArtistCard";
 import SearchBar from "../common/SearchBar";
 import SortFilter, { type SortOption } from "../common/SortFilter";
@@ -53,6 +54,14 @@ export default function AllArtistsPage() {
         try {
           const results = await searchArtists(searchQuery);
           setSearchResults(results);
+          
+          // Track search in analytics
+          trackSearch({
+            search_term: searchQuery,
+            search_location: 'all_artists',
+            results_count: results.length,
+            has_results: results.length > 0,
+          });
         } catch (err) {
           console.error("Error searching artists:", err);
           setError("Failed to search artists");

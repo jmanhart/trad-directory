@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchAllShops } from "../../services/api";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
+import { trackSearch } from "../../utils/analytics";
 import SearchBar from "../common/SearchBar";
 import SortFilter, { type SortOption } from "../common/SortFilter";
 import { buildShopSuggestions, type Suggestion } from "../../utils/suggestions";
@@ -60,6 +61,14 @@ export default function AllShopsPage() {
           shop.address?.toLowerCase().includes(normalizedQuery)
       );
       setSearchResults(filtered);
+      
+      // Track search in analytics
+      trackSearch({
+        search_term: searchQuery,
+        search_location: 'all_shops',
+        results_count: filtered.length,
+        has_results: filtered.length > 0,
+      });
     } else {
       setSearchResults([]);
     }

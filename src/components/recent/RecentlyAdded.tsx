@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { fetchRecentArtists, fetchRecentShops, fetchRecentCountries } from "../../services/api";
 import { formatRelativeTime } from "../../utils/relativeTime";
+import { trackRecentlyAddedClick } from "../../utils/analytics";
 import InstagramLogoUrl from "/logo-instagram.svg";
 import GlobeIcon from "../../assets/icons/globeIcon";
 import ArtistsIcon from "../../assets/icons/artistsIcon";
@@ -277,7 +278,16 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
 
             return (
               <React.Fragment key={`${item.type}-${item.id}`}>
-                <Link to={itemUrl} className={styles.item}>
+                <Link 
+                  to={itemUrl} 
+                  className={styles.item}
+                  onClick={() => trackRecentlyAddedClick({
+                    item_type: item.type,
+                    item_id: item.id,
+                    item_name: item.name,
+                    item_instagram_handle: item.instagram_handle || undefined,
+                  })}
+                >
                   <div className={styles.content}>
                     {item.type === "artist" ? (
                       instagramUrl ? (
