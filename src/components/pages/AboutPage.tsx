@@ -1,13 +1,11 @@
-import React from "react";
 import styles from "./AboutPage.module.css";
-import HeroMessage from "./../common/HeroMessage";
 
 export default function AboutPage() {
   return (
     <div className={styles.container}>
       {/* <h1 className={styles.title}>Trad Tattoo Directory</h1>
       <HeroMessage /> */}
-      <h2 className={styles.subtitle}>What that fuck is this?</h2>
+      <h2 className={styles.subtitle}>What is the Trad Directory?</h2>
       <p className={styles.description}>
         Let’s be real...Instagram’s search fucking sucks. This directory exists
         to help people find solid traditional tattoo artists and shops by
@@ -29,6 +27,7 @@ export default function AboutPage() {
         Now go finish that sleeve, start planning that back piece, and don’t
         forget to tip your artist.
       </p>
+      <p className={styles.description}>This is still very much a work in progress. If you see anything wrong or want to say hi drop me a message on <a href="https://www.instagram.com/trad_tattoo_directory/" target="_blank" rel="noopener noreferrer">Instagram</a>.</p>
     </div>
   );
 }

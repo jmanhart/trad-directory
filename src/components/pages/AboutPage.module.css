@@ -1,10 +1,19 @@
 .container {
-  max-width: 800px;
+  max-width: 500px;
   margin: 0 auto;
   padding: 60px 20px;
   color: var(--color-text-secondary);
   /* background-color: var(--color-background); */
   border-radius: var(--border-radius);
+}
+
+.container a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.container a:hover {
+  color: var(--color-red-dark);
 }
 
 .title {
@@ -24,6 +33,15 @@
 .description {
   line-height: 1.6;
   margin-bottom: 20px;
+}
+
+.description a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.description a:hover {
+  color: var(--color-red-dark);
 }
 
 .list {
