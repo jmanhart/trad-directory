@@ -38,7 +38,12 @@ export default function HomePage() {
           <div className={styles.heroText}>
             <div className={styles.logo}>
               <img 
-                src="/FULL-LOGO.svg" 
+                src="/TRAD-3.svg" 
+                alt="TRAD DIRECTORY" 
+                className={styles.logoSvg}
+              />
+                            <img 
+                src="/DIRECTORY-3.svg" 
                 alt="TRAD DIRECTORY" 
                 className={styles.logoSvg}
               />
