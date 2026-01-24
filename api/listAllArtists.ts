@@ -44,10 +44,10 @@ export default async function handler(req: any, res: any) {
         name,
         instagram_handle,
         is_traveling,
-        city: cities (
+        city: cities!left (
           city_name,
-          state: states (state_name),
-          country: countries (country_name)
+          state: states!left (state_name),
+          country: countries!left (country_name)
         ),
         artist_shop (
           shop: tattoo_shops (id, shop_name, instagram_handle)
