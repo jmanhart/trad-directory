@@ -323,6 +323,45 @@
   font-style: italic;
 }
 
+.detailsCell {
+  max-width: 300px;
+  word-wrap: break-word;
+  font-size: 0.85rem;
+}
+
+.detailsPreview {
+  color: var(--color-text-secondary);
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.statusBadge[data-status="new"] {
+  background-color: rgba(0, 123, 255, 0.1);
+  color: #007bff;
+}
+
+.statusBadge[data-status="in_progress"] {
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+.statusBadge[data-status="resolved"] {
+  background-color: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+}
+
+.statusBadge[data-status="closed"] {
+  background-color: rgba(108, 117, 125, 0.1);
+  color: #6c757d;
+}
+
 /* Modal Styles */
 .modalOverlay {
   position: fixed;
