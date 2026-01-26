@@ -148,16 +148,7 @@
   display: flex;
   justify-content: center;
   padding: 1rem 0;
-}
-
-.turnstilePlaceholder {
-  padding: 2rem;
-  border: 2px dashed var(--color-border);
-  border-radius: 6px;
-  background-color: var(--color-background);
-  color: var(--color-text-tertiary);
-  text-align: center;
-  font-size: 0.9rem;
+  min-height: 65px;
 }
 
 @media (max-width: 600px) {

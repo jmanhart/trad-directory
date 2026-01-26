@@ -72,25 +72,43 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    // TODO: Verify Turnstile token when ready
-    // if (process.env.TURNSTILE_SECRET_KEY && data.turnstile_token) {
-    //   const verifyResponse = await fetch(
-    //     "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-    //     {
-    //       method: "POST",
-    //       headers: { "Content-Type": "application/json" },
-    //       body: JSON.stringify({
-    //         secret: process.env.TURNSTILE_SECRET_KEY,
-    //         response: data.turnstile_token,
-    //       }),
-    //     }
-    //   );
-    //   const verifyResult = await verifyResponse.json();
-    //   if (!verifyResult.success) {
-    //     res.status(400).json({ error: "Turnstile verification failed" });
-    //     return;
-    //   }
-    // }
+    // Verify Turnstile token
+    if (process.env.TURNSTILE_SECRET_KEY) {
+      if (!data.turnstile_token) {
+        res.status(400).json({ error: "Security verification required" });
+        return;
+      }
+
+      try {
+        const verifyResponse = await fetch(
+          "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              secret: process.env.TURNSTILE_SECRET_KEY,
+              response: data.turnstile_token,
+            }),
+          }
+        );
+        const verifyResult = await verifyResponse.json();
+        
+        if (!verifyResult.success) {
+          console.error("Turnstile verification failed:", verifyResult);
+          res.status(400).json({ 
+            error: "Security verification failed. Please try again.",
+            details: verifyResult["error-codes"] || []
+          });
+          return;
+        }
+      } catch (verifyError) {
+        console.error("Turnstile verification error:", verifyError);
+        res.status(500).json({ error: "Failed to verify security token" });
+        return;
+      }
+    } else {
+      console.warn("TURNSTILE_SECRET_KEY not set - skipping verification");
+    }
 
     // Prepare submission data for database
     const submissionData: any = {

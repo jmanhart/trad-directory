@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   FormGroup,
   Label,
@@ -58,12 +58,55 @@ export default function ReportIssueModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileWidgetId = useRef<string | null>(null);
+  const turnstileContainerRef = useRef<HTMLDivElement>(null);
 
   // For new artist mode
   const [newArtistName, setNewArtistName] = useState("");
   const [newArtistInstagram, setNewArtistInstagram] = useState("");
   const [newArtistCity, setNewArtistCity] = useState("");
   const [newArtistCountry, setNewArtistCountry] = useState("");
+
+  // Initialize Turnstile when modal opens
+  useEffect(() => {
+    if (isOpen && window.turnstile) {
+      const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+      if (!siteKey) {
+        console.warn("Turnstile site key not found. Bot protection disabled.");
+        return;
+      }
+
+      // Reset token when modal opens
+      setTurnstileToken(null);
+
+      // Render Turnstile widget
+      if (turnstileContainerRef.current && !turnstileWidgetId.current) {
+        const widgetId = window.turnstile.render(turnstileContainerRef.current, {
+          sitekey: siteKey,
+          callback: (token: string) => {
+            setTurnstileToken(token);
+          },
+          "error-callback": () => {
+            setTurnstileToken(null);
+          },
+          "expired-callback": () => {
+            setTurnstileToken(null);
+          },
+        });
+        turnstileWidgetId.current = widgetId;
+      }
+    }
+
+    // Cleanup: reset Turnstile when modal closes
+    return () => {
+      if (turnstileWidgetId.current && window.turnstile) {
+        window.turnstile.remove(turnstileWidgetId.current);
+        turnstileWidgetId.current = null;
+      }
+      setTurnstileToken(null);
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
   if (mode === "report" && !entityData) return null;
@@ -140,16 +183,24 @@ export default function ReportIssueModal({
           return;
         }
 
-        payload = {
-          submission_type: "new_artist",
-          artist_name: newArtistName,
-          artist_instagram_handle: normalizeInstagramHandle(newArtistInstagram),
-          artist_city: newArtistCity,
-          artist_country: newArtistCountry,
-          details: details || null,
-          reporter_email: email || null,
-          page_url: window.location.href,
-        };
+      // Validate Turnstile token
+      if (!turnstileToken) {
+        setSubmitError("Please complete the security verification");
+        setIsSubmitting(false);
+        return;
+      }
+
+      payload = {
+        submission_type: "new_artist",
+        artist_name: newArtistName,
+        artist_instagram_handle: normalizeInstagramHandle(newArtistInstagram),
+        artist_city: newArtistCity,
+        artist_country: newArtistCountry,
+        details: details || null,
+        reporter_email: email || null,
+        page_url: window.location.href,
+        turnstile_token: turnstileToken,
+      };
       } else {
         // Report mode - validate that at least one field is being edited
         if (editingFields.size === 0) {
@@ -166,6 +217,13 @@ export default function ReportIssueModal({
           };
         });
 
+        // Validate Turnstile token
+        if (!turnstileToken) {
+          setSubmitError("Please complete the security verification");
+          setIsSubmitting(false);
+          return;
+        }
+
         payload = {
           submission_type: "report",
           entity_type: entityType,
@@ -174,6 +232,7 @@ export default function ReportIssueModal({
           details: details || null,
           reporter_email: email || null,
           page_url: pageUrl || window.location.href,
+          turnstile_token: turnstileToken,
         };
       }
 
@@ -400,13 +459,9 @@ export default function ReportIssueModal({
               </p>
             </FormGroup>
 
-            {/* Cloudflare Turnstile widget placeholder */}
+            {/* Cloudflare Turnstile widget */}
             <FormGroup>
-              <div className={styles.turnstileContainer}>
-                <div className={styles.turnstilePlaceholder}>
-                  [Cloudflare Turnstile Widget]
-                </div>
-              </div>
+              <div className={styles.turnstileContainer} ref={turnstileContainerRef}></div>
             </FormGroup>
 
             {/* Hidden fields */}
