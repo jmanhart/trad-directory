@@ -10,38 +10,81 @@ type Story = StoryObj;
 
 export const Colors: Story = {
   render: () => {
-    const colorTokens = [
-      { name: "Primary", var: "--color-primary", value: "#9C0101" },
-      { name: "Background", var: "--color-background", value: "#FFC4C4" },
-      { name: "Surface", var: "--color-surface", value: "#f9f9f9" },
-      { name: "Border", var: "--color-border", value: "#9C0101" },
-      { name: "Text Primary", var: "--color-text-primary", value: "#9C0101" },
-      { name: "Text Secondary", var: "--color-text-secondary", value: "#9C0101" },
-      { name: "Text Tertiary", var: "--color-text-tertiary", value: "#9C0101" },
-      { name: "Error", var: "--color-error", value: "#d9534f" },
-      { name: "Red", var: "--color-red", value: "#FF0000" },
-      { name: "Red Light", var: "--color-red-light", value: "#FF3333" },
-      { name: "Red Dark", var: "--color-red-dark", value: "#9C0101" },
+    // Group colors by their actual hex value to show duplicates
+    const colorGroups = [
+      {
+        value: "#9C0101",
+        tokens: [
+          { name: "Primary", var: "--color-primary" },
+          { name: "Border", var: "--color-border" },
+          { name: "Text Primary", var: "--color-text-primary" },
+          { name: "Text Secondary", var: "--color-text-secondary" },
+          { name: "Text Tertiary", var: "--color-text-tertiary" },
+          { name: "Red Dark", var: "--color-red-dark" },
+        ],
+      },
+      {
+        value: "#FFC4C4",
+        tokens: [{ name: "Background", var: "--color-background" }],
+      },
+      {
+        value: "#f9f9f9",
+        tokens: [{ name: "Surface", var: "--color-surface" }],
+      },
+      {
+        value: "#d9534f",
+        tokens: [{ name: "Error", var: "--color-error" }],
+      },
+      {
+        value: "#FF0000",
+        tokens: [{ name: "Red", var: "--color-red" }],
+      },
+      {
+        value: "#FF3333",
+        tokens: [{ name: "Red Light", var: "--color-red-light" }],
+      },
     ];
 
     return (
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
-        {colorTokens.map((color) => (
-          <div key={color.var} style={{ border: "1px solid var(--color-border)", borderRadius: "8px", overflow: "hidden" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "1.5rem" }}>
+        {colorGroups.map((group, idx) => (
+          <div
+            key={idx}
+            style={{
+              border: "1px solid var(--color-border)",
+              borderRadius: "8px",
+              overflow: "hidden",
+              backgroundColor: "var(--color-surface)",
+            }}
+          >
             <div
               style={{
-                height: "80px",
-                backgroundColor: `var(${color.var})`,
+                height: "100px",
+                backgroundColor: group.value,
                 borderBottom: "1px solid var(--color-border)",
               }}
             />
-            <div style={{ padding: "0.75rem" }}>
-              <div style={{ fontWeight: 600, marginBottom: "0.25rem" }}>{color.name}</div>
-              <div style={{ fontSize: "0.85rem", color: "var(--color-text-tertiary)", fontFamily: "monospace" }}>
-                {color.var}
+            <div style={{ padding: "1rem" }}>
+              <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "1rem" }}>
+                {group.value}
               </div>
-              <div style={{ fontSize: "0.85rem", color: "var(--color-text-secondary)", fontFamily: "monospace" }}>
-                {color.value}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {group.tokens.map((token) => (
+                  <div key={token.var} style={{ fontSize: "0.85rem" }}>
+                    <div style={{ fontWeight: 500, marginBottom: "0.125rem", color: "var(--color-text-primary)" }}>
+                      {token.name}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "0.75rem",
+                        color: "var(--color-text-tertiary)",
+                        fontFamily: "monospace",
+                      }}
+                    >
+                      {token.var}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
