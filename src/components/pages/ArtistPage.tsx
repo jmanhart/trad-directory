@@ -179,25 +179,10 @@ export default function ArtistPage() {
           )}
         </div>
 
-        <div className={styles.actions}>
-          <button
-            onClick={() => setIsReportModalOpen(true)}
-            className={styles.reportButton}
-          >
-            Report an Issue
-          </button>
-        </div>
+
       </div>
 
-      <ReportIssueModal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-        mode="report"
-        entityType="artist"
-        entityId={artist.id.toString()}
-        pageUrl={window.location.href}
-        entityData={artist}
-      />
+
     </div>
   );
 }

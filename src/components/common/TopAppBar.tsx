@@ -27,12 +27,6 @@ export default function TopAppBar() {
           </Link>
         )}
         <nav className={styles.nav}>
-          <button
-            onClick={() => setIsAddArtistModalOpen(true)}
-            className={styles.addButton}
-          >
-            Add Artist
-          </button>
           <Link to="/about" className={styles.navLink}>
             About
           </Link>
