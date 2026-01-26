@@ -7,6 +7,7 @@ import {
   Input,
   Button,
   SubmitButton,
+  Message,
 } from "./FormComponents";
 import styles from "./ReportIssueModal.module.css";
 
@@ -54,6 +55,9 @@ export default function ReportIssueModal({
   const [suggestedValues, setSuggestedValues] = useState<Record<string, string>>({});
   const [details, setDetails] = useState("");
   const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   // For new artist mode
   const [newArtistName, setNewArtistName] = useState("");
@@ -119,47 +123,102 @@ export default function ReportIssueModal({
     return cleaned;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError(null);
+    setSubmitSuccess(false);
 
-    if (mode === "new_artist") {
-      // Validate required fields
-      if (!newArtistName || !newArtistInstagram || !newArtistCity || !newArtistCountry) {
-        alert("Please fill in all required fields");
-        return;
-      }
-      // TODO: Submit new artist
-      console.log("Submit new artist:", {
-        submission_type: "new_artist",
-        artist_name: newArtistName,
-        artist_instagram_handle: normalizeInstagramHandle(newArtistInstagram),
-        artist_city: newArtistCity,
-        artist_country: newArtistCountry,
-        details,
-        reporter_email: email,
-        page_url: window.location.href,
-      });
-    } else {
-      // Report mode
-      const changes: Record<string, { current: string; suggested: string }> = {};
-      editingFields.forEach((field) => {
-        changes[field] = {
-          current: getCurrentValue(field),
-          suggested: suggestedValues[field] || "",
+    try {
+      let payload: any;
+
+      if (mode === "new_artist") {
+        // Validate required fields
+        if (!newArtistName || !newArtistInstagram || !newArtistCity || !newArtistCountry) {
+          setSubmitError("Please fill in all required fields");
+          setIsSubmitting(false);
+          return;
+        }
+
+        payload = {
+          submission_type: "new_artist",
+          artist_name: newArtistName,
+          artist_instagram_handle: normalizeInstagramHandle(newArtistInstagram),
+          artist_city: newArtistCity,
+          artist_country: newArtistCountry,
+          details: details || null,
+          reporter_email: email || null,
+          page_url: window.location.href,
         };
+      } else {
+        // Report mode - validate that at least one field is being edited
+        if (editingFields.size === 0) {
+          setSubmitError("Please click EDIT on at least one field to report an issue");
+          setIsSubmitting(false);
+          return;
+        }
+
+        const changes: Record<string, { current: string; suggested: string }> = {};
+        editingFields.forEach((field) => {
+          changes[field] = {
+            current: getCurrentValue(field),
+            suggested: suggestedValues[field] || "",
+          };
+        });
+
+        payload = {
+          submission_type: "report",
+          entity_type: entityType,
+          entity_id: entityId,
+          changes,
+          details: details || null,
+          reporter_email: email || null,
+          page_url: pageUrl || window.location.href,
+        };
+      }
+
+      // Call API
+      const apiUrl = import.meta.env.VITE_API_URL || "/api/submitReport";
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
-      // TODO: Submit form
-      console.log("Submit report:", {
-        submission_type: "report",
-        entityType,
-        entityId,
-        pageUrl,
-        changes,
-        details,
-        email,
-      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      const result = await response.json();
+      setSubmitSuccess(true);
+
+      // Reset form after success
+      setTimeout(() => {
+        if (mode === "new_artist") {
+          setNewArtistName("");
+          setNewArtistInstagram("");
+          setNewArtistCity("");
+          setNewArtistCountry("");
+        } else {
+          setEditingFields(new Set());
+          setSuggestedValues({});
+        }
+        setDetails("");
+        setEmail("");
+        setSubmitSuccess(false);
+        onClose();
+      }, 2000);
+    } catch (error) {
+      console.error("Error submitting:", error);
+      setSubmitError(error instanceof Error ? error.message : "Failed to submit. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-    onClose();
   };
 
   const renderField = (fieldName: string, label: string) => {
@@ -215,6 +274,13 @@ export default function ReportIssueModal({
 
         <div className={styles.modalContent}>
           <form onSubmit={handleSubmit} className={styles.modalForm}>
+            {submitSuccess && (
+              <Message type="success" text="Submission received! Thank you for your feedback." />
+            )}
+            {submitError && (
+              <Message type="error" text={submitError} />
+            )}
+
             {mode === "new_artist" ? (
               <>
                 <div className={styles.instructions}>
@@ -349,10 +415,15 @@ export default function ReportIssueModal({
             <input type="hidden" name="page_url" value={pageUrl} />
 
             <div className={styles.modalFooter}>
-              <Button type="button" variant="secondary" onClick={onClose}>
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
                 Cancel
               </Button>
-              <SubmitButton>
+              <SubmitButton loading={isSubmitting} loadingText="Submitting...">
                 {mode === "new_artist" ? "Submit Artist" : "Submit Report"}
               </SubmitButton>
             </div>

@@ -49,7 +49,7 @@ interface ShopFormData {
   city_id: string;
 }
 
-type TabType = "artists" | "shops" | "cities" | "countries" | "states";
+type TabType = "artists" | "shops" | "cities" | "countries" | "states" | "new_artists" | "bugs";
 type ArtistSortColumn = "id" | "name" | "instagram_handle" | "location" | "shop_name" | "is_traveling";
 type ShopSortColumn = "id" | "shop_name" | "instagram_handle" | "location" | "address";
 type SortColumn = ArtistSortColumn | ShopSortColumn;
@@ -60,6 +60,7 @@ export default function AdminAllData() {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [allShops, setAllShops] = useState<Shop[]>([]);
   const [countries, setCountries] = useState<{ id: number; country_name: string }[]>([]);
+  const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ type: "error"; text: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -97,8 +98,46 @@ export default function AdminAllData() {
       loadArtists();
     } else if (activeTab === "shops" && allShops.length === 0) {
       loadShops(true); // Show loading when on shops tab
+    } else if (activeTab === "new_artists" || activeTab === "bugs") {
+      // Always reload submissions when switching to these tabs to get latest data
+      loadSubmissions();
     }
   }, [activeTab]);
+
+  const loadSubmissions = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const type = activeTab === "new_artists" ? "new_artist" : "report";
+      const baseUrl = import.meta.env.VITE_API_URL || "/api";
+      const apiUrl = `${baseUrl}/listSubmissions?type=${type}`;
+      
+      console.log("Loading submissions:", { type, apiUrl });
+      
+      const response = await fetch(apiUrl);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log("Submissions loaded:", result.submissions?.length || 0);
+      
+      // Only update if we're still on the same tab
+      if (activeTab === "new_artists" || activeTab === "bugs") {
+        setSubmissions(result.submissions || []);
+      }
+    } catch (err) {
+      console.error("Error loading submissions:", err);
+      setError({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to load submissions",
+      });
+      // Don't clear submissions on error, keep what we had
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -528,6 +567,18 @@ export default function AdminAllData() {
           >
             States
           </button>
+          <button
+            className={`${styles.tab} ${activeTab === "bugs" ? styles.active : ""}`}
+            onClick={() => setActiveTab("bugs")}
+          >
+            BUGS
+          </button>
+          <button
+            className={`${styles.tab} ${activeTab === "new_artists" ? styles.active : ""}`}
+            onClick={() => setActiveTab("new_artists")}
+          >
+            SUBMISSIONS
+          </button>
         </div>
 
         {/* Search Bar */}
@@ -754,7 +805,114 @@ export default function AdminAllData() {
             </div>
           )}
 
-          {activeTab !== "artists" && activeTab !== "shops" && (
+          {(activeTab === "new_artists" || activeTab === "bugs") && (
+            <div className={styles.tableContainer}>
+              {loading ? (
+                <div className={styles.loading}>Loading submissions...</div>
+              ) : error ? (
+                <Message type="error" text={error.text} />
+              ) : submissions.length === 0 ? (
+                <div className={styles.emptyCell}>
+                  No {activeTab === "new_artists" ? "new artist" : "bug"} submissions yet.
+                </div>
+              ) : (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th className={styles.idCell}>ID</th>
+                      <th className={styles.nameCell}>Date</th>
+                      {activeTab === "new_artists" ? (
+                        <>
+                          <th>Name</th>
+                          <th>Instagram</th>
+                          <th>Location</th>
+                          <th>Email</th>
+                          <th>Status</th>
+                        </>
+                      ) : (
+                        <>
+                          <th>Entity</th>
+                          <th>Changes</th>
+                          <th>Details</th>
+                          <th>Email</th>
+                          <th>Status</th>
+                        </>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {submissions.map((submission) => (
+                      <tr key={submission.id}>
+                        <td className={styles.idCell}>
+                          {submission.id.substring(0, 8)}...
+                        </td>
+                        <td className={styles.nameCell}>
+                          {new Date(submission.created_at).toLocaleDateString()}
+                        </td>
+                        {activeTab === "new_artists" ? (
+                          <>
+                            <td>{submission.artist_name || "—"}</td>
+                            <td>
+                              {submission.artist_instagram_handle ? (
+                                <a
+                                  href={`https://instagram.com/${submission.artist_instagram_handle}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={styles.link}
+                                >
+                                  @{submission.artist_instagram_handle}
+                                </a>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td>
+                              {[submission.artist_city, submission.artist_state, submission.artist_country]
+                                .filter(Boolean)
+                                .join(", ") || "—"}
+                            </td>
+                            <td>{submission.reporter_email || "—"}</td>
+                            <td>
+                              <span className={styles.statusBadge} data-status={submission.status}>
+                                {submission.status}
+                              </span>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td>
+                              {submission.entity_type} #{submission.entity_id}
+                            </td>
+                            <td className={styles.detailsCell}>
+                              {submission.details ? (
+                                <div className={styles.detailsPreview}>
+                                  {submission.details.substring(0, 100)}
+                                  {submission.details.length > 100 ? "..." : ""}
+                                </div>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td className={styles.detailsCell}>
+                              {submission.details || "—"}
+                            </td>
+                            <td>{submission.reporter_email || "—"}</td>
+                            <td>
+                              <span className={styles.statusBadge} data-status={submission.status}>
+                                {submission.status}
+                              </span>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {activeTab !== "artists" && activeTab !== "shops" && activeTab !== "new_artists" && activeTab !== "bugs" && (
             <div className={styles.comingSoon}>
               <p>Coming soon: {activeTab} table view</p>
             </div>
