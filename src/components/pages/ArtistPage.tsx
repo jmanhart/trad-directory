@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchArtistById } from "../../services/api";
 import { useSavedArtists } from "../../hooks/useSavedArtists";
 import { useAuth } from "../../contexts/AuthContext";
+import ReportIssueModal from "../../components/common/ReportIssueModal";
 import styles from "./ArtistPage.module.css";
 
 interface Artist {
@@ -27,6 +28,7 @@ export default function ArtistPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   const fromSearch = Boolean((location.state as any)?.fromSearch);
   const previous = (location.state as any)?.previous as string | undefined;
@@ -176,7 +178,26 @@ export default function ArtistPage() {
             </div>
           )}
         </div>
+
+        <div className={styles.actions}>
+          <button
+            onClick={() => setIsReportModalOpen(true)}
+            className={styles.reportButton}
+          >
+            Report an Issue
+          </button>
+        </div>
       </div>
+
+      <ReportIssueModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        mode="report"
+        entityType="artist"
+        entityId={artist.id.toString()}
+        pageUrl={window.location.href}
+        entityData={artist}
+      />
     </div>
   );
 }

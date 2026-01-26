@@ -37,6 +37,23 @@
   margin-left: auto;
 }
 
+.addButton {
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-family: inherit;
+}
+
+.addButton:hover {
+  background-color: var(--color-primary-hover);
+}
+
 .navLink {
   text-decoration: none;
   color: var(--color-text-primary);
