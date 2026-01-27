@@ -29,21 +29,20 @@
 }
 
 .appContainer {
+  position: relative;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  background-color: white; /* White background for the app */
 }
 
 .mainContent {
+  position: relative;
+  z-index: 1;
   flex: 1;
   padding: 0;
-  overflow-y: auto;
   box-sizing: border-box;
-}
-
-.mainContent.noScroll {
-  overflow: hidden;
+  background-color: transparent; /* Transparent so background shows through */
 }
 
 .header {

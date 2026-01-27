@@ -23,6 +23,7 @@ import AdminAllData from "./components/pages/admin/AdminAllData";
 import TopAppBar from "./components/common/TopAppBar";
 import AdminTopAppBar from "./components/common/AdminTopAppBar";
 import { usePageTracking } from "./hooks/usePageTracking";
+import ScatteredSvgBackground from "./components/ScatteredSvgBackground/ScatteredSvgBackground";
 
 // Enhanced App component with Sentry error boundary
 const SentryApp = Sentry.withErrorBoundary(App, {
@@ -56,8 +57,9 @@ function AppContent() {
   
   return (
     <div className={styles.appContainer}>
+      <ScatteredSvgBackground preset="default" intensity="subtle" />
       {isAdminRoute ? <AdminTopAppBar /> : <TopAppBar />}
-      <main className={`${styles.mainContent} ${isHomePage ? styles.noScroll : ""}`}>
+      <main className={styles.mainContent}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/artists" element={<AllArtistsPage />} />
