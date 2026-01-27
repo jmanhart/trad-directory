@@ -13,7 +13,7 @@
 }
 
 .topAppBar.withBorder {
-  border-bottom: var(--border-width) solid var(--color-border);
+  /* border-bottom: var(--border-width) solid var(--color-border); */
 }
 
 .logoContainer {
