@@ -70,7 +70,7 @@
 }
 
 .error {
-  color: #d9534f;
+  color: var(--color-error);
   text-align: center;
   margin-bottom: 1em;
 }
@@ -96,15 +96,15 @@
 .link {
   display: inline-block;
   padding: 10px 20px;
-  background-color: #0073e6;
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-surface);
   text-decoration: none;
   border-radius: 5px;
   font-weight: bold;
 }
 
 .link:hover {
-  background-color: #005bb5;
+  background-color: var(--color-primary-hover);
 }
 
 @media (max-width: 768px) {

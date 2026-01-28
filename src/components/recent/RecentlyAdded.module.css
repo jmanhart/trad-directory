@@ -16,7 +16,7 @@
 
 .container {
   width: 100%;
-  border: var(--border-width) solid #9C0101;
+  border: var(--border-width) solid var(--color-border);
   border-radius: var(--border-radius);
   background-color: var(--color-surface, #ffffff);
   padding: 0;

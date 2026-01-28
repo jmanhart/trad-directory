@@ -131,11 +131,15 @@ export default function UnitedStatesMapPage() {
   }, []);
 
   const getStateColor = (stateCode: string) => {
-    return stateArtistCounts.has(stateCode) ? "#FF0000" : "#E5E5E5";
+    return stateArtistCounts.has(stateCode) 
+      ? "var(--color-primary)" 
+      : "var(--gray-200)";
   };
 
   const getStateHoverColor = (stateCode: string) => {
-    return stateArtistCounts.has(stateCode) ? "#CC0000" : "#D4D4D4";
+    return stateArtistCounts.has(stateCode) 
+      ? "var(--red-300)" 
+      : "var(--gray-300)";
   };
 
   const handleMouseEnter = (stateCode: string, stateName: string, event: any) => {
@@ -188,14 +192,16 @@ export default function UnitedStatesMapPage() {
                 // Map state name to code
                 const stateCode = stateName ? getStateCode(stateName) : null;
                 const hasArtists = stateCode ? stateArtistCounts.has(stateCode) : false;
-                const fillColor = hasArtists ? "#FF0000" : "#E5E5E5";
+                const fillColor = hasArtists 
+                  ? "var(--color-primary)" 
+                  : "var(--gray-200)";
                 
                 return (
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
                     fill={fillColor}
-                    stroke="#FFFFFF"
+                    stroke="var(--color-surface)"
                     strokeWidth={0.5}
                     onMouseEnter={(event) => {
                       if (stateCode && stateName) {
@@ -212,12 +218,12 @@ export default function UnitedStatesMapPage() {
                         outline: "none",
                       },
                       hover: {
-                        fill: hasArtists ? "#CC0000" : "#D4D4D4",
+                        fill: hasArtists ? "var(--red-300)" : "var(--gray-300)",
                         outline: "none",
                         cursor: hasArtists ? "pointer" : "default",
                       },
                       pressed: {
-                        fill: hasArtists ? "#AA0000" : "#C4C4C4",
+                        fill: hasArtists ? "var(--red-400)" : "var(--gray-400)",
                         outline: "none",
                       },
                     }}
@@ -237,7 +243,7 @@ export default function UnitedStatesMapPage() {
                 textAnchor="middle"
                 style={{
                   fontFamily: "system-ui, sans-serif",
-                  fill: "#333",
+                  fill: "var(--color-text-primary)",
                   fontSize: "10px",
                   fontWeight: 500,
                   pointerEvents: "none",
