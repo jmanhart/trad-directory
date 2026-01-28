@@ -16,7 +16,7 @@
 .input {
   width: 100%;
   padding: 10px 10px 10px 40px;
-  border: var(--border-width) solid #9C0101;
+  border: var(--border-width) solid var(--color-border);
   border-radius: var(--border-radius);
   font-size: 16px;
   background-color: var(--color-surface);
@@ -29,8 +29,8 @@
 
 .input:focus {
   outline: none;
-  border-color: #FF0000;
-  box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
 }
 
 /* Large size for homepage */
@@ -124,7 +124,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--color-surface);
-  border: var(--border-width) solid #FF0000;
+  border: var(--border-width) solid var(--color-primary);
   border-radius: 0px;
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -209,7 +209,7 @@
 
 .highlighted .suggestionIcon {
   opacity: 1;
-  color: var(--color-light, #ffffff);
+  color: var(--color-surface);
 }
 
 .suggestionItem:last-child {
@@ -217,14 +217,14 @@
 }
 
 .suggestionItem:hover:not(.highlighted) {
-  background-color: var(--color-red-hover, rgba(255, 0, 0, 0.1));
-  color: var(--color-red, #FF0000);
+  background-color: var(--color-red-hover);
+  color: var(--color-red);
   outline: none;
 }
 
 .suggestionItem:focus-visible:not(.highlighted) {
-  background-color: var(--color-red-hover, rgba(255, 0, 0, 0.1));
-  color: var(--color-red, #FF0000);
+  background-color: var(--color-red-hover);
+  color: var(--color-red);
   outline: none;
 }
 
@@ -262,7 +262,7 @@
 
 .suggestionItem:hover:not(.highlighted) .suggestionDetail,
 .suggestionItem:focus-visible:not(.highlighted) .suggestionDetail {
-  color: var(--color-red, #FF0000);
+  color: var(--color-red);
 }
 
 .highlighted .suggestionDetail {

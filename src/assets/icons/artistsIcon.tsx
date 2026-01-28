@@ -7,8 +7,8 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {
 const ArtistsIcon: React.FC<IconProps> = ({ className, ...props }) => (
 <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} {...props}>
 <g clip-path="url(#clip0_63_116)">
-<circle cx="20.5" cy="12.5" r="9" stroke="black" stroke-width="3"/>
-<path d="M8.24856 26.6286L5.04856 34.6286C4.78581 35.2855 5.26957 36 5.97703 36H35.023C35.7304 36 36.2142 35.2855 35.9514 34.6286L32.7514 26.6286C32.5996 26.249 32.2319 26 31.823 26H9.17703C8.76813 26 8.40042 26.249 8.24856 26.6286Z" stroke="black" stroke-width="3" stroke-linejoin="bevel"/>
+<circle cx="20.5" cy="12.5" r="9" stroke="var(--red-400)" stroke-width="3"/>
+<path d="M8.24856 26.6286L5.04856 34.6286C4.78581 35.2855 5.26957 36 5.97703 36H35.023C35.7304 36 36.2142 35.2855 35.9514 34.6286L32.7514 26.6286C32.5996 26.249 32.2319 26 31.823 26H9.17703C8.76813 26 8.40042 26.249 8.24856 26.6286Z" stroke="var(--red-400)" stroke-width="3" stroke-linejoin="bevel"/>
 </g>
 <defs>
 <clipPath id="clip0_63_116">

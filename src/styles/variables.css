@@ -5,39 +5,132 @@
 */
 
 :root {
-  /* Color Palette */
-  --color-background: #FFC4C4;
-  --color-surface: #f9f9f9;
-  --color-border: #9C0101;
+  /*
+    ----------------------------------------------
+    PALETTE (raw colors)
+    Naming: --{hue}-{step}
+    Step meaning:
+      200 = lighter fill / highlight
+      300 = base fill
+      400 = darker fill / emphasis
+    ----------------------------------------------
+  */
+
+  /* Ink / Neutral */
+  --black-200: #1F1F1F;
+  --black-300: #141414;
+  --black-400: #0A0A0A;
+
+  /* Trad Core */
+  --red-200: #F07A76;
+  --red-300: #D9534F;
+  --red-400: #9C0101;
+
+  --yellow-200: #E8C866;
+  --yellow-300: #D4AF37;
+  --yellow-400: #B08900;
+
+  --green-200: #4F8F63;
+  --green-300: #2F6B3F;
+  --green-400: #1F4D2B;
+
+  --blue-200: #5C79B3;
+  --blue-300: #2F4F88;
+  --blue-400: #1B2E59;
+
+  --orange-200: #E08A45;
+  --orange-300: #C4621A;
+  --orange-400: #9E4A14;
+
+  --brown-200: #8C6553;
+  --brown-300: #6A4534;
+  --brown-400: #4A2F24;
+
+  /*
+    ----------------------------------------------
+    GRAYS (new naming convention)
+    ----------------------------------------------
+  */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /*
+    ----------------------------------------------
+    BACKWARD COMPATIBILITY: Legacy gray variables
+    (deprecated - use --gray-* instead)
+    ----------------------------------------------
+  */
+  --color-gray-50: var(--gray-50);
+  --color-gray-100: var(--gray-100);
+  --color-gray-200: var(--gray-200);
+  --color-gray-300: var(--gray-300);
+  --color-gray-400: var(--gray-400);
+  --color-gray-500: var(--gray-500);
+  --color-gray-600: var(--gray-600);
+  --color-gray-700: var(--gray-700);
+  --color-gray-800: var(--gray-800);
+  --color-gray-900: var(--gray-900);
+
+  /*
+    ----------------------------------------------
+    BACKWARD COMPATIBILITY: Legacy red variables
+    (deprecated - use --red-* or semantic tokens instead)
+    ----------------------------------------------
+  */
+  --color-red: var(--red-300);
+  --color-red-light: var(--red-200);
+  --color-red-hover: rgba(240, 122, 118, 0.1);
+  --color-red-dark: var(--red-400);
+  --color-red-darker: #420000;
+
+  /*
+    ----------------------------------------------
+    SEMANTIC TOKENS (what the UI uses)
+    ----------------------------------------------
+  */
+
+  /* Surfaces */
+  --color-background: #FFF4F4; /* was #FFC4C4 (very pink) */
+  --color-surface: #ffffff;
+  --color-surface-muted: var(--gray-50);
+
+  /* Text */
+  --color-text-primary: var(--red-400);
+  --color-text-secondary: var(--black-200);
+  --color-text-tertiary: var(--gray-600);
+
+  /* Borders */
+  --color-border: color-mix(in srgb, var(--red-400) 35%, white);
   --border-width: 1.5px;
   --border-radius: 4px;
 
-  --color-text-primary: #9C0101;
-  --color-text-secondary: #9C0101;
-  --color-text-tertiary: #9C0101;
+  /* Brand / actions */
+  --color-primary: var(--red-400);
+  --color-primary-hover: var(--red-300);
+  --color-primary-soft: color-mix(in srgb, var(--red-300) 14%, white);
 
-  --color-primary: #9C0101;
-  --color-primary-hover: #9C0101;
-  --color-error: #d9534f;
-  --color-red: #FF0000;
-  --color-red-light: #FF3333;
-  --color-red-hover: rgba(255, 0, 0, 0.1);
-  --color-red-dark: #9C0101;
-  --color-red-darker: #420000;
+  /* Status */
+  --color-error: var(--red-300);
+  --color-warning: var(--yellow-300);
+  --color-success: var(--green-300);
+  --color-info: var(--blue-300);
 
-  /* Grayscale Palette */
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f3f4f6;
-  --color-gray-200: #e5e7eb;
-  --color-gray-300: #d1d5db;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6b7280;
-  --color-gray-600: #4b5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1f2937;
-  --color-gray-900: #111827;
+  /* Focus ring */
+  --color-focus: color-mix(in srgb, var(--blue-300) 55%, white);
 
-  /* Spacing Scale */
+  /*
+    ----------------------------------------------
+    SPACING SCALE
+    ----------------------------------------------
+  */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
@@ -45,7 +138,39 @@
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
 
-  /* Typography Scale */
+  /*
+    ----------------------------------------------
+    FORM CONTROL SIZING
+    ----------------------------------------------
+  */
+  /* Vertical padding (controls height) */
+  --form-control-padding-y-small: 0.5rem;
+  --form-control-padding-y-medium: 0.75rem;
+  --form-control-padding-y-large: 1rem;
+
+  /* Horizontal padding */
+  --form-control-padding-x-small: 0.625rem;
+  --form-control-padding-x-medium: 0.75rem;
+  --form-control-padding-x-large: 1rem;
+
+  /* Button horizontal padding */
+  --button-padding-x-small: 1rem;
+  --button-padding-x-medium: 1.5rem;
+  --button-padding-x-large: 2rem;
+
+  /* Select chevron right padding */
+  --select-chevron-padding: 2.5rem;
+
+  /* Form control height calculation */
+  /* With box-sizing: border-box, height includes padding + content + border */
+  /* padding-top + padding-bottom + line-height (1.5 * font-size) + border-top + border-bottom */
+  --form-control-height-medium: calc(var(--form-control-padding-y-medium) * 2 + 1.5 * var(--font-size-base) + 2px);
+
+  /*
+    ----------------------------------------------
+    TYPOGRAPHY SCALE
+    ----------------------------------------------
+  */
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
@@ -54,7 +179,11 @@
   --font-size-2xl: 2rem;
   --font-size-3xl: 3.2rem;
 
-  /* Base Typography */
+  /*
+    ----------------------------------------------
+    BASE TYPOGRAPHY
+    ----------------------------------------------
+  */
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;

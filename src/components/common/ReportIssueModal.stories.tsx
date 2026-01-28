@@ -6,6 +6,12 @@ const meta: Meta<typeof ReportIssueModal> = {
   title: "Patterns/Forms",
   component: ReportIssueModal,
   tags: ["autodocs"],
+  parameters: {
+    layout: "fullscreen",
+    viewport: {
+      defaultViewport: "desktop",
+    },
+  },
 };
 
 export default meta;
@@ -40,14 +46,23 @@ const mockArtistData = {
 };
 
 export const AddArtistForm: Story = {
+  parameters: {
+    layout: "fullscreen",
+  },
   render: () => <ModalWrapper mode="new_artist" />,
 };
 
 export const ReportBugForm: Story = {
+  parameters: {
+    layout: "fullscreen",
+  },
   render: () => <ModalWrapper mode="report" entityData={mockArtistData} />,
 };
 
 export const ReportBugFormMinimal: Story = {
+  parameters: {
+    layout: "fullscreen",
+  },
   render: () => (
     <ModalWrapper
       mode="report"

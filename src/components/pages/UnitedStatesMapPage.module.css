@@ -50,6 +50,31 @@
 }
 
 .tooltipCount {
-  color: #ccc;
+  color: var(--gray-300);
   font-size: 0.8rem;
+}
+
+/* Map state colors */
+.stateWithArtists {
+  fill: var(--color-primary);
+}
+
+.stateWithoutArtists {
+  fill: var(--gray-200);
+}
+
+.stateWithArtistsHover {
+  fill: var(--red-300);
+}
+
+.stateWithoutArtistsHover {
+  fill: var(--gray-300);
+}
+
+.stateWithArtistsPressed {
+  fill: var(--red-400);
+}
+
+.stateWithoutArtistsPressed {
+  fill: var(--gray-400);
 }

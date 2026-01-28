@@ -11,7 +11,7 @@ const AboutIcon: React.FC<IconProps> = ({ className, ...props }) => (
     height="20"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="currentColor"
+    stroke="var(--red-400)"
     strokeWidth="2"
     xmlns="http://www.w3.org/2000/svg"
     {...props}

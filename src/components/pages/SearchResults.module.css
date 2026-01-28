@@ -15,8 +15,8 @@
 
 .backButton {
   background: none;
-  border: 2px solid #333;
-  color: #333;
+  border: 2px solid var(--color-text-secondary);
+  color: var(--color-text-secondary);
   padding: 0.5rem 1rem;
   border-radius: 8px;
   cursor: pointer;
@@ -29,15 +29,15 @@
 }
 
 .backButton:hover {
-  background: #333;
-  color: white;
+  background: var(--color-text-secondary);
+  color: var(--color-surface);
   transform: translateY(-1px);
 }
 
 .title {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #333;
+  color: var(--color-text-primary);
   margin: 0;
   flex-grow: 1;
 }
@@ -54,7 +54,7 @@
 .searchQuery {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
   margin: 0 0 0.5rem 0;
   display: flex;
   align-items: center;
@@ -62,13 +62,13 @@
 }
 
 .queryText {
-  color: #9C0101;
+  color: var(--color-primary);
   font-weight: 700;
 }
 
 .resultsCount {
   font-size: 1.1rem;
-  color: #666;
+  color: var(--color-text-secondary);
   margin: 0;
   font-weight: 500;
 }
@@ -76,25 +76,25 @@
 .noResults {
   text-align: center;
   padding: 3rem 1rem;
-  background: #f8f9fa;
+  background: var(--color-surface-muted);
   border-radius: 12px;
   margin-bottom: 2rem;
 }
 
 .noResults h3 {
   font-size: 1.5rem;
-  color: #333;
+  color: var(--color-text-primary);
   margin: 0 0 1rem 0;
 }
 
 .noResults p {
   font-size: 1.1rem;
-  color: #666;
+  color: var(--color-text-secondary);
   margin: 0 0 1.5rem 0;
 }
 
 .browseAllButton {
-  background: #9C0101;
+  background: var(--color-primary);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -106,7 +106,7 @@
 }
 
 .browseAllButton:hover {
-  background: #9C0101;
+  background: var(--color-primary-hover);
   transform: translateY(-1px);
 }
 
@@ -116,21 +116,21 @@
   align-items: center;
   min-height: 400px;
   font-size: 1.2rem;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .error {
   text-align: center;
   padding: 3rem 1rem;
-  background: #f8d7da;
-  border: 1px solid #f5c6cb;
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-error);
   border-radius: 12px;
-  color: #721c24;
+  color: var(--color-error);
 }
 
 .error h2 {
   margin: 0 0 1rem 0;
-  color: #721c24;
+  color: var(--color-error);
 }
 
 .error p {
