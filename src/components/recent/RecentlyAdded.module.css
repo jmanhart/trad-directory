@@ -27,7 +27,7 @@
 .feed {
   display: flex;
   flex-direction: column;
-  height: 156px;
+  height: 269px;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;

@@ -1,123 +1,70 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import {
-  FormGroup,
-  Label,
-  Input,
-  Textarea,
-  Select,
-  Button,
-  SubmitButton,
-  Message,
-  HelperText,
-} from "./FormComponents";
+import { FormGroup, Label, Input, Textarea, Select, Button, SubmitButton, Message, HelperText } from "./FormComponents";
 
 const meta: Meta<typeof FormGroup> = {
   title: "Components/Form Components",
   component: FormGroup,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component: "Reusable form components for building consistent forms throughout the application. These components follow the design system tokens and provide a consistent look and feel.",
+      },
+    },
+  },
 };
 
 export default meta;
 type Story = StoryObj<typeof FormGroup>;
 
-export const InputField: Story = {
+// Overview story showing all components together
+export const Overview: Story = {
   render: () => (
-    <FormGroup>
-      <Label htmlFor="example-input">Example Input</Label>
-      <Input id="example-input" placeholder="Enter text..." />
-    </FormGroup>
-  ),
-};
+    <div style={{ display: "flex", flexDirection: "column", gap: "2rem", maxWidth: "500px" }}>
+      <div>
+        <h3 style={{ marginBottom: "1rem", color: "var(--color-text-primary)" }}>Form Components Overview</h3>
+        <p style={{ color: "var(--color-text-secondary)", marginBottom: "1.5rem" }}>
+          The form components are organized into the following sections:
+        </p>
+        <ul style={{ color: "var(--color-text-secondary)", paddingLeft: "1.5rem" }}>
+          <li><strong>Buttons</strong> - Primary, secondary, outline, and submit button variants</li>
+          <li><strong>Inputs</strong> - Text inputs with various types, states, and sizes</li>
+          <li><strong>Textareas</strong> - Multi-line text input components</li>
+          <li><strong>Selects</strong> - Dropdown select components</li>
+          <li><strong>Messages</strong> - Success, error, and info message components</li>
+          <li><strong>Forms</strong> - Complete form examples with validation</li>
+        </ul>
+      </div>
 
-export const RequiredInput: Story = {
-  render: () => (
-    <FormGroup>
-      <Label htmlFor="required-input" required>
-        Required Field
-      </Label>
-      <Input id="required-input" placeholder="This field is required" />
-    </FormGroup>
-  ),
-};
+      <div>
+        <h4 style={{ marginBottom: "0.75rem", color: "var(--color-text-primary)" }}>Quick Example</h4>
+        <form>
+          <FormGroup>
+            <Label htmlFor="overview-name" required>
+              Name
+            </Label>
+            <Input id="overview-name" placeholder="Your name" />
+          </FormGroup>
 
-export const TextareaField: Story = {
-  render: () => (
-    <FormGroup>
-      <Label htmlFor="example-textarea">Message</Label>
-      <Textarea id="example-textarea" rows={4} placeholder="Enter your message..." />
-    </FormGroup>
-  ),
-};
+          <FormGroup>
+            <Label htmlFor="overview-email" required>
+              Email
+            </Label>
+            <Input id="overview-email" type="email" placeholder="your@email.com" />
+            <HelperText>We'll never share your email</HelperText>
+          </FormGroup>
 
-export const SelectField: Story = {
-  render: () => (
-    <FormGroup>
-      <Label htmlFor="example-select">Choose an option</Label>
-      <Select id="example-select">
-        <option value="">Select...</option>
-        <option value="1">Option 1</option>
-        <option value="2">Option 2</option>
-        <option value="3">Option 3</option>
-      </Select>
-    </FormGroup>
-  ),
-};
+          <FormGroup>
+            <Label htmlFor="overview-message">Message</Label>
+            <Textarea id="overview-message" rows={4} placeholder="Your message..." />
+          </FormGroup>
 
-export const Buttons: Story = {
-  render: () => (
-    <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
-      <Button variant="primary">Primary Button</Button>
-      <Button variant="secondary">Secondary Button</Button>
-      <Button variant="outline">Outline Button</Button>
-      <SubmitButton>Submit Button</SubmitButton>
+          <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+            <SubmitButton>Submit</SubmitButton>
+            <Button variant="secondary" type="button">Cancel</Button>
+          </div>
+        </form>
+      </div>
     </div>
-  ),
-};
-
-export const ButtonStates: Story = {
-  render: () => (
-    <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
-      <Button variant="primary">Normal</Button>
-      <Button variant="primary" disabled>Disabled</Button>
-      <Button variant="primary" loading>Loading</Button>
-    </div>
-  ),
-};
-
-export const Messages: Story = {
-  render: () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1rem", maxWidth: "400px" }}>
-      <Message type="success" text="Operation completed successfully!" />
-      <Message type="error" text="An error occurred. Please try again." />
-      <Message type="info" text="Here's some helpful information." />
-    </div>
-  ),
-};
-
-export const CompleteForm: Story = {
-  render: () => (
-    <form style={{ maxWidth: "400px" }}>
-      <FormGroup>
-        <Label htmlFor="name" required>
-          Name
-        </Label>
-        <Input id="name" placeholder="Your name" />
-      </FormGroup>
-
-      <FormGroup>
-        <Label htmlFor="email" required>
-          Email
-        </Label>
-        <Input id="email" type="email" placeholder="your@email.com" />
-        <HelperText>We'll never share your email</HelperText>
-      </FormGroup>
-
-      <FormGroup>
-        <Label htmlFor="message">Message</Label>
-        <Textarea id="message" rows={4} placeholder="Your message..." />
-      </FormGroup>
-
-      <SubmitButton>Submit</SubmitButton>
-    </form>
   ),
 };

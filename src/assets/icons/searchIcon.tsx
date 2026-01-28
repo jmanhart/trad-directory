@@ -5,10 +5,10 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {
 }
 
 const SearchIcon: React.FC<IconProps> = ({ className, ...props }) => (
-<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} {...props}>
 <g clip-path="url(#clip0_63_105)">
-<circle cx="16.5" cy="15.5" r="12" stroke="black" stroke-width="3"/>
-<path d="M36.6465 37.3536C37.2322 37.9393 38.182 37.9393 38.7678 37.3536C39.3536 36.7678 39.3536 35.818 38.7678 35.2322L37.7071 36.2929L36.6465 37.3536ZM25.4142 24L24.3536 25.0607L36.6465 37.3536L37.7071 36.2929L38.7678 35.2322L26.4749 22.9393L25.4142 24Z" fill="black"/>
+<circle cx="16.5" cy="15.5" r="12" stroke="var(--red-400)" stroke-width="3"/>
+<path d="M36.6465 37.3536C37.2322 37.9393 38.182 37.9393 38.7678 37.3536C39.3536 36.7678 39.3536 35.818 38.7678 35.2322L37.7071 36.2929L36.6465 37.3536ZM25.4142 24L24.3536 25.0607L36.6465 37.3536L37.7071 36.2929L38.7678 35.2322L26.4749 22.9393L25.4142 24Z" fill="var(--red-400)"/>
 </g>
 <defs>
 <clipPath id="clip0_63_105">

@@ -140,6 +140,34 @@
 
   /*
     ----------------------------------------------
+    FORM CONTROL SIZING
+    ----------------------------------------------
+  */
+  /* Vertical padding (controls height) */
+  --form-control-padding-y-small: 0.5rem;
+  --form-control-padding-y-medium: 0.75rem;
+  --form-control-padding-y-large: 1rem;
+
+  /* Horizontal padding */
+  --form-control-padding-x-small: 0.625rem;
+  --form-control-padding-x-medium: 0.75rem;
+  --form-control-padding-x-large: 1rem;
+
+  /* Button horizontal padding */
+  --button-padding-x-small: 1rem;
+  --button-padding-x-medium: 1.5rem;
+  --button-padding-x-large: 2rem;
+
+  /* Select chevron right padding */
+  --select-chevron-padding: 2.5rem;
+
+  /* Form control height calculation */
+  /* With box-sizing: border-box, height includes padding + content + border */
+  /* padding-top + padding-bottom + line-height (1.5 * font-size) + border-top + border-bottom */
+  --form-control-height-medium: calc(var(--form-control-padding-y-medium) * 2 + 1.5 * var(--font-size-base) + 2px);
+
+  /*
+    ----------------------------------------------
     TYPOGRAPHY SCALE
     ----------------------------------------------
   */

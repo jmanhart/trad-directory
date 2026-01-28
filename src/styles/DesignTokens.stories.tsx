@@ -9,11 +9,6 @@ export default meta;
 type Story = StoryObj;
 
 export const ColorPalette: Story = {
-  parameters: {
-    docs: {
-      disable: true,
-    },
-  },
   render: () => {
     const palette = [
       {
@@ -205,16 +200,27 @@ export const Typography: Story = {
         <h2 style={{ marginBottom: "0.5rem", color: "var(--color-text-primary)", fontSize: "1.5rem", fontWeight: 700 }}>
           Typography Scale
         </h2>
-        <p style={{ color: "var(--color-text-secondary)", fontSize: "0.9rem", marginBottom: "2rem" }}>
-          Font size tokens for consistent typography hierarchy.
-        </p>
+        <div style={{ marginBottom: "2rem" }}>
+          <p style={{ color: "var(--color-text-secondary)", fontSize: "0.9rem", marginBottom: "0.5rem" }}>
+            Font size tokens for consistent typography hierarchy.
+          </p>
+          <p style={{ color: "var(--color-text-tertiary)", fontSize: "0.85rem", margin: 0 }}>
+            <strong>Font Family:</strong> Inter, system-ui, Avenir, Helvetica, Arial, sans-serif
+          </p>
+          <p style={{ color: "var(--color-text-tertiary)", fontSize: "0.85rem", margin: "0.25rem 0 0 0" }}>
+            <strong>Line Height:</strong> 1.5
+          </p>
+          <p style={{ color: "var(--color-text-tertiary)", fontSize: "0.85rem", margin: "0.25rem 0 0 0" }}>
+            <strong>Font Weight:</strong> 400 (base), 500 (medium), 600 (semibold), 700 (bold)
+          </p>
+        </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {typeTokens.map((type) => (
             <div key={type.var}>
               <div style={{ fontSize: "0.85rem", color: "var(--color-text-tertiary)", marginBottom: "0.5rem", fontFamily: "monospace" }}>
                 {type.var} ({type.value})
               </div>
-              <div style={{ fontSize: `var(${type.var})`, fontWeight: 400, color: "var(--color-text-primary)" }}>
+              <div style={{ fontSize: `var(${type.var})`, fontWeight: 400, color: "var(--color-text-primary)", fontFamily: "Inter, system-ui, sans-serif" }}>
                 The quick brown fox jumps over the lazy dog
               </div>
             </div>
