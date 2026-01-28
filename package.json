@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:admin": "concurrently \"npm run dev\" \"vercel dev --listen 3000\" --names \"VITE,API\" --prefix-colors \"cyan,magenta\"",
+    "everything": "concurrently \"npm run dev:admin\" \"npm run storybook\" --names \"ADMIN,STORYBOOK\" --prefix-colors \"cyan,yellow\"",
     "build": "vite build",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
