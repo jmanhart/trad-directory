@@ -27,6 +27,11 @@
   touch-action: manipulation; /* Better touch performance */
 }
 
+.input::placeholder {
+  color: var(--color-red-dark);
+  opacity: 0.9;
+}
+
 .input:focus {
   outline: none;
   border-color: var(--color-primary);

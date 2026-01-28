@@ -7,7 +7,7 @@
 .label {
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--color-text-secondary, #666);
+  color: var(--color-red-dark);
   margin: 0 0 0.75rem 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -131,7 +131,7 @@
 .handle {
   font-size: 0.85rem;
   font-weight: 500;
-  color: var(--color-text-primary, #333);
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -146,18 +146,18 @@
 
 .instagramHandle {
   font-weight: 400;
-  color: var(--color-text-secondary, #666);
+  color: var(--color-red-dark);
 }
 
 .city {
   font-size: 0.75rem;
-  color: var(--color-text-secondary, #666);
+  color: var(--color-red-dark);
   white-space: nowrap;
 }
 
 .time {
   font-size: 0.7rem;
-  color: var(--color-text-tertiary, #999);
+  color: var(--color-red-dark);
   white-space: nowrap;
   margin-left: auto;
 }
@@ -168,11 +168,11 @@
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(156, 1, 1, 0.08);
   border-radius: 4px;
   margin-left: 8px;
   flex-shrink: 0;
-  color: var(--color-text-secondary, #666);
+  color: var(--color-red-dark);
 }
 
 .divider {
