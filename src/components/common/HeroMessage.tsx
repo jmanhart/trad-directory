@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "./../../services/supabaseClient";
 import { trackHeroMessageClick } from "../../utils/analytics";
+import TypeNumber from "../common/TypeNumber";
 import styles from "./HeroMessage.module.css";
 
 export default function HeroMessage() {
   const [artistCount, setArtistCount] = useState<number | null>(null);
   const [shopCount, setShopCount] = useState<number | null>(null);
   const [countryCount, setCountryCount] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCounts = async () => {
@@ -49,29 +50,46 @@ export default function HeroMessage() {
   return (
     <h1 className={styles.heroMessage}>
       Discover{" "}
-      <Link 
-        to="/artists" 
+      <Link
+        to="/artists"
         className={styles.metricLink}
-        onClick={() => trackHeroMessageClick({ 
-          link_type: 'artists',
-          metric_value: artistCount || undefined 
-        })}
+        onClick={() =>
+          trackHeroMessageClick({
+            link_type: "artists",
+            metric_value: artistCount || undefined,
+          })
+        }
       >
-        <strong className={styles.metricNumber}>{artistCount !== null ? artistCount : "--"}</strong>
+        <TypeNumber
+          value={artistCount}
+          className={styles.metricNumber}
+          placeholder="--"
+        />
       </Link>{" "}
       artists working at over{" "}
-      <Link 
-        to="/shops" 
+      <Link
+        to="/shops"
         className={styles.metricLink}
-        onClick={() => trackHeroMessageClick({ 
-          link_type: 'shops',
-          metric_value: shopCount || undefined 
-        })}
+        onClick={() =>
+          trackHeroMessageClick({
+            link_type: "shops",
+            metric_value: shopCount || undefined,
+          })
+        }
       >
-        <strong className={styles.metricNumber}>{shopCount !== null ? shopCount : "--"}</strong>
+        <TypeNumber
+          value={shopCount}
+          className={styles.metricNumber}
+          placeholder="--"
+        />
       </Link>{" "}
       tattoo shops in{" "}
-      <strong className={styles.metricNumberNoUnderline}>{countryCount !== null ? countryCount : "--"}</strong> countries worldwide.
+      <TypeNumber
+        value={countryCount}
+        className={styles.metricNumberNoUnderline}
+        placeholder="--"
+      />{" "}
+      countries worldwide.
     </h1>
   );
 }

@@ -1,0 +1,92 @@
+.container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+}
+
+.description {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 2rem;
+}
+
+.inputContainer {
+  margin-bottom: 2rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.input {
+  width: 100%;
+  max-width: 500px;
+  padding: var(--form-control-padding-y-medium) var(--form-control-padding-x-medium);
+  font-size: var(--font-size-base);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-family: inherit;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-focus);
+  box-shadow: 0 0 0 2px var(--color-focus);
+}
+
+.inputInfo {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--color-text-tertiary);
+}
+
+.displayContainer {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 2rem;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lettersContainer {
+  display: flex;
+  flex-wrap: wrap;
+  /* gap: 1rem; */
+  align-items: center;
+  justify-content: center;
+}
+
+.letterWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.letterImage {
+  max-width: 200px;
+  max-height: 200px;
+  height: auto;
+  width: auto;
+  object-fit: contain;
+}
+
+.emptyState {
+  text-align: center;
+  color: var(--color-text-tertiary);
+  font-size: 1rem;
+}

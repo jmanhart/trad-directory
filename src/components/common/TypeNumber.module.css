@@ -1,0 +1,22 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  /* gap between digits – override with --type-number-gap */
+  gap: var(--type-number-gap, 0.1rem);
+  /* fine‑tune vertical position – override with --type-number-offset-y */
+  transform: translateY(var(--type-number-offset-y, 4px));
+}
+
+.digitWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.digitImage {
+  /* overall size – override with --type-number-height */
+  height: var(--type-number-height, 0.9em);
+  width: auto;
+  display: block;
+}
+
