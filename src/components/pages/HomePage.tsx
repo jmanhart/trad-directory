@@ -16,13 +16,30 @@ export default function HomePage() {
   const handleSearch = (query: string) => {
     trackSearch({
       search_term: query,
-      search_location: 'home',
+      search_location: "home",
     });
     baseSearchHandler(query);
   };
 
-  const handleSelectSuggestion = (s: Suggestion) => {
+  const handleSelectSuggestion = async (s: Suggestion) => {
     if (s.type === "artist" && s.id) {
+      // Fetch artist to get slug for human-readable URL
+      try {
+        const response = await fetch(`/api/artists/${s.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          const slug = data.result?.slug;
+          if (slug) {
+            navigate(`/artist/${slug}`, {
+              state: { fromSearch: true, previous: "/?from=home" },
+            });
+            return;
+          }
+        }
+      } catch (error) {
+        console.warn("Failed to fetch artist slug, using ID:", error);
+      }
+      // Fallback to ID if slug fetch fails
       navigate(`/artist/${s.id}`, {
         state: { fromSearch: true, previous: "/?from=home" },
       });
@@ -45,26 +62,26 @@ export default function HomePage() {
         <div className={styles.heroContent}>
           <div className={styles.heroText}>
             <div className={styles.logo}>
-              <img 
-                src="/TRAD-3.svg" 
-                alt="TRAD DIRECTORY" 
+              <img
+                src="/TRAD-3.svg"
+                alt="TRAD DIRECTORY"
                 className={styles.logoSvg}
               />
-                            <img 
-                src="/DIRECTORY-3.svg" 
-                alt="TRAD DIRECTORY" 
+              <img
+                src="/DIRECTORY-3.svg"
+                alt="TRAD DIRECTORY"
                 className={styles.logoSvg}
               />
             </div>
             <HeroMessage />
           </div>
           <SearchBar
-              onSearch={handleSearch}
-              suggestions={suggestions}
-              onSelectSuggestion={handleSelectSuggestion}
-              size="large"
-              debug={false}
-            />
+            onSearch={handleSearch}
+            suggestions={suggestions}
+            onSelectSuggestion={handleSelectSuggestion}
+            size="large"
+            debug={false}
+          />
 
           <div className={styles.recentSection}>
             <RecentlyAdded limit={30} includeLocations={true} />

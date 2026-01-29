@@ -11,6 +11,7 @@ import { addBreadcrumb, captureException, Sentry } from "../../utils/sentry";
 interface Artist {
   id: number;
   name: string;
+  slug?: string | null;
   instagram_handle?: string;
   shop_name?: string;
   shop_id?: number;
@@ -76,7 +77,7 @@ function SearchResults() {
     try {
       setIsLoading(true);
       console.log(`[SearchResults] Performing search for: "${query}"`);
-      
+
       addBreadcrumb("Search performed on results page", "search", "info", {
         query,
         timestamp: new Date().toISOString(),
@@ -84,16 +85,18 @@ function SearchResults() {
       });
 
       const results = await searchArtists(query);
-      console.log(`[SearchResults] Search completed. Found ${results.length} results for "${query}"`);
-      
+      console.log(
+        `[SearchResults] Search completed. Found ${results.length} results for "${query}"`
+      );
+
       // Track search in analytics
       trackSearch({
         search_term: query,
-        search_location: 'search_results',
+        search_location: "search_results",
         results_count: results.length,
         has_results: results.length > 0,
       });
-      
+
       setFilteredResults(results);
       setHasSearched(true);
     } catch (error) {

@@ -4,6 +4,7 @@ import styles from "../pages/SearchResults.module.css";
 interface Artist {
   id: number;
   name: string;
+  slug?: string | null;
   instagram_handle?: string;
   shop_name?: string;
   shop_id?: number;

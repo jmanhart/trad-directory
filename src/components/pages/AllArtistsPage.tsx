@@ -54,11 +54,11 @@ export default function AllArtistsPage() {
         try {
           const results = await searchArtists(searchQuery);
           setSearchResults(results);
-          
+
           // Track search in analytics
           trackSearch({
             search_term: searchQuery,
-            search_location: 'all_artists',
+            search_location: "all_artists",
             results_count: results.length,
             has_results: results.length > 0,
           });
@@ -76,7 +76,7 @@ export default function AllArtistsPage() {
   // Apply sorting to the current artist list (either search results or all artists)
   const filteredArtists = useMemo(() => {
     const artistsToSort = searchQuery.trim() ? searchResults : artists;
-    
+
     if (sortBy === "a-z") {
       return [...artistsToSort].sort((a, b) => {
         const nameA = (a.name || "").toLowerCase().trim();
@@ -87,7 +87,9 @@ export default function AllArtistsPage() {
       return [...artistsToSort].sort((a, b) => {
         // If both have created_at, sort by most recent first
         if (a.created_at && b.created_at) {
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          return (
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
         }
         // If only one has created_at, prioritize it
         if (a.created_at && !b.created_at) return -1;
@@ -103,8 +105,25 @@ export default function AllArtistsPage() {
     setSearchQuery(query);
   };
 
-  const handleSelectSuggestion = (s: Suggestion) => {
+  const handleSelectSuggestion = async (s: Suggestion) => {
     if (s.type === "artist" && s.id) {
+      // Fetch artist to get slug for human-readable URL
+      try {
+        const response = await fetch(`/api/artists/${s.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          const slug = data.result?.slug;
+          if (slug) {
+            navigate(`/artist/${slug}`, {
+              state: { fromSearch: true, previous: "/artists" },
+            });
+            return;
+          }
+        }
+      } catch (error) {
+        console.warn("Failed to fetch artist slug, using ID:", error);
+      }
+      // Fallback to ID if slug fetch fails
       navigate(`/artist/${s.id}`, {
         state: { fromSearch: true, previous: "/artists" },
       });
@@ -132,7 +151,7 @@ export default function AllArtistsPage() {
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>All Artists</h1>
-      
+
       <div className={styles.searchSection}>
         <div className={styles.searchFilterRow}>
           <SearchBar
@@ -147,13 +166,14 @@ export default function AllArtistsPage() {
       {searchQuery && (
         <div className={styles.searchInfo}>
           <p>
-            Showing {filteredArtists.length} result{filteredArtists.length !== 1 ? "s" : ""} for "{searchQuery}"
+            Showing {filteredArtists.length} result
+            {filteredArtists.length !== 1 ? "s" : ""} for "{searchQuery}"
           </p>
         </div>
       )}
 
       <div className={styles.grid}>
-        {filteredArtists.map((artist) => (
+        {filteredArtists.map(artist => (
           <ArtistCard key={artist.id} artist={artist} />
         ))}
       </div>
@@ -166,4 +186,3 @@ export default function AllArtistsPage() {
     </div>
   );
 }
-

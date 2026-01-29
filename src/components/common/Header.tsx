@@ -28,7 +28,7 @@ export default function Header() {
     const nameMap = new Map<string, number>();
     const handleMap = new Map<string, number>();
 
-    suggestions.forEach((suggestion) => {
+    suggestions.forEach(suggestion => {
       if (suggestion.type === "artist" && suggestion.id) {
         nameMap.set(suggestion.label, suggestion.id);
         if (suggestion.detail?.startsWith("@")) {
@@ -45,7 +45,7 @@ export default function Header() {
     if (query.trim()) {
       trackSearch({
         search_term: query.trim(),
-        search_location: 'header',
+        search_location: "header",
       });
       navigate(`/search-results?q=${encodeURIComponent(query.trim())}`);
     }
@@ -77,6 +77,26 @@ export default function Header() {
         }
       }
       if (id) {
+        // Fetch artist to get slug for human-readable URL
+        try {
+          const response = await fetch(`/api/artists/${id}`);
+          if (response.ok) {
+            const data = await response.json();
+            const slug = data.result?.slug;
+            if (slug) {
+              navigate(`/artist/${slug}`, {
+                state: {
+                  fromSearch: true,
+                  previous: location.pathname + (location.search || ""),
+                },
+              });
+              return;
+            }
+          }
+        } catch (error) {
+          console.warn("Failed to fetch artist slug, using ID:", error);
+        }
+        // Fallback to ID if slug fetch fails
         navigate(`/artist/${id}`, {
           state: {
             fromSearch: true,

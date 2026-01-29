@@ -5,6 +5,7 @@ import styles from "./ResultsSection.module.css";
 interface Artist {
   id: number;
   name: string;
+  slug?: string | null;
   instagram_handle?: string;
   shop_name?: string;
   shop_id?: number;
@@ -38,7 +39,7 @@ export default function ResultsSection({
       <div className={styles.resultsContainer}>
         <h2 className={styles.allArtistsTitle}>All Artists</h2>
         <div className={styles.grid}>
-          {allArtists.map((artist) => (
+          {allArtists.map(artist => (
             <ArtistCard key={artist.id} artist={artist} />
           ))}
         </div>
@@ -50,7 +51,7 @@ export default function ResultsSection({
     <div className={styles.resultsContainer}>
       {artists.length > 0 && (
         <div className={styles.grid}>
-          {artists.map((artist) => (
+          {artists.map(artist => (
             <ArtistCard key={artist.id} artist={artist} />
           ))}
         </div>
