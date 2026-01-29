@@ -4,7 +4,11 @@ import { useSavedArtists } from "../../hooks/useSavedArtists";
 import { useAuth } from "../../contexts/AuthContext";
 import ReportIssueModal from "../../components/common/ReportIssueModal";
 import { isNumericId } from "../../utils/slug";
+import ArtistPageV2 from "./ArtistPageV2/index";
 import styles from "./ArtistPage.module.css";
+
+/** Set to true to use the new artist page (ArtistPageV2) while you build it. */
+const USE_NEW_ARTIST_PAGE = true;
 
 interface Artist {
   id: number;
@@ -94,6 +98,17 @@ export default function ArtistPage() {
   };
 
   if (isLoading) {
+    if (USE_NEW_ARTIST_PAGE) {
+      return (
+        <ArtistPageV2
+          artist={null}
+          error={null}
+          isLoading
+          onBack={handleBack}
+          showBackButton={fromSearch}
+        />
+      );
+    }
     return (
       <div className={styles.container}>
         <div className={styles.card}>Loading artist…</div>
@@ -102,10 +117,33 @@ export default function ArtistPage() {
   }
 
   if (error || !artist) {
+    if (USE_NEW_ARTIST_PAGE) {
+      return (
+        <ArtistPageV2
+          artist={null}
+          error={error}
+          isLoading={false}
+          onBack={handleBack}
+          showBackButton={fromSearch}
+        />
+      );
+    }
     return (
       <div className={styles.container}>
         <div className={styles.card}>Unable to load artist. {error || ""}</div>
       </div>
+    );
+  }
+
+  if (USE_NEW_ARTIST_PAGE) {
+    return (
+      <ArtistPageV2
+        artist={artist}
+        error={null}
+        isLoading={false}
+        onBack={handleBack}
+        showBackButton={fromSearch}
+      />
     );
   }
 

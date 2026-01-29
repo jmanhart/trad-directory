@@ -1,0 +1,23 @@
+.section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  margin: 0 0 1rem;
+  color: var(--color-text-primary);
+}
+
+.placeholder {
+  min-height: 120px;
+  background-color: var(--color-bg-subtle);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--border-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}

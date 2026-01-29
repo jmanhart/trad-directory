@@ -7,7 +7,9 @@ interface FormGroupProps {
 }
 
 export function FormGroup({ children, className }: FormGroupProps) {
-  return <div className={`${styles.formGroup} ${className || ""}`}>{children}</div>;
+  return (
+    <div className={`${styles.formGroup} ${className || ""}`}>{children}</div>
+  );
 }
 
 interface LabelProps {
@@ -31,18 +33,31 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, ...props }, ref) => {
-    return <input ref={ref} className={`${styles.input} ${className || ""}`} {...props} />;
+    return (
+      <input
+        ref={ref}
+        className={`${styles.input} ${className || ""}`}
+        {...props}
+      />
+    );
   }
 );
 Input.displayName = "Input";
 
-interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+interface TextareaProps
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   // All standard textarea props are inherited
 }
 
 export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, ...props }, ref) => {
-    return <textarea ref={ref} className={`${styles.textarea} ${className || ""}`} {...props} />;
+    return (
+      <textarea
+        ref={ref}
+        className={`${styles.textarea} ${className || ""}`}
+        {...props}
+      />
+    );
   }
 );
 Textarea.displayName = "Textarea";
@@ -63,41 +78,54 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "outline";
   loading?: boolean;
   loadingText?: string;
+  /** Optional icon element (e.g. SVG) shown before the label */
+  icon?: React.ReactNode;
   children: React.ReactNode;
 }
 
-export function Button({ 
-  variant = "primary", 
-  loading, 
-  loadingText, 
-  children, 
+export function Button({
+  variant = "primary",
+  loading,
+  loadingText,
+  icon,
+  children,
   className,
-  ...props 
+  ...props
 }: ButtonProps) {
-  const variantClass = styles[`button${variant.charAt(0).toUpperCase() + variant.slice(1)}`];
+  const variantClass =
+    styles[`button${variant.charAt(0).toUpperCase() + variant.slice(1)}`];
+  const withIconClass = icon ? styles.buttonWithIcon : "";
   return (
-    <button 
-      className={`${styles.button} ${variantClass} ${className || ""}`} 
-      disabled={loading || props.disabled} 
+    <button
+      className={`${styles.button} ${variantClass} ${withIconClass} ${className || ""}`}
+      disabled={loading || props.disabled}
       {...props}
     >
+      {icon && <span className={styles.buttonIcon}>{icon}</span>}
       {loading ? loadingText || "Loading..." : children}
     </button>
   );
 }
 
-interface SubmitButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface SubmitButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
   loadingText?: string;
   children: React.ReactNode;
 }
 
-export function SubmitButton({ loading, loadingText, children, className, ...props }: SubmitButtonProps) {
+export function SubmitButton({
+  loading,
+  loadingText,
+  children,
+  className,
+  ...props
+}: SubmitButtonProps) {
   return (
-    <button 
-      type="submit" 
-      className={`${styles.submitButton} ${className || ""}`} 
-      disabled={loading || props.disabled} 
+    <button
+      type="submit"
+      className={`${styles.submitButton} ${className || ""}`}
+      disabled={loading || props.disabled}
       {...props}
     >
       {loading ? loadingText || "Loading..." : children}
@@ -126,8 +154,6 @@ interface HelperTextProps {
 
 export function HelperText({ children, className }: HelperTextProps) {
   return (
-    <p className={`${styles.helperText} ${className || ""}`}>
-      {children}
-    </p>
+    <p className={`${styles.helperText} ${className || ""}`}>{children}</p>
   );
 }
