@@ -81,11 +81,11 @@
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   .statCard {
     padding: 1.25rem;
   }
-  
+
   .statValue {
     font-size: 1.75rem;
   }
@@ -135,15 +135,48 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  width: 100%;
+}
+
+.searchInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0 1rem;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--border-radius);
+  background-color: var(--color-surface);
+}
+
+.searchInputWrapper:focus-within {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+.searchIcon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-primary);
 }
 
 .searchInput {
   flex: 1;
-  max-width: 600px;
-  padding: 0.75rem 1rem;
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--border-radius);
+  min-width: 0;
+  padding: 0.75rem 0;
+  border: none;
+  border-radius: 0;
   font-size: 1rem;
+  background: transparent;
+}
+
+.searchInput:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 .resultCount {
@@ -507,7 +540,7 @@
   .table {
     font-size: 0.85rem;
   }
-  
+
   .table th,
   .table td {
     padding: 0.75rem 0.5rem;
@@ -518,11 +551,11 @@
   .modalOverlay {
     padding: 1rem;
   }
-  
+
   .modal {
     max-height: 95vh;
   }
-  
+
   .modalHeader,
   .modalContent,
   .modalFooter {

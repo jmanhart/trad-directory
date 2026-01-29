@@ -17,16 +17,21 @@ export interface TabsProps {
 export function Tabs({ items, activeTab, onTabChange, className }: TabsProps) {
   return (
     <div className={`${styles.tabs} ${className || ""}`}>
-      {items.map((item) => (
-        <button
-          key={item.id}
-          className={`${styles.tab} ${activeTab === item.id ? styles.active : ""}`}
-          onClick={() => !item.disabled && onTabChange(item.id)}
-          disabled={item.disabled}
-        >
-          {item.label}
-        </button>
-      ))}
+      {items.map(item => {
+        const isActive = activeTab === item.id;
+        return (
+          <button
+            key={item.id}
+            className={`${styles.tab} ${isActive ? styles.active : ""}`}
+            data-active={isActive}
+            onClick={() => !item.disabled && onTabChange(item.id)}
+            disabled={item.disabled}
+            type="button"
+          >
+            {item.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

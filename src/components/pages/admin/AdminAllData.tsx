@@ -1,9 +1,24 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Message, MessageWithRetry, Input, FormGroup, Label, Select } from "./AdminFormComponents";
-import { updateArtist, fetchArtistById, updateShop, fetchShopById, fetchCountries } from "../../../services/adminApi";
+import {
+  Message,
+  MessageWithRetry,
+  Input,
+  FormGroup,
+  Label,
+  Select,
+} from "./AdminFormComponents";
+import { Tabs } from "../../common/Tabs";
+import {
+  updateArtist,
+  fetchArtistById,
+  updateShop,
+  fetchShopById,
+  fetchCountries,
+} from "../../../services/adminApi";
 import { useAdminData } from "./useAdminData";
 import { getCityDisplayName } from "./adminUtils";
+import SearchIcon from "../../../assets/icons/searchIcon";
 import styles from "./AdminAllData.module.css";
 
 interface Artist {
@@ -49,9 +64,27 @@ interface ShopFormData {
   city_id: string;
 }
 
-type TabType = "artists" | "shops" | "cities" | "countries" | "states" | "new_artists" | "bugs";
-type ArtistSortColumn = "id" | "name" | "instagram_handle" | "location" | "shop_name" | "is_traveling";
-type ShopSortColumn = "id" | "shop_name" | "instagram_handle" | "location" | "address";
+type TabType =
+  | "artists"
+  | "shops"
+  | "cities"
+  | "countries"
+  | "states"
+  | "new_artists"
+  | "bugs";
+type ArtistSortColumn =
+  | "id"
+  | "name"
+  | "instagram_handle"
+  | "location"
+  | "shop_name"
+  | "is_traveling";
+type ShopSortColumn =
+  | "id"
+  | "shop_name"
+  | "instagram_handle"
+  | "location"
+  | "address";
 type SortColumn = ArtistSortColumn | ShopSortColumn;
 type SortDirection = "asc" | "desc";
 
@@ -59,27 +92,33 @@ export default function AdminAllData() {
   const [activeTab, setActiveTab] = useState<TabType>("artists");
   const [artists, setArtists] = useState<Artist[]>([]);
   const [allShops, setAllShops] = useState<Shop[]>([]);
-  const [countries, setCountries] = useState<{ id: number; country_name: string }[]>([]);
+  const [countries, setCountries] = useState<
+    { id: number; country_name: string }[]
+  >([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<{ type: "error"; text: string } | null>(null);
+  const [error, setError] = useState<{ type: "error"; text: string } | null>(
+    null
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [sortColumn, setSortColumn] = useState<SortColumn>("id");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  
+
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingArtistId, setEditingArtistId] = useState<number | null>(null);
   const [editingShopId, setEditingShopId] = useState<number | null>(null);
   const [formData, setFormData] = useState<ArtistFormData | null>(null);
   const [shopFormData, setShopFormData] = useState<ShopFormData | null>(null);
-  const [originalFormData, setOriginalFormData] = useState<ArtistFormData | null>(null);
-  const [originalShopFormData, setOriginalShopFormData] = useState<ShopFormData | null>(null);
+  const [originalFormData, setOriginalFormData] =
+    useState<ArtistFormData | null>(null);
+  const [originalShopFormData, setOriginalShopFormData] =
+    useState<ShopFormData | null>(null);
   const [loadingArtist, setLoadingArtist] = useState(false);
   const [loadingShop, setLoadingShop] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  
+
   const { cities, shops } = useAdminData({
     loadCities: true,
     loadShops: true,
@@ -111,18 +150,18 @@ export default function AdminAllData() {
       const type = activeTab === "new_artists" ? "new_artist" : "report";
       const baseUrl = import.meta.env.VITE_API_URL || "/api";
       const apiUrl = `${baseUrl}/listSubmissions?type=${type}`;
-      
+
       console.log("Loading submissions:", { type, apiUrl });
-      
+
       const response = await fetch(apiUrl);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const result = await response.json();
       console.log("Submissions loaded:", result.submissions?.length || 0);
-      
+
       // Only update if we're still on the same tab
       if (activeTab === "new_artists" || activeTab === "bugs") {
         setSubmissions(result.submissions || []);
@@ -153,18 +192,20 @@ export default function AdminAllData() {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Use dedicated admin endpoint that returns all artists
       const apiUrl = import.meta.env.VITE_API_URL || "/api/listAllArtists";
       const response = await fetch(apiUrl);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData.details || errorData.error || `Failed to fetch artists: ${response.status}`
+          errorData.details ||
+            errorData.error ||
+            `Failed to fetch artists: ${response.status}`
         );
       }
-      
+
       const result = await response.json();
       setArtists(result.artists || []);
     } catch (err) {
@@ -183,17 +224,19 @@ export default function AdminAllData() {
         setLoading(true);
         setError(null);
       }
-      
+
       const apiUrl = import.meta.env.VITE_API_URL || "/api/listAllShops";
       const response = await fetch(apiUrl);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData.details || errorData.error || `Failed to fetch shops: ${response.status}`
+          errorData.details ||
+            errorData.error ||
+            `Failed to fetch shops: ${response.status}`
         );
       }
-      
+
       const result = await response.json();
       setAllShops(result.shops || []);
     } catch (err) {
@@ -225,13 +268,15 @@ export default function AdminAllData() {
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = artists.filter((artist) => {
+      filtered = artists.filter(artist => {
         const location = formatLocation(artist).toLowerCase();
         return (
           artist.name.toLowerCase().includes(query) ||
-          (artist.instagram_handle && artist.instagram_handle.toLowerCase().includes(query)) ||
+          (artist.instagram_handle &&
+            artist.instagram_handle.toLowerCase().includes(query)) ||
           location.includes(query) ||
-          (artist.shop_name && artist.shop_name.toLowerCase().includes(query)) ||
+          (artist.shop_name &&
+            artist.shop_name.toLowerCase().includes(query)) ||
           artist.id.toString().includes(query)
         );
       });
@@ -286,11 +331,12 @@ export default function AdminAllData() {
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = allShops.filter((shop) => {
+      filtered = allShops.filter(shop => {
         const location = formatLocation(shop).toLowerCase();
         return (
           shop.shop_name.toLowerCase().includes(query) ||
-          (shop.instagram_handle && shop.instagram_handle.toLowerCase().includes(query)) ||
+          (shop.instagram_handle &&
+            shop.instagram_handle.toLowerCase().includes(query)) ||
           location.includes(query) ||
           (shop.address && shop.address.toLowerCase().includes(query)) ||
           shop.id.toString().includes(query)
@@ -346,7 +392,7 @@ export default function AdminAllData() {
   };
 
   const getSortIcon = (column: SortColumn) => {
-    if (sortColumn !== column) return "↕️";
+    if (sortColumn !== column) return "";
     return sortDirection === "asc" ? "↑" : "↓";
   };
 
@@ -363,7 +409,7 @@ export default function AdminAllData() {
       setLoadingArtist(true);
       setSaveError(null);
       const artist = await fetchArtistById(artistId);
-      
+
       const formData: ArtistFormData = {
         name: artist.name || "",
         instagram_handle: artist.instagram_handle || "",
@@ -374,13 +420,15 @@ export default function AdminAllData() {
         shop_id: artist.shop_id?.toString() || "",
         is_traveling: artist.is_traveling || false,
       };
-      
+
       setFormData(formData);
       setOriginalFormData(JSON.parse(JSON.stringify(formData)));
       setEditingArtistId(artistId);
       setIsModalOpen(true);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Failed to load artist data");
+      setSaveError(
+        err instanceof Error ? err.message : "Failed to load artist data"
+      );
     } finally {
       setLoadingArtist(false);
     }
@@ -397,7 +445,10 @@ export default function AdminAllData() {
     setSaveError(null);
   };
 
-  const handleFormChange = (field: keyof ArtistFormData, value: string | boolean) => {
+  const handleFormChange = (
+    field: keyof ArtistFormData,
+    value: string | boolean
+  ) => {
     if (!formData) return;
     setFormData({ ...formData, [field]: value });
   };
@@ -412,17 +463,26 @@ export default function AdminAllData() {
       return JSON.stringify(formData) !== JSON.stringify(originalFormData);
     }
     if (editingShopId && shopFormData && originalShopFormData) {
-      return JSON.stringify(shopFormData) !== JSON.stringify(originalShopFormData);
+      return (
+        JSON.stringify(shopFormData) !== JSON.stringify(originalShopFormData)
+      );
     }
     return false;
-  }, [formData, originalFormData, shopFormData, originalShopFormData, editingArtistId, editingShopId]);
+  }, [
+    formData,
+    originalFormData,
+    shopFormData,
+    originalShopFormData,
+    editingArtistId,
+    editingShopId,
+  ]);
 
   const handleEditShopClick = async (shopId: number) => {
     try {
       setLoadingShop(true);
       setSaveError(null);
       const shop = await fetchShopById(shopId);
-      
+
       const formData: ShopFormData = {
         shop_name: shop.shop_name || "",
         instagram_handle: shop.instagram_handle || "",
@@ -432,13 +492,15 @@ export default function AdminAllData() {
         website_url: shop.website_url || "",
         city_id: shop.city_id?.toString() || "",
       };
-      
+
       setShopFormData(formData);
       setOriginalShopFormData(JSON.parse(JSON.stringify(formData)));
       setEditingShopId(shopId);
       setIsModalOpen(true);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Failed to load shop data");
+      setSaveError(
+        err instanceof Error ? err.message : "Failed to load shop data"
+      );
     } finally {
       setLoadingShop(false);
     }
@@ -449,7 +511,7 @@ export default function AdminAllData() {
       try {
         setSaving(true);
         setSaveError(null);
-        
+
         await updateArtist({
           id: editingArtistId,
           name: formData.name,
@@ -461,12 +523,14 @@ export default function AdminAllData() {
           shop_id: formData.shop_id ? parseInt(formData.shop_id) : undefined,
           is_traveling: formData.is_traveling,
         });
-        
+
         // Reload artists list
         await loadArtists();
         handleCloseModal();
       } catch (err) {
-        setSaveError(err instanceof Error ? err.message : "Failed to save changes");
+        setSaveError(
+          err instanceof Error ? err.message : "Failed to save changes"
+        );
       } finally {
         setSaving(false);
       }
@@ -474,7 +538,7 @@ export default function AdminAllData() {
       try {
         setSaving(true);
         setSaveError(null);
-        
+
         await updateShop({
           id: editingShopId,
           shop_name: shopFormData.shop_name,
@@ -483,14 +547,18 @@ export default function AdminAllData() {
           contact: shopFormData.contact || undefined,
           phone_number: shopFormData.phone_number || undefined,
           website_url: shopFormData.website_url || undefined,
-          city_id: shopFormData.city_id ? parseInt(shopFormData.city_id) : undefined,
+          city_id: shopFormData.city_id
+            ? parseInt(shopFormData.city_id)
+            : undefined,
         });
-        
+
         // Reload shops list
         await loadShops();
         handleCloseModal();
       } catch (err) {
-        setSaveError(err instanceof Error ? err.message : "Failed to save changes");
+        setSaveError(
+          err instanceof Error ? err.message : "Failed to save changes"
+        );
       } finally {
         setSaving(false);
       }
@@ -511,90 +579,64 @@ export default function AdminAllData() {
     <div className={styles.pageContainer}>
       <div className={styles.container}>
         <h1 className={styles.title}>ALL DATA</h1>
-        
+
         {/* Stats Cards */}
         <div className={styles.statsGrid}>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>Total Artists</div>
-            <div className={styles.statValue}>{stats.totalArtists.toLocaleString()}</div>
+            <div className={styles.statValue}>
+              {stats.totalArtists.toLocaleString()}
+            </div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>Total Shops</div>
-            <div className={styles.statValue}>{stats.totalShops.toLocaleString()}</div>
+            <div className={styles.statValue}>
+              {stats.totalShops.toLocaleString()}
+            </div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>Total Countries</div>
-            <div className={styles.statValue}>{stats.totalCountries.toLocaleString()}</div>
+            <div className={styles.statValue}>
+              {stats.totalCountries.toLocaleString()}
+            </div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>Total Cities</div>
-            <div className={styles.statValue}>{stats.totalCities.toLocaleString()}</div>
+            <div className={styles.statValue}>
+              {stats.totalCities.toLocaleString()}
+            </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className={styles.tabs}>
-          <button
-            className={`${styles.tab} ${activeTab === "artists" ? styles.active : ""}`}
-            onClick={() => setActiveTab("artists")}
-          >
-            Artists
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === "shops" ? styles.active : ""}`}
-            onClick={() => setActiveTab("shops")}
-          >
-            Shops
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === "cities" ? styles.active : ""}`}
-            onClick={() => setActiveTab("cities")}
-            disabled
-          >
-            Cities
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === "countries" ? styles.active : ""}`}
-            onClick={() => setActiveTab("countries")}
-            disabled
-          >
-            Countries
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === "states" ? styles.active : ""}`}
-            onClick={() => setActiveTab("states")}
-            disabled
-          >
-            States
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === "bugs" ? styles.active : ""}`}
-            onClick={() => setActiveTab("bugs")}
-          >
-            BUGS
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === "new_artists" ? styles.active : ""}`}
-            onClick={() => setActiveTab("new_artists")}
-          >
-            SUBMISSIONS
-          </button>
-        </div>
+        <Tabs
+          items={[
+            { id: "artists", label: "Artists" },
+            { id: "shops", label: "Shops" },
+            { id: "bugs", label: "Bugs" },
+            { id: "new_artists", label: "Submissions" },
+          ]}
+          activeTab={activeTab}
+          onTabChange={tabId => setActiveTab(tabId as TabType)}
+        />
 
         {/* Search Bar */}
         {(activeTab === "artists" || activeTab === "shops") && !loading && (
           <div className={styles.searchContainer}>
-            <Input
-              type="text"
-              placeholder={
-                activeTab === "artists"
-                  ? "Search artists by name, Instagram, location, shop, or ID..."
-                  : "Search shops by name, Instagram, location, address, or ID..."
-              }
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={styles.searchInput}
-            />
+            <div className={styles.searchInputWrapper}>
+              <SearchIcon className={styles.searchIcon} aria-hidden />
+              <Input
+                type="text"
+                placeholder={
+                  activeTab === "artists"
+                    ? "Search artists by name, Instagram, location, shop, or ID..."
+                    : "Search shops by name, Instagram, location, address, or ID..."
+                }
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className={styles.searchInput}
+              />
+            </div>
             {searchQuery && (
               <span className={styles.resultCount}>
                 {activeTab === "artists"
@@ -624,37 +666,37 @@ export default function AdminAllData() {
                 <table className={styles.table}>
                   <thead>
                     <tr>
-                      <th 
+                      <th
                         className={styles.sortableHeader}
                         onClick={() => handleSort("id")}
                       >
                         ID {getSortIcon("id")}
                       </th>
-                      <th 
+                      <th
                         className={styles.sortableHeader}
                         onClick={() => handleSort("name")}
                       >
                         Name {getSortIcon("name")}
                       </th>
-                      <th 
+                      <th
                         className={styles.sortableHeader}
                         onClick={() => handleSort("instagram_handle")}
                       >
                         Instagram {getSortIcon("instagram_handle")}
                       </th>
-                      <th 
+                      <th
                         className={styles.sortableHeader}
                         onClick={() => handleSort("location")}
                       >
                         Location {getSortIcon("location")}
                       </th>
-                      <th 
+                      <th
                         className={styles.sortableHeader}
                         onClick={() => handleSort("shop_name")}
                       >
                         Shop {getSortIcon("shop_name")}
                       </th>
-                      <th 
+                      <th
                         className={styles.sortableHeader}
                         onClick={() => handleSort("is_traveling")}
                       >
@@ -667,18 +709,20 @@ export default function AdminAllData() {
                     {filteredAndSortedArtists.length === 0 ? (
                       <tr>
                         <td colSpan={7} className={styles.emptyCell}>
-                          {searchQuery ? "No artists match your search" : "No artists found"}
+                          {searchQuery
+                            ? "No artists match your search"
+                            : "No artists found"}
                         </td>
                       </tr>
                     ) : (
-                      filteredAndSortedArtists.map((artist) => (
+                      filteredAndSortedArtists.map(artist => (
                         <tr key={artist.id}>
                           <td className={styles.idCell}>{artist.id}</td>
                           <td className={styles.nameCell}>{artist.name}</td>
                           <td className={styles.instagramCell}>
                             {artist.instagram_handle ? (
                               <a
-                                href={`https://instagram.com/${artist.instagram_handle.replace('@', '')}`}
+                                href={`https://instagram.com/${artist.instagram_handle.replace("@", "")}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className={styles.link}
@@ -723,31 +767,31 @@ export default function AdminAllData() {
                 <table className={styles.table}>
                   <thead>
                     <tr>
-                      <th 
+                      <th
                         className={styles.sortableHeader}
                         onClick={() => handleSort("id")}
                       >
                         ID {getSortIcon("id")}
                       </th>
-                      <th 
+                      <th
                         className={styles.sortableHeader}
                         onClick={() => handleSort("shop_name")}
                       >
                         Shop Name {getSortIcon("shop_name")}
                       </th>
-                      <th 
+                      <th
                         className={styles.sortableHeader}
                         onClick={() => handleSort("instagram_handle")}
                       >
                         Instagram {getSortIcon("instagram_handle")}
                       </th>
-                      <th 
+                      <th
                         className={styles.sortableHeader}
                         onClick={() => handleSort("location")}
                       >
                         Location {getSortIcon("location")}
                       </th>
-                      <th 
+                      <th
                         className={styles.sortableHeader}
                         onClick={() => handleSort("address")}
                       >
@@ -760,18 +804,20 @@ export default function AdminAllData() {
                     {filteredAndSortedShops.length === 0 ? (
                       <tr>
                         <td colSpan={6} className={styles.emptyCell}>
-                          {searchQuery ? "No shops match your search" : "No shops found"}
+                          {searchQuery
+                            ? "No shops match your search"
+                            : "No shops found"}
                         </td>
                       </tr>
                     ) : (
-                      filteredAndSortedShops.map((shop) => (
+                      filteredAndSortedShops.map(shop => (
                         <tr key={shop.id}>
                           <td className={styles.idCell}>{shop.id}</td>
                           <td className={styles.nameCell}>{shop.shop_name}</td>
                           <td className={styles.instagramCell}>
                             {shop.instagram_handle ? (
                               <a
-                                href={`https://instagram.com/${shop.instagram_handle.replace('@', '')}`}
+                                href={`https://instagram.com/${shop.instagram_handle.replace("@", "")}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className={styles.link}
@@ -813,7 +859,8 @@ export default function AdminAllData() {
                 <Message type="error" text={error.text} />
               ) : submissions.length === 0 ? (
                 <div className={styles.emptyCell}>
-                  No {activeTab === "new_artists" ? "new artist" : "bug"} submissions yet.
+                  No {activeTab === "new_artists" ? "new artist" : "bug"}{" "}
+                  submissions yet.
                 </div>
               ) : (
                 <table className={styles.table}>
@@ -841,7 +888,7 @@ export default function AdminAllData() {
                     </tr>
                   </thead>
                   <tbody>
-                    {submissions.map((submission) => (
+                    {submissions.map(submission => (
                       <tr key={submission.id}>
                         <td className={styles.idCell}>
                           {submission.id.substring(0, 8)}...
@@ -867,13 +914,20 @@ export default function AdminAllData() {
                               )}
                             </td>
                             <td>
-                              {[submission.artist_city, submission.artist_state, submission.artist_country]
+                              {[
+                                submission.artist_city,
+                                submission.artist_state,
+                                submission.artist_country,
+                              ]
                                 .filter(Boolean)
                                 .join(", ") || "—"}
                             </td>
                             <td>{submission.reporter_email || "—"}</td>
                             <td>
-                              <span className={styles.statusBadge} data-status={submission.status}>
+                              <span
+                                className={styles.statusBadge}
+                                data-status={submission.status}
+                              >
                                 {submission.status}
                               </span>
                             </td>
@@ -898,7 +952,10 @@ export default function AdminAllData() {
                             </td>
                             <td>{submission.reporter_email || "—"}</td>
                             <td>
-                              <span className={styles.statusBadge} data-status={submission.status}>
+                              <span
+                                className={styles.statusBadge}
+                                data-status={submission.status}
+                              >
                                 {submission.status}
                               </span>
                             </td>
@@ -912,25 +969,30 @@ export default function AdminAllData() {
             </div>
           )}
 
-          {activeTab !== "artists" && activeTab !== "shops" && activeTab !== "new_artists" && activeTab !== "bugs" && (
-            <div className={styles.comingSoon}>
-              <p>Coming soon: {activeTab} table view</p>
-            </div>
-          )}
+          {activeTab !== "artists" &&
+            activeTab !== "shops" &&
+            activeTab !== "new_artists" &&
+            activeTab !== "bugs" && (
+              <div className={styles.comingSoon}>
+                <p>Coming soon: {activeTab} table view</p>
+              </div>
+            )}
         </div>
       </div>
 
       {/* Edit Modal */}
       {isModalOpen && (
         <div className={styles.modalOverlay} onClick={handleCloseModal}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>
                 {editingArtistId ? "Edit Artist" : "Edit Shop"}
               </h2>
-              <button className={styles.modalClose} onClick={handleCloseModal}>×</button>
+              <button className={styles.modalClose} onClick={handleCloseModal}>
+                ×
+              </button>
             </div>
-            
+
             <div className={styles.modalContent}>
               {editingArtistId && loadingArtist ? (
                 <div className={styles.loading}>Loading artist data...</div>
@@ -938,18 +1000,18 @@ export default function AdminAllData() {
                 <div className={styles.loading}>Loading shop data...</div>
               ) : editingArtistId && formData ? (
                 <>
-                  {saveError && (
-                    <Message type="error" text={saveError} />
-                  )}
-                  
+                  {saveError && <Message type="error" text={saveError} />}
+
                   <form className={styles.modalForm}>
                     <FormGroup>
-                      <Label htmlFor="name" required>Name</Label>
+                      <Label htmlFor="name" required>
+                        Name
+                      </Label>
                       <Input
                         type="text"
                         id="name"
                         value={formData.name}
-                        onChange={(e) => handleFormChange("name", e.target.value)}
+                        onChange={e => handleFormChange("name", e.target.value)}
                         required
                       />
                     </FormGroup>
@@ -960,7 +1022,9 @@ export default function AdminAllData() {
                         type="text"
                         id="instagram_handle"
                         value={formData.instagram_handle}
-                        onChange={(e) => handleFormChange("instagram_handle", e.target.value)}
+                        onChange={e =>
+                          handleFormChange("instagram_handle", e.target.value)
+                        }
                         placeholder="@username or username"
                       />
                     </FormGroup>
@@ -971,7 +1035,9 @@ export default function AdminAllData() {
                         type="text"
                         id="gender"
                         value={formData.gender}
-                        onChange={(e) => handleFormChange("gender", e.target.value)}
+                        onChange={e =>
+                          handleFormChange("gender", e.target.value)
+                        }
                         placeholder="Gender"
                       />
                     </FormGroup>
@@ -982,7 +1048,7 @@ export default function AdminAllData() {
                         type="url"
                         id="url"
                         value={formData.url}
-                        onChange={(e) => handleFormChange("url", e.target.value)}
+                        onChange={e => handleFormChange("url", e.target.value)}
                         placeholder="https://example.com"
                       />
                     </FormGroup>
@@ -993,17 +1059,23 @@ export default function AdminAllData() {
                         type="text"
                         id="contact"
                         value={formData.contact}
-                        onChange={(e) => handleFormChange("contact", e.target.value)}
+                        onChange={e =>
+                          handleFormChange("contact", e.target.value)
+                        }
                         placeholder="Email or phone number"
                       />
                     </FormGroup>
 
                     <FormGroup>
-                      <Label htmlFor="city_id" required>City</Label>
+                      <Label htmlFor="city_id" required>
+                        City
+                      </Label>
                       <Select
                         id="city_id"
                         value={formData.city_id}
-                        onChange={(e) => handleFormChange("city_id", e.target.value)}
+                        onChange={e =>
+                          handleFormChange("city_id", e.target.value)
+                        }
                         required
                       >
                         <option value="">Select a city</option>
@@ -1020,7 +1092,9 @@ export default function AdminAllData() {
                       <Select
                         id="shop_id"
                         value={formData.shop_id}
-                        onChange={(e) => handleFormChange("shop_id", e.target.value)}
+                        onChange={e =>
+                          handleFormChange("shop_id", e.target.value)
+                        }
                       >
                         <option value="">No shop</option>
                         {shops.map(shop => (
@@ -1032,14 +1106,25 @@ export default function AdminAllData() {
                     </FormGroup>
 
                     <FormGroup>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                        }}
+                      >
                         <Input
                           type="checkbox"
                           id="is_traveling"
                           checked={formData.is_traveling}
-                          onChange={(e) => handleFormChange("is_traveling", e.target.checked)}
+                          onChange={e =>
+                            handleFormChange("is_traveling", e.target.checked)
+                          }
                         />
-                        <Label htmlFor="is_traveling" style={{ margin: 0, cursor: "pointer" }}>
+                        <Label
+                          htmlFor="is_traveling"
+                          style={{ margin: 0, cursor: "pointer" }}
+                        >
                           Traveling Artist
                         </Label>
                       </div>
@@ -1048,29 +1133,38 @@ export default function AdminAllData() {
                 </>
               ) : editingShopId && shopFormData ? (
                 <>
-                  {saveError && (
-                    <Message type="error" text={saveError} />
-                  )}
-                  
+                  {saveError && <Message type="error" text={saveError} />}
+
                   <form className={styles.modalForm}>
                     <FormGroup>
-                      <Label htmlFor="shop_name" required>Shop Name</Label>
+                      <Label htmlFor="shop_name" required>
+                        Shop Name
+                      </Label>
                       <Input
                         type="text"
                         id="shop_name"
                         value={shopFormData.shop_name}
-                        onChange={(e) => handleShopFormChange("shop_name", e.target.value)}
+                        onChange={e =>
+                          handleShopFormChange("shop_name", e.target.value)
+                        }
                         required
                       />
                     </FormGroup>
 
                     <FormGroup>
-                      <Label htmlFor="shop_instagram_handle">Instagram Handle</Label>
+                      <Label htmlFor="shop_instagram_handle">
+                        Instagram Handle
+                      </Label>
                       <Input
                         type="text"
                         id="shop_instagram_handle"
                         value={shopFormData.instagram_handle}
-                        onChange={(e) => handleShopFormChange("instagram_handle", e.target.value)}
+                        onChange={e =>
+                          handleShopFormChange(
+                            "instagram_handle",
+                            e.target.value
+                          )
+                        }
                         placeholder="@username or username"
                       />
                     </FormGroup>
@@ -1081,7 +1175,9 @@ export default function AdminAllData() {
                         type="text"
                         id="shop_address"
                         value={shopFormData.address}
-                        onChange={(e) => handleShopFormChange("address", e.target.value)}
+                        onChange={e =>
+                          handleShopFormChange("address", e.target.value)
+                        }
                         placeholder="Street address"
                       />
                     </FormGroup>
@@ -1092,7 +1188,9 @@ export default function AdminAllData() {
                         type="text"
                         id="shop_contact"
                         value={shopFormData.contact}
-                        onChange={(e) => handleShopFormChange("contact", e.target.value)}
+                        onChange={e =>
+                          handleShopFormChange("contact", e.target.value)
+                        }
                         placeholder="Email or other contact"
                       />
                     </FormGroup>
@@ -1103,7 +1201,9 @@ export default function AdminAllData() {
                         type="tel"
                         id="shop_phone_number"
                         value={shopFormData.phone_number}
-                        onChange={(e) => handleShopFormChange("phone_number", e.target.value)}
+                        onChange={e =>
+                          handleShopFormChange("phone_number", e.target.value)
+                        }
                         placeholder="Phone number"
                       />
                     </FormGroup>
@@ -1114,17 +1214,23 @@ export default function AdminAllData() {
                         type="url"
                         id="shop_website_url"
                         value={shopFormData.website_url}
-                        onChange={(e) => handleShopFormChange("website_url", e.target.value)}
+                        onChange={e =>
+                          handleShopFormChange("website_url", e.target.value)
+                        }
                         placeholder="https://example.com"
                       />
                     </FormGroup>
 
                     <FormGroup>
-                      <Label htmlFor="shop_city_id" required>City</Label>
+                      <Label htmlFor="shop_city_id" required>
+                        City
+                      </Label>
                       <Select
                         id="shop_city_id"
                         value={shopFormData.city_id}
-                        onChange={(e) => handleShopFormChange("city_id", e.target.value)}
+                        onChange={e =>
+                          handleShopFormChange("city_id", e.target.value)
+                        }
                         required
                       >
                         <option value="">Select a city</option>
@@ -1154,8 +1260,10 @@ export default function AdminAllData() {
                   onClick={handleSave}
                   disabled={
                     saving ||
-                    (editingArtistId && (!formData?.name || !formData?.city_id)) ||
-                    (editingShopId && (!shopFormData?.shop_name || !shopFormData?.city_id))
+                    (editingArtistId &&
+                      (!formData?.name || !formData?.city_id)) ||
+                    (editingShopId &&
+                      (!shopFormData?.shop_name || !shopFormData?.city_id))
                   }
                 >
                   {saving ? "Saving..." : "Save"}

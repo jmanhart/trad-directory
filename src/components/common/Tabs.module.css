@@ -5,20 +5,33 @@
   margin-bottom: 1.5rem;
   padding: 0;
   overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none; /* Firefox: hide scrollbar */
+  -ms-overflow-style: none; /* IE/Edge: hide scrollbar */
+}
+
+.tabs::-webkit-scrollbar {
+  display: none; /* Chrome/Safari: hide scrollbar (removes gray block at end) */
 }
 
 .tab {
   padding: 0.75rem 1.5rem;
   background: none;
   border: none;
+  border-bottom: 3px solid transparent;
   border-radius: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-base);
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
   white-space: nowrap;
   font-family: inherit;
+  margin-bottom: calc(
+    -1 * var(--border-width)
+  ); /* Overlap container border so active line replaces it */
   position: relative;
 }
 
@@ -26,41 +39,17 @@
   color: var(--color-text-primary);
 }
 
+/* Active state: red text + red underline (data attribute ensures it applies) */
+.tab[data-active="true"],
 .tab.active {
   color: var(--color-primary);
   font-weight: 600;
-}
-
-.tab.active::after {
-  content: "";
-  position: absolute;
-  bottom: calc(-1 * var(--border-width) - 1px);
-  left: 0;
-  right: 0;
-  height: 3px;
-  background-color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  border-bottom-width: 3px;
 }
 
 .tab:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   color: var(--color-text-tertiary);
-}
-
-/* Scrollbar styling for horizontal overflow */
-.tabs::-webkit-scrollbar {
-  height: 6px;
-}
-
-.tabs::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.tabs::-webkit-scrollbar-thumb {
-  background-color: var(--gray-300);
-  border-radius: 3px;
-}
-
-.tabs::-webkit-scrollbar-thumb:hover {
-  background-color: var(--gray-400);
 }
