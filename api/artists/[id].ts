@@ -2,6 +2,16 @@ import { createClient } from "@supabase/supabase-js";
 import { Artist } from "../types";
 import { withCache, CacheManager, CACHE_TTL } from "../cache";
 
+// Import slug utilities - using dynamic import since this is server-side
+function isNumericId(value: string): boolean {
+  return /^\d+$/.test(value);
+}
+
+function extractIdFromSlug(slug: string): number | null {
+  const match = slug.match(/-(\d+)$/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
 export default async function handler(req: any, res: any) {
   // Set CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -24,8 +34,27 @@ export default async function handler(req: any, res: any) {
     const { id } = req.query;
 
     if (!id) {
-      res.status(400).json({ error: "Artist ID is required" });
+      res.status(400).json({ error: "Artist identifier is required" });
       return;
+    }
+
+    // Determine if we have a numeric ID or a slug
+    let artistId: number | null = null;
+    let queryBySlug = false;
+    let slugValue: string | null = null;
+
+    if (isNumericId(id)) {
+      // Backward compatibility: numeric ID
+      artistId = Number(id);
+    } else {
+      // New: slug format - query by slug directly
+      queryBySlug = true;
+      slugValue = id;
+      // Try to extract ID from slug for fallback (if slug has ID suffix like "name-123")
+      const extractedId = extractIdFromSlug(id);
+      if (extractedId) {
+        artistId = extractedId;
+      }
     }
 
     // Check if environment variables are available
@@ -44,18 +73,19 @@ export default async function handler(req: any, res: any) {
     // Fetch artist data (with optional caching)
     let artistData;
     try {
-      const cacheKey = CacheManager.artistKey(id);
+      const cacheKey = queryBySlug
+        ? CacheManager.artistKey(`slug:${slugValue}`)
+        : CacheManager.artistKey(String(artistId));
       artistData = await withCache(
         cacheKey,
         CACHE_TTL.ARTIST_DETAILS,
         async () => {
-          // Fetch specific artist by ID
-          const { data: artist, error } = await supabase
-            .from("artists")
-            .select(
-              `
+          // Build query - include slug in select
+          let query = supabase.from("artists").select(
+            `
               id,
               name,
+              slug,
               instagram_handle,
               gender,
               url,
@@ -72,9 +102,18 @@ export default async function handler(req: any, res: any) {
                 shop: tattoo_shops (id, shop_name, instagram_handle)
               )
             `
-            )
-            .eq("id", id)
-            .single();
+          );
+
+          // Query by slug if we have one, otherwise use ID
+          if (queryBySlug && slugValue) {
+            query = query.eq("slug", slugValue);
+          } else if (artistId !== null) {
+            query = query.eq("id", artistId);
+          } else {
+            throw new Error("Invalid artist identifier");
+          }
+
+          const { data: artist, error } = await query.single();
 
           if (error) {
             console.error("Supabase error:", error);
@@ -94,12 +133,11 @@ export default async function handler(req: any, res: any) {
     } catch (cacheError) {
       // If caching fails, fetch directly
       console.warn("Cache error, fetching directly:", cacheError);
-      const { data: artist, error } = await supabase
-        .from("artists")
-        .select(
-          `
+      let query = supabase.from("artists").select(
+        `
           id,
           name,
+          slug,
           instagram_handle,
           gender,
           url,
@@ -116,37 +154,79 @@ export default async function handler(req: any, res: any) {
             shop: tattoo_shops (id, shop_name, instagram_handle)
           )
         `
-        )
-        .eq("id", id)
-        .single();
+      );
 
-      if (error) {
-        console.error("Supabase error:", error);
-        if (error.code === "PGRST116") {
-          res.status(404).json({ error: "Artist not found" });
-          return;
+      // Query by slug if we have one, otherwise use ID
+      if (queryBySlug && slugValue) {
+        query = query.eq("slug", slugValue);
+      } else if (artistId !== null) {
+        query = query.eq("id", artistId);
+      } else {
+        throw new Error("Invalid artist identifier");
+      }
+
+      const { data: artist, error } = await query.single();
+
+      // If slug query fails and we have an extracted ID, fall back to ID query
+      if (error && queryBySlug && artistId !== null) {
+        const { data: artistById, error: errorById } = await supabase
+          .from("artists")
+          .select(
+            `
+            id,
+            name,
+            slug,
+            instagram_handle,
+            gender,
+            url,
+            contact,
+            city_id,
+            is_traveling,
+            city: cities (
+              id,
+              city_name,
+              state: states (state_name),
+              country: countries (country_name)
+            ),
+            artist_shop (
+              shop: tattoo_shops (id, shop_name, instagram_handle)
+            )
+          `
+          )
+          .eq("id", artistId)
+          .single();
+
+        if (errorById) {
+          throw error;
         }
-        throw new Error(`Database query failed: ${error.message}`);
+        artistData = artistById;
+      } else if (error) {
+        throw error;
+      } else {
+        artistData = artist;
       }
 
-      if (!artist) {
-        res.status(404).json({ error: "Artist not found" });
-        return;
-      }
-
-      artistData = artist;
+      // Error handling is done in the catch block above
     }
 
-    const result: Artist & { 
+    // Handle case where artist not found
+    if (!artistData) {
+      res.status(404).json({ error: "Artist not found" });
+      return;
+    }
+
+    const result: Artist & {
       shop?: any;
       city_id?: number;
       shop_id?: number;
       gender?: string | null;
       url?: string | null;
       contact?: string | null;
+      slug?: string | null;
     } = {
       id: artistData.id,
       name: artistData.name,
+      slug: artistData.slug || null,
       instagram_handle: artistData.instagram_handle || null,
       is_traveling: artistData.is_traveling || false,
       city_id: artistData.city_id || null,
@@ -169,11 +249,18 @@ export default async function handler(req: any, res: any) {
     res.status(200).json({
       result,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Unexpected error in /api/artists/[id]:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
     console.error("Error stack:", errorStack);
+
+    // Handle Supabase "not found" errors
+    if (error?.code === "PGRST116") {
+      res.status(404).json({ error: "Artist not found" });
+      return;
+    }
+
     res.status(500).json({
       error: "Internal server error",
       details: errorMessage,

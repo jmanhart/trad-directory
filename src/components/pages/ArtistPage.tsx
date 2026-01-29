@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { fetchArtistById } from "../../services/api";
 import { useSavedArtists } from "../../hooks/useSavedArtists";
 import { useAuth } from "../../contexts/AuthContext";
 import ReportIssueModal from "../../components/common/ReportIssueModal";
+import { isNumericId } from "../../utils/slug";
 import styles from "./ArtistPage.module.css";
 
 interface Artist {
   id: number;
   name: string;
+  slug?: string | null;
   instagram_handle?: string | null;
   city_name?: string;
   state_name?: string;
@@ -19,7 +20,7 @@ interface Artist {
 }
 
 export default function ArtistPage() {
-  const { artistId } = useParams();
+  const { slugOrId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -38,12 +39,29 @@ export default function ArtistPage() {
       try {
         setIsLoading(true);
         setError(null);
-        const id = Number(artistId);
-        if (!Number.isFinite(id)) {
-          throw new Error("Invalid artist id");
+
+        if (!slugOrId) {
+          throw new Error("Invalid artist identifier");
         }
-        const data = await fetchArtistById(id);
-        setArtist(data as unknown as Artist);
+
+        // Use the API route directly - it handles both slugs and IDs
+        const response = await fetch(`/api/artists/${slugOrId}`);
+        if (!response.ok) {
+          const errorData = await response
+            .json()
+            .catch(() => ({ error: "Failed to fetch artist" }));
+          throw new Error(errorData.error || "Failed to fetch artist");
+        }
+        const apiData = await response.json();
+        const artistData = apiData.result as unknown as Artist & {
+          slug?: string | null;
+        };
+        setArtist(artistData);
+
+        // Redirect to slug URL if user accessed via ID and slug exists
+        if (isNumericId(slugOrId) && artistData.slug) {
+          navigate(`/artist/${artistData.slug}`, { replace: true });
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
       } finally {
@@ -52,7 +70,7 @@ export default function ArtistPage() {
     }
 
     getArtist();
-  }, [artistId]);
+  }, [slugOrId, navigate]);
 
   const handleBack = () => {
     if (previous) {
@@ -178,11 +196,7 @@ export default function ArtistPage() {
             </div>
           )}
         </div>
-
-
       </div>
-
-
     </div>
   );
 }

@@ -2,11 +2,13 @@ import styles from "./ArtistCard.module.css";
 import { Link, useLocation } from "react-router-dom";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
+import { getArtistUrl } from "../../services/api";
 import InstagramIcon from "../../assets/icons/instagramIcon";
 
 interface Artist {
   id: number;
   name: string;
+  slug?: string | null;
   instagram_handle?: string;
   shop_name?: string;
   shop_instagram_handle?: string;
@@ -22,7 +24,10 @@ interface ArtistCardProps {
   showTimestamp?: boolean;
 }
 
-export default function ArtistCard({ artist, showTimestamp = false }: ArtistCardProps) {
+export default function ArtistCard({
+  artist,
+  showTimestamp = false,
+}: ArtistCardProps) {
   const location = useLocation();
   const artistInstagramUrl = artist.instagram_handle
     ? `https://www.instagram.com/${artist.instagram_handle}`
@@ -41,7 +46,7 @@ export default function ArtistCard({ artist, showTimestamp = false }: ArtistCard
 
   return (
     <Link
-      to={`/artist/${artist.id}`}
+      to={getArtistUrl(artist)}
       state={{ fromSearch, previous }}
       className={styles.cardLink}
     >
@@ -61,10 +66,10 @@ export default function ArtistCard({ artist, showTimestamp = false }: ArtistCard
             target="_blank"
             rel="noopener noreferrer"
             className={styles.link}
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               e.stopPropagation();
-              window.open(artistInstagramUrl, '_blank', 'noopener,noreferrer');
+              window.open(artistInstagramUrl, "_blank", "noopener,noreferrer");
             }}
           >
             <InstagramIcon

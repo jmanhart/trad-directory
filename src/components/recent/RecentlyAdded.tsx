@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { fetchRecentArtists, fetchRecentShops, fetchRecentCountries } from "../../services/api";
+import {
+  fetchRecentArtists,
+  fetchRecentShops,
+  fetchRecentCountries,
+  getArtistUrl,
+  getShopUrl,
+} from "../../services/api";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { trackRecentlyAddedClick } from "../../utils/analytics";
 import InstagramLogoUrl from "/logo-instagram.svg";
@@ -12,6 +18,7 @@ import styles from "./RecentlyAdded.module.css";
 interface Artist {
   id: number;
   name: string;
+  slug?: string | null;
   instagram_handle?: string | null;
   city_name?: string;
   state_name?: string;
@@ -23,6 +30,7 @@ interface Artist {
 interface Shop {
   id: number;
   shop_name: string;
+  slug?: string | null;
   instagram_handle?: string | null;
   city_name?: string;
   state_name?: string;
@@ -43,6 +51,7 @@ interface FeedItem {
   id: number;
   type: FeedItemType;
   name: string; // Artist name, shop name, or location name
+  slug?: string | null;
   instagram_handle?: string | null;
   city_name?: string;
   state_name?: string;
@@ -58,7 +67,10 @@ interface RecentlyAddedProps {
   includeLocations?: boolean; // Option to include/exclude locations and countries
 }
 
-export default function RecentlyAdded({ limit = 10, includeLocations = false }: RecentlyAddedProps) {
+export default function RecentlyAdded({
+  limit = 10,
+  includeLocations = false,
+}: RecentlyAddedProps) {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
   const [countries, setCountries] = useState<Country[]>([]);
@@ -84,6 +96,7 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
         const transformedArtists = artistsData.map((artist: any) => ({
           id: artist.id,
           name: artist.name,
+          slug: artist.slug || null,
           instagram_handle: artist.instagram_handle,
           city_name: artist.city_name || null,
           state_name: artist.state_name || null,
@@ -95,6 +108,7 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
         const transformedShops = shopsData.map((shop: any) => ({
           id: shop.id,
           shop_name: shop.shop_name,
+          slug: shop.slug || null,
           instagram_handle: shop.instagram_handle,
           city_name: shop.city_name || null,
           state_name: shop.state_name || null,
@@ -102,13 +116,14 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
           created_at: shop.created_at,
         }));
 
-        const transformedCountries = countriesData.length > 0
-          ? countriesData.map((country: any) => ({
-              id: country.id,
-              country_name: country.country_name,
-              created_at: country.created_at,
-            }))
-          : [];
+        const transformedCountries =
+          countriesData.length > 0
+            ? countriesData.map((country: any) => ({
+                id: country.id,
+                country_name: country.country_name,
+                created_at: country.created_at,
+              }))
+            : [];
 
         setArtists(transformedArtists);
         setShops(transformedShops);
@@ -129,7 +144,7 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
     const items: FeedItem[] = [];
 
     // Add artists
-    artists.forEach((artist) => {
+    artists.forEach(artist => {
       // Sort by created_at timestamp if available, otherwise use id (higher = newer)
       let sortKey: number;
       if (artist.created_at) {
@@ -143,6 +158,7 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
         id: artist.id,
         type: "artist",
         name: artist.name,
+        slug: artist.slug || null,
         instagram_handle: artist.instagram_handle,
         city_name: artist.city_name,
         state_name: artist.state_name,
@@ -154,7 +170,7 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
     });
 
     // Add shops
-    shops.forEach((shop) => {
+    shops.forEach(shop => {
       // Sort by created_at timestamp if available, otherwise use id (higher = newer)
       let sortKey: number;
       if (shop.created_at) {
@@ -168,6 +184,7 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
         id: shop.id,
         type: "shop",
         name: shop.shop_name,
+        slug: shop.slug || null,
         instagram_handle: shop.instagram_handle,
         city_name: shop.city_name,
         state_name: shop.state_name,
@@ -179,7 +196,7 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
     });
 
     // Add countries
-    countries.forEach((country) => {
+    countries.forEach(country => {
       // Sort by created_at timestamp if available, otherwise use id (higher = newer)
       let sortKey: number;
       if (country.created_at) {
@@ -208,7 +225,7 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
     // Sort by sortKey descending (most recent first) - all types together
     // This ensures the most recent items show up regardless of type
     const sorted = items.sort((a, b) => b.sortKey - a.sortKey);
-    
+
     // Return the top 'limit' items, sorted by most recent first
     // This means if a city/country was just added, it will show up at the top
     return sorted.slice(0, limit);
@@ -225,8 +242,14 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
               <div key={index} className={styles.skeletonItem}>
                 <div className={styles.skeletonIcon}></div>
                 <div className={styles.skeletonContent}>
-                  <div className={styles.skeletonLine} style={{ width: "60%" }}></div>
-                  <div className={styles.skeletonLine} style={{ width: "40%" }}></div>
+                  <div
+                    className={styles.skeletonLine}
+                    style={{ width: "60%" }}
+                  ></div>
+                  <div
+                    className={styles.skeletonLine}
+                    style={{ width: "40%" }}
+                  ></div>
                 </div>
                 <div className={styles.skeletonBadge}></div>
               </div>
@@ -251,9 +274,17 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
   const getItemUrl = (item: FeedItem): string => {
     switch (item.type) {
       case "artist":
-        return `/artist/${item.id}`;
+        return getArtistUrl({
+          id: item.id,
+          slug: item.slug || null,
+          name: item.name,
+        });
       case "shop":
-        return `/shop/${item.id}`;
+        return getShopUrl({
+          id: item.id,
+          slug: item.slug || null,
+          shop_name: item.name,
+        });
       case "country":
         // Search by country name
         return `/search-results?q=${encodeURIComponent(item.country_name || item.name)}`;
@@ -267,85 +298,98 @@ export default function RecentlyAdded({ limit = 10, includeLocations = false }: 
       <h3 className={styles.label}>Recently Added</h3>
       <div className={styles.container}>
         <div className={styles.feed}>
-        {feedItems.length === 0 ? (
-          <p className={styles.empty}>No recent items</p>
-        ) : (
-          feedItems.map((item, index) => {
-            const instagramUrl = item.instagram_handle
-              ? `https://www.instagram.com/${item.instagram_handle}`
-              : null;
-            const itemUrl = getItemUrl(item);
+          {feedItems.length === 0 ? (
+            <p className={styles.empty}>No recent items</p>
+          ) : (
+            feedItems.map((item, index) => {
+              const instagramUrl = item.instagram_handle
+                ? `https://www.instagram.com/${item.instagram_handle}`
+                : null;
+              const itemUrl = getItemUrl(item);
 
-            return (
-              <React.Fragment key={`${item.type}-${item.id}`}>
-                <Link 
-                  to={itemUrl} 
-                  className={styles.item}
-                  onClick={() => trackRecentlyAddedClick({
-                    item_type: item.type,
-                    item_id: item.id,
-                    item_name: item.name,
-                    item_instagram_handle: item.instagram_handle || undefined,
-                  })}
-                >
-                  <div className={styles.content}>
-                    {item.type === "artist" ? (
-                      instagramUrl ? (
-                        <a
-                          href={instagramUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.instagramLink}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            window.open(instagramUrl, "_blank", "noopener,noreferrer");
-                          }}
-                        >
+              return (
+                <React.Fragment key={`${item.type}-${item.id}`}>
+                  <Link
+                    to={itemUrl}
+                    className={styles.item}
+                    onClick={() =>
+                      trackRecentlyAddedClick({
+                        item_type: item.type,
+                        item_id: item.id,
+                        item_name: item.name,
+                        item_instagram_handle:
+                          item.instagram_handle || undefined,
+                      })
+                    }
+                  >
+                    <div className={styles.content}>
+                      {item.type === "artist" ? (
+                        instagramUrl ? (
+                          <a
+                            href={instagramUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.instagramLink}
+                            onClick={e => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              window.open(
+                                instagramUrl,
+                                "_blank",
+                                "noopener,noreferrer"
+                              );
+                            }}
+                          >
+                            <ArtistsIcon className={styles.itemIcon} />
+                          </a>
+                        ) : (
                           <ArtistsIcon className={styles.itemIcon} />
-                        </a>
-                      ) : (
-                        <ArtistsIcon className={styles.itemIcon} />
-                      )
-                    ) : item.type === "country" ? (
-                      <GlobeIcon className={styles.globeIcon} />
-                    ) : item.type === "shop" ? (
-                      <ShopsIcon className={styles.itemIcon} />
-                    ) : (
-                      <span className={styles.iconPlaceholder} />
-                    )}
-                    <span className={styles.handle}>
-                      {item.type === "shop" ? (
-                        <>
-                          <span className={styles.name}>{item.name}</span>
-                          {item.instagram_handle && (
-                            <span className={styles.instagramHandle}> @{item.instagram_handle}</span>
-                          )}
-                        </>
+                        )
                       ) : item.type === "country" ? (
-                        `${item.name} added to the directory`
-                      ) : item.type === "artist" ? (
-                        <>
-                          <span className={styles.name}>{item.name}</span>
-                          {item.instagram_handle && (
-                            <span className={styles.instagramHandle}> @{item.instagram_handle}</span>
-                          )}
-                        </>
+                        <GlobeIcon className={styles.globeIcon} />
+                      ) : item.type === "shop" ? (
+                        <ShopsIcon className={styles.itemIcon} />
                       ) : (
-                        item.name
+                        <span className={styles.iconPlaceholder} />
                       )}
-                    </span>
-                    {item.created_at && (
-                      <span className={styles.time}>
-                        {formatRelativeTime(item.created_at)}
+                      <span className={styles.handle}>
+                        {item.type === "shop" ? (
+                          <>
+                            <span className={styles.name}>{item.name}</span>
+                            {item.instagram_handle && (
+                              <span className={styles.instagramHandle}>
+                                {" "}
+                                @{item.instagram_handle}
+                              </span>
+                            )}
+                          </>
+                        ) : item.type === "country" ? (
+                          `${item.name} added to the directory`
+                        ) : item.type === "artist" ? (
+                          <>
+                            <span className={styles.name}>{item.name}</span>
+                            {item.instagram_handle && (
+                              <span className={styles.instagramHandle}>
+                                {" "}
+                                @{item.instagram_handle}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          item.name
+                        )}
                       </span>
-                    )}
-                  </div>
-                </Link>
-              </React.Fragment>
-            );
-          })
-        )}
+                      {item.created_at && (
+                        <span className={styles.time}>
+                          {formatRelativeTime(item.created_at)}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                </React.Fragment>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

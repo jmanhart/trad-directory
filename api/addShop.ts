@@ -51,10 +51,30 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
+    // Generate slug for the shop
+    // First, generate base slug
+    const baseSlug = data.shop_name
+      .toLowerCase()
+      .trim()
+      .replace(/['"]/g, "")
+      .replace(/[\s_]+/g, "-")
+      .replace(/[^a-z0-9-]/g, "")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 100);
+
+    // Check if slug already exists
+    const { data: existingShop } = await supabase
+      .from("tattoo_shops")
+      .select("id")
+      .eq("slug", baseSlug)
+      .single();
+
     // Create the shop
     const shopData: any = {
       shop_name: data.shop_name,
       city_id: data.city_id,
+      // Slug will be set after insert if needed
     };
 
     if (data.instagram_handle) {
@@ -89,6 +109,18 @@ export default async function handler(req: any, res: any) {
       );
     }
 
+    // Set slug (append ID if duplicate exists)
+    const finalSlug = existingShop ? `${baseSlug}-${newShop.id}` : baseSlug;
+    const { error: slugError } = await supabase
+      .from("tattoo_shops")
+      .update({ slug: finalSlug })
+      .eq("id", newShop.id);
+
+    if (slugError) {
+      console.warn(`Failed to set slug for shop: ${slugError.message}`);
+      // Don't throw - the shop was created successfully, just the slug failed
+    }
+
     res.status(200).json({
       success: true,
       shop_id: newShop.id,
@@ -102,4 +134,3 @@ export default async function handler(req: any, res: any) {
     });
   }
 }
-

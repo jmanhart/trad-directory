@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
 import HomePage from "./components/pages/HomePage";
 import AboutPage from "./components/pages/AboutPage";
 import ShopPage from "./components/pages/ShopPage";
@@ -52,101 +57,101 @@ function AppContent() {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
   const isAdminRoute = location.pathname.startsWith("/admin");
-  
+
   // Track page views on route changes
   usePageTracking();
-  
+
   return (
     <div className={styles.appContainer}>
       <ScatteredSvgBackground preset="default" intensity="subtle" />
       {isAdminRoute ? <AdminTopAppBar /> : <TopAppBar />}
       <main className={styles.mainContent}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/artists" element={<AllArtistsPage />} />
-            <Route path="/shops" element={<AllShopsPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/united-states" element={<UnitedStatesMapPage />} />
-            <Route path="/type-test" element={<TypeTestingPage />} />
-            <Route path="/shop/:shopId" element={<ShopPage />} />
-            <Route path="/search-results" element={<SearchResults />} />
-            <Route path="/logo-type" element={<LogoTypePlayground />} />
-            <Route path="/artist/:artistId" element={<ArtistPage />} />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <AdminAllData />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/add-artist"
-              element={
-                <ProtectedRoute>
-                  <AdminAddArtist />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/add-shop"
-              element={
-                <ProtectedRoute>
-                  <AdminAddShop />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/add-city"
-              element={
-                <ProtectedRoute>
-                  <AdminAddCity />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/add-country"
-              element={
-                <ProtectedRoute>
-                  <AdminAddCountry />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/link-artist-shop"
-              element={
-                <ProtectedRoute>
-                  <AdminAddArtistShopLink />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/broken-links"
-              element={
-                <ProtectedRoute>
-                  <AdminBrokenLinks />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/new-adding"
-              element={
-                <ProtectedRoute>
-                  <AdminNewAdding />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/all-data"
-              element={
-                <ProtectedRoute>
-                  <AdminAllData />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </main>
-      </div>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/artists" element={<AllArtistsPage />} />
+          <Route path="/shops" element={<AllShopsPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/united-states" element={<UnitedStatesMapPage />} />
+          <Route path="/type-test" element={<TypeTestingPage />} />
+          <Route path="/shop/:slugOrId" element={<ShopPage />} />
+          <Route path="/search-results" element={<SearchResults />} />
+          <Route path="/logo-type" element={<LogoTypePlayground />} />
+          <Route path="/artist/:slugOrId" element={<ArtistPage />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminAllData />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/add-artist"
+            element={
+              <ProtectedRoute>
+                <AdminAddArtist />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/add-shop"
+            element={
+              <ProtectedRoute>
+                <AdminAddShop />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/add-city"
+            element={
+              <ProtectedRoute>
+                <AdminAddCity />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/add-country"
+            element={
+              <ProtectedRoute>
+                <AdminAddCountry />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/link-artist-shop"
+            element={
+              <ProtectedRoute>
+                <AdminAddArtistShopLink />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/broken-links"
+            element={
+              <ProtectedRoute>
+                <AdminBrokenLinks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/new-adding"
+            element={
+              <ProtectedRoute>
+                <AdminNewAdding />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/all-data"
+            element={
+              <ProtectedRoute>
+                <AdminAllData />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </main>
+    </div>
   );
 }
 

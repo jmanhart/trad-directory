@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { fetchAllShops } from "../../services/api";
+import { fetchAllShops, getShopUrl } from "../../services/api";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import { trackSearch } from "../../utils/analytics";
 import SearchBar from "../common/SearchBar";
@@ -12,6 +12,7 @@ import styles from "./AllShopsPage.module.css";
 interface Shop {
   id: number;
   shop_name: string;
+  slug?: string | null;
   instagram_handle?: string;
   address?: string;
   city_name?: string;
@@ -52,7 +53,7 @@ export default function AllShopsPage() {
     if (searchQuery.trim()) {
       const normalizedQuery = searchQuery.toLowerCase();
       const filtered = shops.filter(
-        (shop) =>
+        shop =>
           shop.shop_name?.toLowerCase().includes(normalizedQuery) ||
           shop.instagram_handle?.toLowerCase().includes(normalizedQuery) ||
           shop.city_name?.toLowerCase().includes(normalizedQuery) ||
@@ -61,11 +62,11 @@ export default function AllShopsPage() {
           shop.address?.toLowerCase().includes(normalizedQuery)
       );
       setSearchResults(filtered);
-      
+
       // Track search in analytics
       trackSearch({
         search_term: searchQuery,
-        search_location: 'all_shops',
+        search_location: "all_shops",
         results_count: filtered.length,
         has_results: filtered.length > 0,
       });
@@ -77,7 +78,7 @@ export default function AllShopsPage() {
   // Apply sorting to the current shop list (either search results or all shops)
   const filteredShops = useMemo(() => {
     const shopsToSort = searchQuery.trim() ? searchResults : shops;
-    
+
     if (sortBy === "a-z") {
       return [...shopsToSort].sort((a, b) => {
         const nameA = (a.shop_name || "").toLowerCase().trim();
@@ -88,7 +89,9 @@ export default function AllShopsPage() {
       return [...shopsToSort].sort((a, b) => {
         // If both have created_at, sort by most recent first
         if (a.created_at && b.created_at) {
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          return (
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
         }
         // If only one has created_at, prioritize it
         if (a.created_at && !b.created_at) return -1;
@@ -133,7 +136,7 @@ export default function AllShopsPage() {
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>All Shops</h1>
-      
+
       <div className={styles.searchSection}>
         <div className={styles.searchFilterRow}>
           <SearchBar
@@ -148,19 +151,21 @@ export default function AllShopsPage() {
       {searchQuery && (
         <div className={styles.searchInfo}>
           <p>
-            Showing {filteredShops.length} result{filteredShops.length !== 1 ? "s" : ""} for "{searchQuery}"
+            Showing {filteredShops.length} result
+            {filteredShops.length !== 1 ? "s" : ""} for "{searchQuery}"
           </p>
         </div>
       )}
 
       <div className={styles.grid}>
-        {filteredShops.map((shop) => {
-          const location = formatArtistLocation({
-            city_name: shop.city_name,
-            state_name: shop.state_name,
-            country_name: shop.country_name,
-            is_traveling: false,
-          }) || "N/A";
+        {filteredShops.map(shop => {
+          const location =
+            formatArtistLocation({
+              city_name: shop.city_name,
+              state_name: shop.state_name,
+              country_name: shop.country_name,
+              is_traveling: false,
+            }) || "N/A";
 
           const shopInstagramUrl = shop.instagram_handle
             ? `https://www.instagram.com/${shop.instagram_handle}`
@@ -169,7 +174,7 @@ export default function AllShopsPage() {
           return (
             <Link
               key={shop.id}
-              to={`/shop/${shop.id}`}
+              to={getShopUrl(shop)}
               className={styles.cardLink}
             >
               <div className={styles.card}>
@@ -183,10 +188,14 @@ export default function AllShopsPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className={styles.link}
-                    onClick={(e) => {
+                    onClick={e => {
                       e.preventDefault();
                       e.stopPropagation();
-                      window.open(shopInstagramUrl, "_blank", "noopener,noreferrer");
+                      window.open(
+                        shopInstagramUrl,
+                        "_blank",
+                        "noopener,noreferrer"
+                      );
                     }}
                   >
                     <img
@@ -215,4 +224,3 @@ export default function AllShopsPage() {
     </div>
   );
 }
-

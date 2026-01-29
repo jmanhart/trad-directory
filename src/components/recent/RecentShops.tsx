@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { fetchRecentShops } from "../../services/api";
+import { fetchRecentShops, getShopUrl } from "../../services/api";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import InstagramLogoUrl from "/logo-instagram.svg";
@@ -9,6 +9,7 @@ import styles from "./RecentShops.module.css";
 interface Shop {
   id: number;
   shop_name: string;
+  slug?: string | null;
   instagram_handle?: string;
   address?: string;
   city_name?: string;
@@ -69,22 +70,23 @@ export default function RecentShops({ limit = 6 }: RecentShopsProps) {
     <div className={styles.container}>
       <h2 className={styles.title}>Recently Added Shops</h2>
       <div className={styles.grid}>
-        {shops.map((shop) => {
+        {shops.map(shop => {
           const shopInstagramUrl = shop.instagram_handle
             ? `https://www.instagram.com/${shop.instagram_handle}`
             : "#";
 
-          const location = formatArtistLocation({
-            city_name: shop.city_name,
-            state_name: shop.state_name,
-            country_name: shop.country_name,
-            is_traveling: false,
-          }) || "N/A";
+          const location =
+            formatArtistLocation({
+              city_name: shop.city_name,
+              state_name: shop.state_name,
+              country_name: shop.country_name,
+              is_traveling: false,
+            }) || "N/A";
 
           return (
             <Link
               key={shop.id}
-              to={`/shop/${shop.id}`}
+              to={getShopUrl(shop)}
               className={styles.cardLink}
             >
               <div className={styles.card}>
@@ -103,10 +105,14 @@ export default function RecentShops({ limit = 6 }: RecentShopsProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className={styles.link}
-                    onClick={(e) => {
+                    onClick={e => {
                       e.preventDefault();
                       e.stopPropagation();
-                      window.open(shopInstagramUrl, '_blank', 'noopener,noreferrer');
+                      window.open(
+                        shopInstagramUrl,
+                        "_blank",
+                        "noopener,noreferrer"
+                      );
                     }}
                   >
                     <img
@@ -129,4 +135,3 @@ export default function RecentShops({ limit = 6 }: RecentShopsProps) {
     </div>
   );
 }
-

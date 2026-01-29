@@ -170,7 +170,8 @@ export default async function handler(req: any, res: any) {
       // Create/find city from names
       if (!data.city_name || !data.state_name || !data.country_name) {
         res.status(400).json({
-          error: "Either city_id or (city_name, state_name, country_name) must be provided",
+          error:
+            "Either city_id or (city_name, state_name, country_name) must be provided",
         });
         return;
       }
@@ -179,16 +180,40 @@ export default async function handler(req: any, res: any) {
       const countryId = await getOrCreateCountry(supabase, data.country_name);
 
       // Step 2: Get or create state
-      const stateId = await getOrCreateState(supabase, data.state_name, countryId);
+      const stateId = await getOrCreateState(
+        supabase,
+        data.state_name,
+        countryId
+      );
 
       // Step 3: Get or create city
       cityId = await getOrCreateCity(supabase, data.city_name, stateId);
     }
 
-    // Step 4: Create the artist
+    // Step 4: Generate slug for the artist
+    // First, generate base slug
+    const baseSlug = data.name
+      .toLowerCase()
+      .trim()
+      .replace(/['"]/g, "")
+      .replace(/[\s_]+/g, "-")
+      .replace(/[^a-z0-9-]/g, "")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 100);
+
+    // Check if slug already exists
+    const { data: existingArtist } = await supabase
+      .from("artists")
+      .select("id")
+      .eq("slug", baseSlug)
+      .single();
+
+    // Step 5: Create the artist
     const artistData: any = {
       name: data.name,
       city_id: cityId,
+      // Slug will be set after insert if needed
     };
 
     if (data.instagram_handle) {
@@ -223,14 +248,24 @@ export default async function handler(req: any, res: any) {
       );
     }
 
-    // Step 5: If shop_id is provided, create the artist-shop relationship
+    // Step 6: Set slug (append ID if duplicate exists)
+    const finalSlug = existingArtist ? `${baseSlug}-${newArtist.id}` : baseSlug;
+    const { error: slugError } = await supabase
+      .from("artists")
+      .update({ slug: finalSlug })
+      .eq("id", newArtist.id);
+
+    if (slugError) {
+      console.warn(`Failed to set slug for artist: ${slugError.message}`);
+      // Don't throw - the artist was created successfully, just the slug failed
+    }
+
+    // Step 7: If shop_id is provided, create the artist-shop relationship
     if (data.shop_id) {
-      const { error: shopError } = await supabase
-        .from("artist_shop")
-        .insert({
-          artist_id: newArtist.id,
-          shop_id: data.shop_id,
-        });
+      const { error: shopError } = await supabase.from("artist_shop").insert({
+        artist_id: newArtist.id,
+        shop_id: data.shop_id,
+      });
 
       if (shopError) {
         console.warn(`Failed to link artist to shop: ${shopError.message}`);
@@ -251,4 +286,3 @@ export default async function handler(req: any, res: any) {
     });
   }
 }
-

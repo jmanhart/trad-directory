@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { fetchShopById } from "../../services/api";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
+import { isNumericId } from "../../utils/slug";
 import ArtistCard from "../artist/ArtistCard";
 import styles from "./ShopPage.module.css";
 import InstagramLogoUrl from "/logo-instagram.svg";
@@ -21,6 +21,7 @@ interface Artist {
 interface Shop {
   id: number;
   shop_name: string;
+  slug?: string | null;
   instagram_handle?: string | null;
   address?: string | null;
   city_name?: string;
@@ -30,7 +31,7 @@ interface Shop {
 }
 
 export default function ShopPage() {
-  const { shopId } = useParams();
+  const { slugOrId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const [shop, setShop] = useState<Shop | null>(null);
@@ -45,12 +46,28 @@ export default function ShopPage() {
       try {
         setIsLoading(true);
         setError(null);
-        const id = Number(shopId);
-        if (!Number.isFinite(id)) {
-          throw new Error("Invalid shop id");
+
+        if (!slugOrId) {
+          throw new Error("Invalid shop identifier");
         }
-        const data = await fetchShopById(id);
-        setShop(data as unknown as Shop);
+
+        // Use the API route directly - it handles both slugs and IDs
+        const response = await fetch(`/api/shops/${slugOrId}`);
+        if (!response.ok) {
+          const errorData = await response
+            .json()
+            .catch(() => ({ error: "Failed to fetch shop" }));
+          throw new Error(errorData.error || "Failed to fetch shop");
+        }
+        const apiData = await response.json();
+        const data = apiData.result;
+        const shopData = data as unknown as Shop & { slug?: string | null };
+        setShop(shopData);
+
+        // Redirect to slug URL if user accessed via ID and slug exists
+        if (isNumericId(slugOrId) && shopData.slug) {
+          navigate(`/shop/${shopData.slug}`, { replace: true });
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
       } finally {
@@ -59,7 +76,7 @@ export default function ShopPage() {
     }
 
     getShop();
-  }, [shopId]);
+  }, [slugOrId, navigate]);
 
   const handleBack = () => {
     if (previous) {
@@ -89,12 +106,13 @@ export default function ShopPage() {
     ? `https://www.instagram.com/${shop.instagram_handle}`
     : null;
 
-  const locationString = formatArtistLocation({
-    city_name: shop.city_name,
-    state_name: shop.state_name,
-    country_name: shop.country_name,
-    is_traveling: false,
-  }) || "N/A";
+  const locationString =
+    formatArtistLocation({
+      city_name: shop.city_name,
+      state_name: shop.state_name,
+      country_name: shop.country_name,
+      is_traveling: false,
+    }) || "N/A";
 
   return (
     <div className={styles.container}>
@@ -167,7 +185,7 @@ export default function ShopPage() {
             Artists at {shop.shop_name} ({shop.artists.length})
           </h2>
           <div className={styles.artistsGrid}>
-            {shop.artists.map((artist) => (
+            {shop.artists.map(artist => (
               <ArtistCard key={artist.id} artist={artist} />
             ))}
           </div>

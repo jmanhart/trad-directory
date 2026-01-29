@@ -1,73 +1,115 @@
 import { supabase } from "./supabaseClient";
 import { createClient } from "@supabase/supabase-js";
+import { generateUniqueSlug } from "../utils/slug";
+
+/**
+ * Helper function to get artist URL (uses slug if available, falls back to ID)
+ */
+export function getArtistUrl(artist: {
+  id: number;
+  slug?: string | null;
+  name?: string;
+}): string {
+  if (artist.slug) {
+    return `/artist/${artist.slug}`;
+  }
+  // Fallback: generate slug from name if slug doesn't exist yet
+  if (artist.name) {
+    return `/artist/${generateUniqueSlug(artist.name, artist.id)}`;
+  }
+  return `/artist/${artist.id}`;
+}
+
+/**
+ * Helper function to get shop URL (uses slug if available, falls back to ID)
+ */
+export function getShopUrl(shop: {
+  id: number;
+  slug?: string | null;
+  shop_name?: string;
+}): string {
+  if (shop.slug) {
+    return `/shop/${shop.slug}`;
+  }
+  // Fallback: generate slug from name if slug doesn't exist yet
+  if (shop.shop_name) {
+    return `/shop/${generateUniqueSlug(shop.shop_name, shop.id)}`;
+  }
+  return `/shop/${shop.id}`;
+}
 
 /**
  * Safely extracts city, state, and country data from a city object/array
  * Handles null cities, arrays with null elements, and nested state/country structures
  */
-function extractLocationData(city: any): { city_name: string; state_name: string; country_name: string } {
+function extractLocationData(city: any): {
+  city_name: string;
+  state_name: string;
+  country_name: string;
+} {
   let city_name = "N/A";
   let state_name = "N/A";
   let country_name = "N/A";
-  
+
   if (!city || city === null || city === undefined) {
     return { city_name, state_name, country_name };
   }
-  
+
   if (Array.isArray(city)) {
     // Find first non-null city in array
     const cityData = city.find((c: any) => c !== null && c !== undefined);
     if (cityData && cityData !== null) {
       city_name = cityData?.city_name || "N/A";
-      
+
       // Extract state (nested under city)
       const state = cityData?.state;
       if (state && state !== null && state !== undefined) {
-        const stateData = Array.isArray(state) 
-          ? (state.find((s: any) => s !== null && s !== undefined) || state[0])
+        const stateData = Array.isArray(state)
+          ? state.find((s: any) => s !== null && s !== undefined) || state[0]
           : state;
         if (stateData && stateData !== null && stateData !== undefined) {
           state_name = stateData?.state_name || "N/A";
         }
       }
-      
+
       // Extract country (nested directly under city, NOT under state!)
       const country = cityData?.country;
       if (country && country !== null && country !== undefined) {
         const countryData = Array.isArray(country)
-          ? (country.find((c: any) => c !== null && c !== undefined) || country[0])
+          ? country.find((c: any) => c !== null && c !== undefined) ||
+            country[0]
           : country;
         if (countryData && countryData !== null && countryData !== undefined) {
           country_name = countryData?.country_name || "N/A";
         }
       }
     }
-  } else if (typeof city === 'object') {
+  } else if (typeof city === "object") {
     city_name = city?.city_name || "N/A";
-    
+
     // Extract state (nested under city)
     const state = city?.state;
     if (state && state !== null && state !== undefined) {
-      const stateData = Array.isArray(state) 
-        ? (state.find((s: any) => s !== null && s !== undefined) || state[0])
+      const stateData = Array.isArray(state)
+        ? state.find((s: any) => s !== null && s !== undefined) || state[0]
         : state;
       if (stateData && stateData !== null && stateData !== undefined) {
         state_name = stateData?.state_name || "N/A";
       }
     }
-    
+
     // Extract country (nested directly under city, NOT under state!)
     const country = city?.country;
     if (country && country !== null && country !== undefined) {
       const countryData = Array.isArray(country)
-        ? (country.find((c: any) => c !== null && c !== undefined) || country[0])
+        ? country.find((c: any) => c !== null && c !== undefined) || country[0]
         : country;
       if (countryData && countryData !== null && countryData !== undefined) {
         country_name = countryData?.country_name || "N/A";
       }
     }
   }
-  
+
   return { city_name, state_name, country_name };
 }
 
@@ -77,6 +119,7 @@ export async function fetchTattooShopsWithArtists() {
     const { data, error } = await supabase.from("artists").select(`
         id,
         name,
+        slug,
         instagram_handle,
         created_at,
         is_traveling,
@@ -86,7 +129,7 @@ export async function fetchTattooShopsWithArtists() {
           country: countries (country_name)
         ),
         artist_shop (
-          shop: tattoo_shops (id, shop_name, instagram_handle)
+          shop: tattoo_shops (id, shop_name, slug, instagram_handle)
         )
       `);
 
@@ -103,16 +146,20 @@ export async function fetchTattooShopsWithArtists() {
     const mappedArtists = (data || []).map((artist: any) => {
       try {
         // Safely extract city data - handle null city for traveling artists
-        const { city_name, state_name, country_name } = extractLocationData(artist?.city);
-        
+        const { city_name, state_name, country_name } = extractLocationData(
+          artist?.city
+        );
+
         return {
           ...artist,
+          slug: artist?.slug || null,
           is_traveling: artist?.is_traveling || false,
           city_name,
           state_name,
           country_name,
           shop_id: artist?.artist_shop?.[0]?.shop?.id || null,
           shop_name: artist?.artist_shop?.[0]?.shop?.shop_name || "N/A",
+          shop_slug: artist?.artist_shop?.[0]?.shop?.slug || null,
           shop_instagram_handle:
             artist?.artist_shop?.[0]?.shop?.instagram_handle || null,
         };
@@ -121,54 +168,59 @@ export async function fetchTattooShopsWithArtists() {
         // Return a safe fallback
         return {
           ...artist,
+          slug: artist?.slug || null,
           is_traveling: artist?.is_traveling || false,
           city_name: "N/A",
           state_name: "N/A",
           country_name: "N/A",
           shop_id: null,
           shop_name: "N/A",
+          shop_slug: null,
           shop_instagram_handle: null,
         };
       }
     });
-    
+
     // Debug: Check country extraction - always log to help diagnose
     {
       const countriesFound = new Set(
-        mappedArtists
-          .map(a => a.country_name)
-          .filter(c => c && c !== "N/A")
+        mappedArtists.map(a => a.country_name).filter(c => c && c !== "N/A")
       );
-      const artistsWithCountry = mappedArtists.filter(a => a.country_name && a.country_name !== "N/A").length;
+      const artistsWithCountry = mappedArtists.filter(
+        a => a.country_name && a.country_name !== "N/A"
+      ).length;
       const artistsWithoutCountry = mappedArtists.length - artistsWithCountry;
-      
+
       // Sample a few artists to see their country_name values
       const sampleArtists = mappedArtists
         .filter(a => a.country_name && a.country_name !== "N/A")
         .slice(0, 5)
         .map(a => ({ id: a.id, name: a.name, country: a.country_name }));
-      
-      console.log('[fetchTattooShopsWithArtists] Country extraction:', {
+
+      console.log("[fetchTattooShopsWithArtists] Country extraction:", {
         totalArtists: mappedArtists.length,
         artistsWithCountry,
         artistsWithoutCountry,
         uniqueCountries: Array.from(countriesFound).slice(0, 15),
         sampleArtistsWithCountry: sampleArtists,
       });
-      
+
       // Check for specific countries the user mentioned
-      const checkCountries = ['United States', 'United Kingdom', 'Canada'];
+      const checkCountries = ["United States", "United Kingdom", "Canada"];
       checkCountries.forEach(countryName => {
-        const count = mappedArtists.filter(a => 
-          a.country_name && 
-          a.country_name.trim().toLowerCase() === countryName.toLowerCase()
+        const count = mappedArtists.filter(
+          a =>
+            a.country_name &&
+            a.country_name.trim().toLowerCase() === countryName.toLowerCase()
         ).length;
         if (count > 0) {
-          console.log(`[fetchTattooShopsWithArtists] Found ${count} artists in "${countryName}"`);
+          console.log(
+            `[fetchTattooShopsWithArtists] Found ${count} artists in "${countryName}"`
+          );
         }
       });
     }
-    
+
     return mappedArtists;
   } catch (err) {
     console.error("Unhandled error in fetchTattooShopsWithArtists:", err);
@@ -185,6 +237,7 @@ export async function fetchArtistById(id: number) {
         `
         id,
         name,
+        slug,
         instagram_handle,
         is_traveling,
         city: cities (
@@ -206,10 +259,13 @@ export async function fetchArtistById(id: number) {
     }
 
     // Safely extract city data - handle null city for traveling artists
-    const { city_name, state_name, country_name } = extractLocationData(data?.city);
+    const { city_name, state_name, country_name } = extractLocationData(
+      data?.city
+    );
 
     return {
       ...data,
+      slug: data.slug || null,
       is_traveling: data.is_traveling || false,
       city_name,
       state_name,
@@ -234,6 +290,7 @@ export async function fetchShopById(id: number) {
         `
         id,
         shop_name,
+        slug,
         instagram_handle,
         address,
         city: cities (
@@ -261,10 +318,15 @@ export async function fetchShopById(id: number) {
     }
 
     // Safely extract shop city data
-    const { city_name: shopCityName, state_name: shopStateName, country_name: shopCountryName } = extractLocationData(data?.city);
-    
+    const {
+      city_name: shopCityName,
+      state_name: shopStateName,
+      country_name: shopCountryName,
+    } = extractLocationData(data?.city);
+
     return {
       ...data,
+      slug: data.slug || null,
       instagram_handle: data.instagram_handle || null,
       city_name: shopCityName,
       state_name: shopStateName,
@@ -273,8 +335,10 @@ export async function fetchShopById(id: number) {
         try {
           const artist = entry.artist;
           // Safely extract city data - handle null city for traveling artists
-          const { city_name, state_name, country_name } = extractLocationData(artist?.city);
-          
+          const { city_name, state_name, country_name } = extractLocationData(
+            artist?.city
+          );
+
           return {
             id: artist.id,
             name: artist.name,
@@ -285,15 +349,21 @@ export async function fetchShopById(id: number) {
             country_name,
             shop_id: artist.artist_shop?.[0]?.shop?.id || null,
             shop_name: artist.artist_shop?.[0]?.shop?.shop_name || "N/A",
-            shop_instagram_handle: artist.artist_shop?.[0]?.shop?.instagram_handle || null,
+            shop_instagram_handle:
+              artist.artist_shop?.[0]?.shop?.instagram_handle || null,
           };
         } catch (mapError) {
-          console.error("Error mapping artist in shop:", entry.artist?.id, mapError);
+          console.error(
+            "Error mapping artist in shop:",
+            entry.artist?.id,
+            mapError
+          );
           // Return a safe fallback
           const artist = entry.artist;
           return {
             id: artist?.id || 0,
             name: artist?.name || "Unknown",
+            slug: artist?.slug || null,
             instagram_handle: artist?.instagram_handle || null,
             is_traveling: artist?.is_traveling || false,
             city_name: "N/A",
@@ -301,6 +371,7 @@ export async function fetchShopById(id: number) {
             country_name: "N/A",
             shop_id: null,
             shop_name: "N/A",
+            shop_slug: null,
             shop_instagram_handle: null,
           };
         }
@@ -345,7 +416,7 @@ export async function searchArtists(query: string) {
   }
 
   // Filter results based on query - prioritize exact location matches
-  const filtered = allArtists.filter((artist) => {
+  const filtered = allArtists.filter(artist => {
     // Skip artists with "N/A" location values
     const cityName = artist.city_name?.toLowerCase().trim();
     const stateName = artist.state_name?.toLowerCase().trim();
@@ -358,18 +429,22 @@ export async function searchArtists(query: string) {
       (artistName && artistName.includes(normalizedQuery)) ||
       (instagramHandle && instagramHandle.includes(normalizedQuery)) ||
       (cityName && cityName !== "n/a" && cityName.includes(normalizedQuery)) ||
-      (stateName && stateName !== "n/a" && stateName.includes(normalizedQuery)) ||
-      (countryName && countryName !== "n/a" && countryName.includes(normalizedQuery)) ||
+      (stateName &&
+        stateName !== "n/a" &&
+        stateName.includes(normalizedQuery)) ||
+      (countryName &&
+        countryName !== "n/a" &&
+        countryName.includes(normalizedQuery)) ||
       (shopName && shopName !== "n/a" && shopName.includes(normalizedQuery))
     );
   });
 
   // Debug logging for country searches - always log to help diagnose
   if (normalizedQuery.length > 2) {
-    const countryMatches = filtered.filter(a => 
+    const countryMatches = filtered.filter(a =>
       a.country_name?.toLowerCase().trim().includes(normalizedQuery)
     );
-    
+
     // Get all unique countries from artist data
     const allCountries = new Set(
       allArtists
@@ -377,22 +452,36 @@ export async function searchArtists(query: string) {
         .filter(Boolean)
         .filter(c => c !== "n/a")
     );
-    
+
     console.log(`[searchArtists] Searching for "${normalizedQuery}":`, {
       totalArtists: allArtists.length,
       filteredResults: filtered.length,
       countryMatches: countryMatches.length,
-      artistsWithCountry: allArtists.filter(a => a.country_name && a.country_name !== "N/A").length,
+      artistsWithCountry: allArtists.filter(
+        a => a.country_name && a.country_name !== "N/A"
+      ).length,
       uniqueCountriesInData: Array.from(allCountries).slice(0, 10),
       sampleArtists: allArtists
-        .filter(a => a.country_name && a.country_name.toLowerCase().trim().includes(normalizedQuery))
+        .filter(
+          a =>
+            a.country_name &&
+            a.country_name.toLowerCase().trim().includes(normalizedQuery)
+        )
         .slice(0, 3)
         .map(a => ({ id: a.id, name: a.name, country: a.country_name })),
     });
-    
-    if (countryMatches.length === 0 && Array.from(allCountries).some(c => c.includes(normalizedQuery))) {
-      console.warn(`[searchArtists] WARNING: Country "${normalizedQuery}" exists in data but search returned 0 results!`);
-      console.warn(`[searchArtists] This suggests a filtering issue. Sample countries in data:`, Array.from(allCountries).slice(0, 10));
+
+    if (
+      countryMatches.length === 0 &&
+      Array.from(allCountries).some(c => c.includes(normalizedQuery))
+    ) {
+      console.warn(
+        `[searchArtists] WARNING: Country "${normalizedQuery}" exists in data but search returned 0 results!`
+      );
+      console.warn(
+        `[searchArtists] This suggests a filtering issue. Sample countries in data:`,
+        Array.from(allCountries).slice(0, 10)
+      );
     }
   }
 
@@ -405,9 +494,11 @@ export async function fetchRecentArtists(limit: number = 6) {
     // Try to fetch with created_at first, fallback to without if it fails
     let query = supabase
       .from("artists")
-      .select(`
+      .select(
+        `
         id,
         name,
+        slug,
         instagram_handle,
         created_at,
         is_traveling,
@@ -417,9 +508,10 @@ export async function fetchRecentArtists(limit: number = 6) {
           country: countries (country_name)
         ),
         artist_shop (
-          shop: tattoo_shops (id, shop_name, instagram_handle)
+          shop: tattoo_shops (id, shop_name, slug, instagram_handle)
         )
-      `)
+      `
+      )
       .order("id", { ascending: false })
       .limit(limit);
 
@@ -427,12 +519,18 @@ export async function fetchRecentArtists(limit: number = 6) {
 
     // If error occurs, try without created_at field (it might not exist)
     if (error) {
-      console.warn("Error fetching with created_at, retrying without it:", error.message);
-      const { data: dataWithoutTimestamp, error: errorWithoutTimestamp } = await supabase
-        .from("artists")
-        .select(`
+      console.warn(
+        "Error fetching with created_at, retrying without it:",
+        error.message
+      );
+      const { data: dataWithoutTimestamp, error: errorWithoutTimestamp } =
+        await supabase
+          .from("artists")
+          .select(
+            `
           id,
           name,
+          slug,
           instagram_handle,
           is_traveling,
           city: cities (
@@ -441,24 +539,31 @@ export async function fetchRecentArtists(limit: number = 6) {
             country: countries (country_name)
           ),
           artist_shop (
-            shop: tattoo_shops (id, shop_name, instagram_handle)
+            shop: tattoo_shops (id, shop_name, slug, instagram_handle)
           )
-        `)
-        .order("id", { ascending: false })
-        .limit(limit);
+        `
+          )
+          .order("id", { ascending: false })
+          .limit(limit);
 
       if (errorWithoutTimestamp) {
-        console.error("Error fetching recent artists:", errorWithoutTimestamp.message);
+        console.error(
+          "Error fetching recent artists:",
+          errorWithoutTimestamp.message
+        );
         throw new Error(errorWithoutTimestamp.message);
       }
 
       return (dataWithoutTimestamp || []).map((artist: any) => {
         try {
           // Safely extract city data - handle null city for traveling artists
-          const { city_name, state_name, country_name } = extractLocationData(artist?.city);
-          
+          const { city_name, state_name, country_name } = extractLocationData(
+            artist?.city
+          );
+
           return {
             ...artist,
+            slug: artist.slug || null,
             created_at: null,
             is_traveling: artist.is_traveling || false,
             city_name,
@@ -466,6 +571,7 @@ export async function fetchRecentArtists(limit: number = 6) {
             country_name,
             shop_id: artist.artist_shop?.[0]?.shop?.id || null,
             shop_name: artist.artist_shop?.[0]?.shop?.shop_name || "N/A",
+            shop_slug: artist.artist_shop?.[0]?.shop?.slug || null,
             shop_instagram_handle:
               artist.artist_shop?.[0]?.shop?.instagram_handle || null,
           };
@@ -474,6 +580,7 @@ export async function fetchRecentArtists(limit: number = 6) {
           // Return a safe fallback
           return {
             ...artist,
+            slug: artist?.slug || null,
             created_at: null,
             is_traveling: artist.is_traveling || false,
             city_name: "N/A",
@@ -481,6 +588,7 @@ export async function fetchRecentArtists(limit: number = 6) {
             country_name: "N/A",
             shop_id: null,
             shop_name: "N/A",
+            shop_slug: null,
             shop_instagram_handle: null,
           };
         }
@@ -490,16 +598,20 @@ export async function fetchRecentArtists(limit: number = 6) {
     return (data || []).map((artist: any) => {
       try {
         // Safely extract city data - handle null city for traveling artists
-        const { city_name, state_name, country_name } = extractLocationData(artist?.city);
-        
+        const { city_name, state_name, country_name } = extractLocationData(
+          artist?.city
+        );
+
         return {
           ...artist,
+          slug: artist.slug || null,
           is_traveling: artist.is_traveling || false,
           city_name,
           state_name,
           country_name,
           shop_id: artist.artist_shop?.[0]?.shop?.id || null,
           shop_name: artist.artist_shop?.[0]?.shop?.shop_name || "N/A",
+          shop_slug: artist.artist_shop?.[0]?.shop?.slug || null,
           shop_instagram_handle:
             artist.artist_shop?.[0]?.shop?.instagram_handle || null,
         };
@@ -508,12 +620,14 @@ export async function fetchRecentArtists(limit: number = 6) {
         // Return a safe fallback
         return {
           ...artist,
+          slug: artist?.slug || null,
           is_traveling: artist.is_traveling || false,
           city_name: "N/A",
           state_name: "N/A",
           country_name: "N/A",
           shop_id: null,
           shop_name: "N/A",
+          shop_slug: null,
           shop_instagram_handle: null,
         };
       }
@@ -529,9 +643,11 @@ export async function fetchAllShops() {
   try {
     const { data, error } = await supabase
       .from("tattoo_shops")
-      .select(`
+      .select(
+        `
         id,
         shop_name,
+        slug,
         instagram_handle,
         address,
         created_at,
@@ -540,7 +656,8 @@ export async function fetchAllShops() {
           state: states (state_name),
           country: countries (country_name)
         )
-      `)
+      `
+      )
       .order("shop_name", { ascending: true });
 
     if (error) {
@@ -551,6 +668,7 @@ export async function fetchAllShops() {
     return (data || []).map((shop: any) => ({
       id: shop.id,
       shop_name: shop.shop_name,
+      slug: shop.slug || null,
       instagram_handle: shop.instagram_handle || null,
       address: shop.address || null,
       created_at: shop.created_at || null,
@@ -571,7 +689,9 @@ export async function fetchAllShops() {
 }
 
 // Fetch all countries
-export async function fetchAllCountries(): Promise<{ id: number; country_name: string }[]> {
+export async function fetchAllCountries(): Promise<
+  { id: number; country_name: string }[]
+> {
   try {
     const { data, error } = await supabase
       .from("countries")
@@ -587,9 +707,12 @@ export async function fetchAllCountries(): Promise<{ id: number; country_name: s
       id: country.id,
       country_name: country.country_name,
     }));
-    
-    console.log(`[fetchAllCountries] Fetched ${countries.length} countries:`, countries.slice(0, 10).map(c => c.country_name));
-    
+
+    console.log(
+      `[fetchAllCountries] Fetched ${countries.length} countries:`,
+      countries.slice(0, 10).map(c => c.country_name)
+    );
+
     return countries;
   } catch (err) {
     console.error("Unhandled error in fetchAllCountries:", err);
@@ -602,11 +725,13 @@ export async function fetchRecentCountries(limit: number = 6) {
   try {
     let query = supabase
       .from("countries")
-      .select(`
+      .select(
+        `
         id,
         country_name,
         created_at
-      `)
+      `
+      )
       .order("id", { ascending: false })
       .limit(limit);
 
@@ -614,18 +739,27 @@ export async function fetchRecentCountries(limit: number = 6) {
 
     // If error occurs, try without created_at field (it might not exist)
     if (error) {
-      console.warn("Error fetching with created_at, retrying without it:", error.message);
-      const { data: dataWithoutTimestamp, error: errorWithoutTimestamp } = await supabase
-        .from("countries")
-        .select(`
+      console.warn(
+        "Error fetching with created_at, retrying without it:",
+        error.message
+      );
+      const { data: dataWithoutTimestamp, error: errorWithoutTimestamp } =
+        await supabase
+          .from("countries")
+          .select(
+            `
           id,
           country_name
-        `)
-        .order("id", { ascending: false })
-        .limit(limit);
+        `
+          )
+          .order("id", { ascending: false })
+          .limit(limit);
 
       if (errorWithoutTimestamp) {
-        console.error("Error fetching recent countries:", errorWithoutTimestamp.message);
+        console.error(
+          "Error fetching recent countries:",
+          errorWithoutTimestamp.message
+        );
         throw new Error(errorWithoutTimestamp.message);
       }
 
@@ -653,13 +787,15 @@ export async function fetchRecentCities(limit: number = 6) {
     // Use the same pattern as fetchRecentArtists - country is nested directly under city
     let query = supabase
       .from("cities")
-      .select(`
+      .select(
+        `
         id,
         city_name,
         created_at,
         state: states (state_name),
         country: countries (country_name)
-      `)
+      `
+      )
       .order("id", { ascending: false })
       .limit(limit);
 
@@ -667,20 +803,29 @@ export async function fetchRecentCities(limit: number = 6) {
 
     // If error occurs, try without created_at field (it might not exist)
     if (error) {
-      console.warn("Error fetching with created_at, retrying without it:", error.message);
-      const { data: dataWithoutTimestamp, error: errorWithoutTimestamp } = await supabase
-        .from("cities")
-        .select(`
+      console.warn(
+        "Error fetching with created_at, retrying without it:",
+        error.message
+      );
+      const { data: dataWithoutTimestamp, error: errorWithoutTimestamp } =
+        await supabase
+          .from("cities")
+          .select(
+            `
           id,
           city_name,
           state: states (state_name),
           country: countries (country_name)
-        `)
-        .order("id", { ascending: false })
-        .limit(limit);
+        `
+          )
+          .order("id", { ascending: false })
+          .limit(limit);
 
       if (errorWithoutTimestamp) {
-        console.error("Error fetching recent cities:", errorWithoutTimestamp.message);
+        console.error(
+          "Error fetching recent cities:",
+          errorWithoutTimestamp.message
+        );
         throw new Error(errorWithoutTimestamp.message);
       }
 
@@ -688,7 +833,9 @@ export async function fetchRecentCities(limit: number = 6) {
         const state = Array.isArray(city.state) ? city.state[0] : city.state;
         // Country is nested directly under city (same pattern as in fetchRecentArtists)
         const country = city.country
-          ? (Array.isArray(city.country) ? city.country[0] : city.country)
+          ? Array.isArray(city.country)
+            ? city.country[0]
+            : city.country
           : null;
 
         console.log("[fetchRecentCities] City extraction (no timestamp):", {
@@ -712,7 +859,9 @@ export async function fetchRecentCities(limit: number = 6) {
       const state = Array.isArray(city.state) ? city.state[0] : city.state;
       // Country is nested directly under city (same pattern as in fetchRecentArtists)
       const country = city.country
-        ? (Array.isArray(city.country) ? city.country[0] : city.country)
+        ? Array.isArray(city.country)
+          ? city.country[0]
+          : city.country
         : null;
 
       console.log("[fetchRecentCities] City extraction:", {
@@ -742,9 +891,11 @@ export async function fetchRecentShops(limit: number = 6) {
     // Try to fetch with created_at first, fallback to without if it fails
     let query = supabase
       .from("tattoo_shops")
-      .select(`
+      .select(
+        `
         id,
         shop_name,
+        slug,
         instagram_handle,
         address,
         created_at,
@@ -753,7 +904,8 @@ export async function fetchRecentShops(limit: number = 6) {
           state: states (state_name),
           country: countries (country_name)
         )
-      `)
+      `
+      )
       .order("id", { ascending: false })
       .limit(limit);
 
@@ -761,12 +913,18 @@ export async function fetchRecentShops(limit: number = 6) {
 
     // If error occurs, try without created_at field (it might not exist)
     if (error) {
-      console.warn("Error fetching with created_at, retrying without it:", error.message);
-      const { data: dataWithoutTimestamp, error: errorWithoutTimestamp } = await supabase
-        .from("tattoo_shops")
-        .select(`
+      console.warn(
+        "Error fetching with created_at, retrying without it:",
+        error.message
+      );
+      const { data: dataWithoutTimestamp, error: errorWithoutTimestamp } =
+        await supabase
+          .from("tattoo_shops")
+          .select(
+            `
           id,
           shop_name,
+          slug,
           instagram_handle,
           address,
           city: cities (
@@ -774,18 +932,23 @@ export async function fetchRecentShops(limit: number = 6) {
             state: states (state_name),
             country: countries (country_name)
           )
-        `)
-        .order("id", { ascending: false })
-        .limit(limit);
+        `
+          )
+          .order("id", { ascending: false })
+          .limit(limit);
 
       if (errorWithoutTimestamp) {
-        console.error("Error fetching recent shops:", errorWithoutTimestamp.message);
+        console.error(
+          "Error fetching recent shops:",
+          errorWithoutTimestamp.message
+        );
         throw new Error(errorWithoutTimestamp.message);
       }
 
       return (dataWithoutTimestamp || []).map((shop: any) => ({
         id: shop.id,
         shop_name: shop.shop_name,
+        slug: shop.slug || null,
         instagram_handle: shop.instagram_handle || null,
         address: shop.address || null,
         created_at: null,
@@ -804,6 +967,7 @@ export async function fetchRecentShops(limit: number = 6) {
     return (data || []).map((shop: any) => ({
       id: shop.id,
       shop_name: shop.shop_name,
+      slug: shop.slug || null,
       instagram_handle: shop.instagram_handle || null,
       address: shop.address || null,
       created_at: shop.created_at || null,
