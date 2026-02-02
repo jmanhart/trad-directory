@@ -60,7 +60,7 @@ export default function ArtistInfo({ artist, imageUrl }: ArtistInfoProps) {
             window.open(instagramUrl, "_blank", "noopener,noreferrer")
           }
         >
-          @{artist.instagram_handle}!
+          @{artist.instagram_handle}
         </Button>
       )}
     </section>

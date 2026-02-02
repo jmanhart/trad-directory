@@ -52,7 +52,7 @@ export default function ArtistPageV2({
           </button>
         )}
         <ArtistInfo artist={artist} imageUrl={null} />
-        {/* {SHOW_ARTIST_PORTFOLIO && <ArtistPortfolio />} */}
+        {SHOW_ARTIST_PORTFOLIO && <ArtistPortfolio />}
       </div>
     </div>
   );
