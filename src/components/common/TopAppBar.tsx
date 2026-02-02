@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import styles from "./TopAppBar.module.css";
-import InstagramIcon from "../../assets/icons/instagramIcon";
 import ReportIssueModal from "./ReportIssueModal";
 import SearchBar from "./SearchBar";
 import { useSearchSuggestions } from "../../hooks/useSearchSuggestions";
@@ -32,29 +31,16 @@ export default function TopAppBar() {
             </Link>
           )}
         </div>
-        <div className={styles.center}>
-          <SearchBar
-            size="compact"
-            onSearch={handleSearch}
-            suggestions={suggestions}
-            placeholder="Search artists, shops, locations..."
-          />
+        <div className={styles.right}>
+          {!isHomePage && (
+            <SearchBar
+              size="compact"
+              onSearch={handleSearch}
+              suggestions={suggestions}
+              placeholder="Search"
+            />
+          )}
         </div>
-        <div className={styles.spacer} aria-hidden />
-        <nav className={styles.nav}>
-          <Link to="/about" className={styles.navLink}>
-            About
-          </Link>
-          <a
-            href="https://www.instagram.com/trad_tattoo_directory/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.navLink}
-            aria-label="Instagram"
-          >
-            <InstagramIcon className={styles.instagramIcon} />
-          </a>
-        </nav>
       </header>
 
       <ReportIssueModal

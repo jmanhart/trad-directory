@@ -16,22 +16,25 @@ interface Artist {
 interface SearchResultsDisplayProps {
   searchQuery: string;
   hasSearched: boolean;
-  filteredResults: Artist[];
+  filteredArtists: Artist[];
+  filteredShops: { id: number }[];
   navigate: (path: string) => void;
 }
 
 export default function SearchResultsDisplay({
   searchQuery,
   hasSearched,
-  filteredResults,
+  filteredArtists,
+  filteredShops,
 }: SearchResultsDisplayProps) {
+  const totalCount = filteredArtists.length + filteredShops.length;
   return (
     <div>
       {searchQuery && (
         <div className={styles.searchInfo}>
           <LocationResultsHeader
             title={searchQuery}
-            resultsCount={hasSearched ? filteredResults.length : undefined}
+            resultsCount={hasSearched ? totalCount : undefined}
           />
         </div>
       )}

@@ -23,12 +23,17 @@
   }
 }
 
-.allArtistsTitle {
+.allArtistsTitle,
+.sectionTitle {
   font-size: 1.8rem;
   font-weight: 600;
-  color: #333;
-  margin: 0 0 1.5rem 0;
-  text-align: center;
+  color: var(--color-text-primary);
+  margin: 0 0 1rem 0;
+  padding: 0 16px;
+}
+
+.sectionTitle:not(:first-child) {
+  margin-top: 2rem;
 }
 
 .noResults {

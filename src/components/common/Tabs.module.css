@@ -33,6 +33,11 @@
     -1 * var(--border-width)
   ); /* Overlap container border so active line replaces it */
   position: relative;
+  outline: none;
+}
+
+.tab:focus-visible {
+  outline: none;
 }
 
 .tab:hover:not(:disabled) {

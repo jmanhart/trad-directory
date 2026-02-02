@@ -1,0 +1,29 @@
+.container {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  color: var(--color-text-primary);
+}
+
+.message {
+  font-size: 1.125rem;
+  margin: 0 0 1.5rem;
+}
+
+.link {
+  color: var(--color-primary);
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.link:hover {
+  color: var(--color-primary-hover);
+}

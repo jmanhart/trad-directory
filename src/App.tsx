@@ -16,6 +16,7 @@ import TypeTestingPage from "./components/pages/TypeTestingPage";
 import styles from "./App.module.css";
 import { Sentry } from "./utils/sentry";
 import ArtistPage from "./components/pages/ArtistPage";
+import NotFoundPage from "./components/pages/NotFoundPage";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import AdminPage from "./components/pages/admin/AdminPage";
 import AdminAddArtist from "./components/pages/admin/AdminAddArtist";
@@ -28,6 +29,7 @@ import AdminNewAdding from "./components/pages/admin/AdminNewAdding";
 import AdminAllData from "./components/pages/admin/AdminAllData";
 import TopAppBar from "./components/common/TopAppBar";
 import AdminTopAppBar from "./components/common/AdminTopAppBar";
+import Footer from "./components/common/Footer";
 import { usePageTracking } from "./hooks/usePageTracking";
 import ScatteredSvgBackground from "./components/ScatteredSvgBackground/ScatteredSvgBackground";
 
@@ -53,10 +55,13 @@ const SentryApp = Sentry.withErrorBoundary(App, {
   },
 });
 
+const PAGES_WITHOUT_FOOTER = ["/artists", "/shops"];
+
 function AppContent() {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
   const isAdminRoute = location.pathname.startsWith("/admin");
+  const showFooter = !PAGES_WITHOUT_FOOTER.includes(location.pathname);
 
   // Track page views on route changes
   usePageTracking();
@@ -65,7 +70,10 @@ function AppContent() {
     <div className={styles.appContainer}>
       <ScatteredSvgBackground preset="default" intensity="subtle" />
       {isAdminRoute ? <AdminTopAppBar /> : <TopAppBar />}
-      <main className={styles.mainContent}>
+      {showFooter && <Footer />}
+      <main
+        className={`${styles.mainContent} ${!showFooter ? styles.mainContentNoFixedFooter : ""}`}
+      >
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/artists" element={<AllArtistsPage />} />
@@ -149,6 +157,7 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
     </div>

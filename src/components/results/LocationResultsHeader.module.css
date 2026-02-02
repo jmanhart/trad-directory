@@ -1,10 +1,16 @@
-/* Single line: icon + title + results – matches ArtistInfo weight and feel */
+/* Single line: (icon + title) left, results count right */
 
 .line {
   display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  width: 100%;
+}
+
+.titleBlock {
+  display: flex;
   align-items: baseline;
   gap: 0.5rem;
-  flex-wrap: wrap;
 }
 
 .icon {

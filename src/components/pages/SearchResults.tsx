@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { searchArtists } from "../../services/api";
+import { searchArtists, searchShops } from "../../services/api";
 import ResultsSection from "../results/ResultsSection";
 import SearchResultsDisplay from "../results/SearchResultsDisplay";
 // import SearchBar from "../common/SearchBar";
@@ -20,11 +20,23 @@ interface Artist {
   country_name?: string;
 }
 
+interface Shop {
+  id: number;
+  shop_name: string;
+  slug?: string | null;
+  instagram_handle?: string | null;
+  city_name?: string;
+  state_name?: string;
+  country_name?: string;
+}
+
 function SearchResults() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [artists, setArtists] = useState<Artist[]>([]);
-  const [filteredResults, setFilteredResults] = useState<Artist[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [filteredArtists, setFilteredArtists] = useState<Artist[]>([]);
+  const [filteredShops, setFilteredShops] = useState<Shop[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasSearched, setHasSearched] = useState(false);
@@ -45,21 +57,25 @@ function SearchResults() {
 
     // Only fetch all artists if there's no search query (for "show all" functionality)
     if (!searchQuery) {
-      const fetchAllArtists = async () => {
+      const fetchInitialData = async () => {
         try {
-          const { fetchTattooShopsWithArtists } = await import(
+          const { fetchTattooShopsWithArtists, fetchAllShops } = await import(
             "../../services/api"
           );
-          const allArtistsData = await fetchTattooShopsWithArtists();
+          const [allArtistsData, allShopsData] = await Promise.all([
+            fetchTattooShopsWithArtists(),
+            fetchAllShops(),
+          ]);
           setArtists(allArtistsData);
-        } catch (error) {
-          console.error("Error fetching all artists:", error);
+          setShops(allShopsData);
+        } catch (err) {
+          console.error("Error fetching initial data:", err);
         } finally {
           setIsLoading(false);
         }
       };
 
-      fetchAllArtists();
+      fetchInitialData();
     } else {
       // If there's a search query, we don't need to fetch all artists
       setIsLoading(false);
@@ -84,25 +100,29 @@ function SearchResults() {
         component: "SearchResults",
       });
 
-      const results = await searchArtists(query);
+      const [artistResults, shopResults] = await Promise.all([
+        searchArtists(query),
+        searchShops(query),
+      ]);
+      const totalCount = artistResults.length + shopResults.length;
       console.log(
-        `[SearchResults] Search completed. Found ${results.length} results for "${query}"`
+        `[SearchResults] Search completed. Found ${artistResults.length} artists, ${shopResults.length} shops for "${query}"`
       );
 
-      // Track search in analytics
       trackSearch({
         search_term: query,
         search_location: "search_results",
-        results_count: results.length,
-        has_results: results.length > 0,
+        results_count: totalCount,
+        has_results: totalCount > 0,
       });
 
-      setFilteredResults(results);
+      setFilteredArtists(artistResults);
+      setFilteredShops(shopResults);
       setHasSearched(true);
-    } catch (error) {
-      setError("Error searching artists.");
-      console.error("[SearchResults] Search error:", error);
-      captureException(error as Error, {
+    } catch (err) {
+      setError("Error searching.");
+      console.error("[SearchResults] Search error:", err);
+      captureException(err as Error, {
         component: "SearchResults",
         action: "perform_search",
         query,
@@ -138,31 +158,37 @@ function SearchResults() {
     );
   }
 
+  const hasNoResults =
+    hasSearched && filteredArtists.length === 0 && filteredShops.length === 0;
+
   return (
     <div className={styles.container}>
       <SearchResultsDisplay
         searchQuery={searchQuery}
         hasSearched={hasSearched}
-        filteredResults={filteredResults}
+        filteredArtists={filteredArtists}
+        filteredShops={filteredShops}
         navigate={navigate}
       />
-      {hasSearched && filteredResults.length === 0 && (
+      {hasNoResults && (
         <div className={styles.noResults}>
           <h3>No results found</h3>
-          <p>Try adjusting your search terms or browse all artists below.</p>
+          <p>Try adjusting your search terms or browse below.</p>
           <button
             onClick={() => navigate("/")}
             className={styles.browseAllButton}
           >
-            Browse All Artists
+            Browse All
           </button>
         </div>
       )}
       <ResultsSection
-        artists={filteredResults}
+        artists={filteredArtists}
+        shops={filteredShops}
         hasSearched={hasSearched}
         showAllIfNoSearch={true}
         allArtists={artists}
+        allShops={shops}
       />
     </div>
   );

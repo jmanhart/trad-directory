@@ -1,4 +1,3 @@
-import React from "react";
 import GlobeIcon from "../../assets/icons/globeIcon";
 import styles from "./LocationResultsHeader.module.css";
 
@@ -15,8 +14,10 @@ export default function LocationResultsHeader({
 }: LocationResultsHeaderProps) {
   return (
     <div className={styles.line} aria-label="Location results">
-      <GlobeIcon className={styles.icon} aria-hidden />
-      <h2 className={styles.title}>{title}</h2>
+      <div className={styles.titleBlock}>
+        <GlobeIcon className={styles.icon} aria-hidden />
+        <h2 className={styles.title}>{title}</h2>
+      </div>
       {resultsCount !== undefined && resultsCount >= 0 && (
         <span className={styles.resultsLine}>
           {resultsCount} result{resultsCount !== 1 ? "s" : ""} found

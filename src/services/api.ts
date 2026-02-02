@@ -488,6 +488,36 @@ export async function searchArtists(query: string) {
   return filtered;
 }
 
+/** Search shops by name, location, or Instagram handle. */
+export async function searchShops(query: string) {
+  const allShops = await fetchAllShops();
+  const normalizedQuery = query.toLowerCase().trim().replace(/^@/, "");
+
+  if (!normalizedQuery) {
+    return [];
+  }
+
+  return allShops.filter(shop => {
+    const shopName = shop.shop_name?.toLowerCase().trim();
+    const cityName = shop.city_name?.toLowerCase().trim();
+    const stateName = shop.state_name?.toLowerCase().trim();
+    const countryName = shop.country_name?.toLowerCase().trim();
+    const instagramHandle = shop.instagram_handle?.toLowerCase().trim();
+
+    return (
+      (shopName && shopName.includes(normalizedQuery)) ||
+      (instagramHandle && instagramHandle.includes(normalizedQuery)) ||
+      (cityName && cityName !== "n/a" && cityName.includes(normalizedQuery)) ||
+      (stateName &&
+        stateName !== "n/a" &&
+        stateName.includes(normalizedQuery)) ||
+      (countryName &&
+        countryName !== "n/a" &&
+        countryName.includes(normalizedQuery))
+    );
+  });
+}
+
 // Fetch recently added artists (ordered by id descending, limit to most recent)
 export async function fetchRecentArtists(limit: number = 6) {
   try {

@@ -25,20 +25,11 @@
   align-items: center;
 }
 
-.center {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  top: 0;
-  bottom: 0;
+.right {
   display: flex;
   align-items: center;
-  z-index: 1001; /* So search dropdown appears above nav */
-}
-
-.spacer {
-  flex: 1;
-  min-width: 0;
+  margin-left: auto;
+  z-index: 1001; /* So search dropdown appears above header */
 }
 
 .logoContainer {
@@ -53,46 +44,4 @@
   width: auto;
   object-fit: contain;
   flex-shrink: 0;
-}
-
-.nav {
-  display: flex;
-  gap: 24px;
-  align-items: center;
-  margin-left: auto;
-}
-
-.addButton {
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-weight: 500;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-family: inherit;
-}
-
-.addButton:hover {
-  background-color: var(--color-primary-hover);
-}
-
-.navLink {
-  text-decoration: none;
-  color: var(--color-text-primary);
-  font-weight: 500;
-  font-size: 0.9rem;
-  transition: color 0.2s ease;
-}
-
-.navLink:hover {
-  color: var(--color-text-secondary);
-}
-
-.instagramIcon {
-  width: 20px;
-  height: 20px;
-  color: currentColor;
 }

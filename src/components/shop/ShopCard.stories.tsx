@@ -12,7 +12,7 @@ type Story = StoryObj<typeof ShopCard>;
 
 const mockShop = {
   id: 1,
-  name: "Ink Shop",
+  shop_name: "Ink Shop",
   city_name: "Los Angeles",
   state_name: "California",
   country_name: "United States",
@@ -28,7 +28,7 @@ export const International: Story = {
   args: {
     shop: {
       id: 2,
-      name: "Tokyo Ink Studio",
+      shop_name: "Tokyo Ink Studio",
       city_name: "Tokyo",
       state_name: undefined,
       country_name: "Japan",
@@ -40,18 +40,39 @@ export const Minimal: Story = {
   args: {
     shop: {
       id: 3,
-      name: "Local Shop",
+      shop_name: "Local Shop",
     },
   },
 };
 
 export const Grid: Story = {
   render: () => (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1rem" }}>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+        gap: "1rem",
+      }}
+    >
       <ShopCard shop={mockShop} />
-      <ShopCard shop={{ ...mockShop, name: "Neo Traditional Studio", city_name: "New York", state_name: "New York" }} />
-      <ShopCard shop={{ ...mockShop, name: "European Ink", city_name: "London", state_name: undefined, country_name: "United Kingdom" }} />
-      <ShopCard shop={{ id: 4, name: "Minimal Shop" }} />
+      <ShopCard
+        shop={{
+          ...mockShop,
+          shop_name: "Neo Traditional Studio",
+          city_name: "New York",
+          state_name: "New York",
+        }}
+      />
+      <ShopCard
+        shop={{
+          ...mockShop,
+          shop_name: "European Ink",
+          city_name: "London",
+          state_name: undefined,
+          country_name: "United Kingdom",
+        }}
+      />
+      <ShopCard shop={{ id: 4, shop_name: "Minimal Shop" }} />
     </div>
   ),
 };
