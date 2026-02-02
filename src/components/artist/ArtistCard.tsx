@@ -4,6 +4,8 @@ import { formatRelativeTime } from "../../utils/relativeTime";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import { getArtistUrl } from "../../services/api";
 import InstagramIcon from "../../assets/icons/instagramIcon";
+import GlobeIcon from "../../assets/icons/globeIcon";
+import { Button } from "../common/FormComponents";
 
 interface Artist {
   id: number;
@@ -31,12 +33,11 @@ export default function ArtistCard({
   const location = useLocation();
   const artistInstagramUrl = artist.instagram_handle
     ? `https://www.instagram.com/${artist.instagram_handle}`
-    : "#";
+    : null;
 
   const fromSearch = location.pathname === "/search-results";
   const previous = `${location.pathname}${location.search || ""}`;
 
-  // Format location string using shared utility
   const locationString = formatArtistLocation({
     city_name: artist.city_name,
     state_name: artist.state_name,
@@ -51,39 +52,42 @@ export default function ArtistCard({
       className={styles.cardLink}
     >
       <div className={styles.card}>
-        <div className={styles.header}>
-          <h4 className={styles.artistName}>{artist.name}</h4>
-          {showTimestamp && artist.created_at && (
-            <span className={styles.timestampLabel}>
-              {formatRelativeTime(artist.created_at)}
-            </span>
-          )}
+        <div className={styles.content}>
+          <div className={styles.header}>
+            <div className={styles.nameRow}>
+              <h3 className={styles.artistName}>{artist.name}</h3>
+              {showTimestamp && artist.created_at && (
+                <span className={styles.timestampLabel}>
+                  {formatRelativeTime(artist.created_at)}
+                </span>
+              )}
+            </div>
+            {artist.instagram_handle && (
+              <span className={styles.instagramHandle}>
+                @{artist.instagram_handle}
+              </span>
+            )}
+            {(locationString || artist.is_traveling) && (
+              <div className={styles.locationLine}>
+                <GlobeIcon className={styles.locationIcon} aria-hidden />
+                <span className={styles.locationValue}>{locationString}</span>
+              </div>
+            )}
+          </div>
         </div>
-
-        {artist.instagram_handle && (
-          <a
-            href={artistInstagramUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.link}
+        {artistInstagramUrl && (
+          <Button
+            variant="secondary"
+            size="small"
+            type="button"
             onClick={e => {
               e.preventDefault();
               e.stopPropagation();
               window.open(artistInstagramUrl, "_blank", "noopener,noreferrer");
             }}
           >
-            <InstagramIcon
-              className={styles.instagramIcon}
-              aria-hidden="true"
-            />
-            @{artist.instagram_handle}
-          </a>
-        )}
-
-        {(locationString || artist.is_traveling) && (
-          <div className={styles.details}>
-            <p className={styles.address}>{locationString}</p>
-          </div>
+            View Artist
+          </Button>
         )}
       </div>
     </Link>

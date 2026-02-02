@@ -53,7 +53,7 @@ export default function ArtistInfo({ artist, imageUrl }: ArtistInfoProps) {
       </div>
       {instagramUrl && (
         <Button
-          variant="outline"
+          variant="primary"
           type="button"
           icon={<InstagramIcon />}
           onClick={() =>

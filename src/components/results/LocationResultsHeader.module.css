@@ -1,0 +1,29 @@
+/* Single line: icon + title + results – matches ArtistInfo weight and feel */
+
+.line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.icon {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  color: var(--color-text-primary);
+}
+
+.title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.resultsLine {
+  font-size: var(--font-size-2xl);
+  color: var(--color-text-primary);
+  font-weight: 400;
+  margin: 0;
+}

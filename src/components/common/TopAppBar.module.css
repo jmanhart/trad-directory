@@ -1,8 +1,10 @@
 .topAppBar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 1000;
-  /* background-color: white; */
+  background-color: var(--color-surface);
   color: var(--color-text-primary);
   display: flex;
   justify-content: space-between;
@@ -13,7 +15,30 @@
 }
 
 .topAppBar.withBorder {
-  /* border-bottom: var(--border-width) solid var(--color-border); */
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.left {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  z-index: 1001; /* So search dropdown appears above nav */
+}
+
+.spacer {
+  flex: 1;
+  min-width: 0;
 }
 
 .logoContainer {

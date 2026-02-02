@@ -6,7 +6,7 @@ import ShopsIcon from "../../assets/icons/shopsIcon";
 import GlobeIcon from "../../assets/icons/globeIcon";
 import { type Suggestion } from "../../utils/suggestions";
 
-type SearchBarSize = "small" | "medium" | "large";
+type SearchBarSize = "small" | "medium" | "large" | "compact";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -55,14 +55,10 @@ export default function SearchBar({
         shop: [],
         location: [],
       };
-      allSuggestions.forEach((suggestion) => {
+      allSuggestions.forEach(suggestion => {
         grouped[suggestion.type]?.push(suggestion);
       });
-      return [
-        ...grouped.artist,
-        ...grouped.shop,
-        ...grouped.location,
-      ];
+      return [...grouped.artist, ...grouped.shop, ...grouped.location];
     }
 
     // If no query, return empty (unless keepOpen is true, handled above)
@@ -70,30 +66,48 @@ export default function SearchBar({
 
     // Normalize query for filtering
     const normalizedQuery = query.toLowerCase().trim().replace(/^@/, "");
-    
+
     if (!normalizedQuery) return [];
 
     // Filter suggestions that match the query
-    const filtered = suggestions.filter((suggestion) => {
-      const labelMatch = suggestion.label.toLowerCase().includes(normalizedQuery);
-      const detailMatch = suggestion.detail?.toLowerCase().includes(normalizedQuery);
+    const filtered = suggestions.filter(suggestion => {
+      const labelMatch = suggestion.label
+        .toLowerCase()
+        .includes(normalizedQuery);
+      const detailMatch = suggestion.detail
+        ?.toLowerCase()
+        .includes(normalizedQuery);
       return labelMatch || detailMatch;
     });
-    
+
     // Debug: Log filtering results for location suggestions
     if (normalizedQuery.length >= 2) {
-      const allLocationSuggestions = suggestions.filter(s => s.type === "location");
+      const allLocationSuggestions = suggestions.filter(
+        s => s.type === "location"
+      );
       const locationMatches = filtered.filter(s => s.type === "location");
-      
+
       // Check for specific countries
-      const hasUnitedStates = allLocationSuggestions.some(s => s.label.toLowerCase().includes('united states'));
-      const hasUnitedKingdom = allLocationSuggestions.some(s => s.label.toLowerCase().includes('united kingdom'));
-      const hasCanada = allLocationSuggestions.some(s => s.label.toLowerCase().includes('canada'));
-      
-      const matchesUnitedStates = locationMatches.some(s => s.label.toLowerCase().includes('united states'));
-      const matchesUnitedKingdom = locationMatches.some(s => s.label.toLowerCase().includes('united kingdom'));
-      const matchesCanada = locationMatches.some(s => s.label.toLowerCase().includes('canada'));
-      
+      const hasUnitedStates = allLocationSuggestions.some(s =>
+        s.label.toLowerCase().includes("united states")
+      );
+      const hasUnitedKingdom = allLocationSuggestions.some(s =>
+        s.label.toLowerCase().includes("united kingdom")
+      );
+      const hasCanada = allLocationSuggestions.some(s =>
+        s.label.toLowerCase().includes("canada")
+      );
+
+      const matchesUnitedStates = locationMatches.some(s =>
+        s.label.toLowerCase().includes("united states")
+      );
+      const matchesUnitedKingdom = locationMatches.some(s =>
+        s.label.toLowerCase().includes("united kingdom")
+      );
+      const matchesCanada = locationMatches.some(s =>
+        s.label.toLowerCase().includes("canada")
+      );
+
       console.log(`[SearchBar] Filtering for "${normalizedQuery}":`, {
         totalSuggestions: suggestions.length,
         totalLocationSuggestions: allLocationSuggestions.length,
@@ -105,7 +119,9 @@ export default function SearchBar({
         matchesUnitedStates,
         matchesUnitedKingdom,
         matchesCanada,
-        sampleAllLocations: allLocationSuggestions.slice(0, 10).map(s => s.label),
+        sampleAllLocations: allLocationSuggestions
+          .slice(0, 10)
+          .map(s => s.label),
         sampleLocationMatches: locationMatches.slice(0, 10).map(s => s.label),
       });
     }
@@ -117,24 +133,24 @@ export default function SearchBar({
       location: [],
     };
 
-    filtered.forEach((suggestion) => {
+    filtered.forEach(suggestion => {
       grouped[suggestion.type]?.push(suggestion);
     });
 
     // Flatten with artists first, then shops, then locations
-    return [
-      ...grouped.artist,
-      ...grouped.shop,
-      ...grouped.location,
-    ];
+    return [...grouped.artist, ...grouped.shop, ...grouped.location];
   }, [query, suggestions, keepOpen]);
 
   // Debug logging
   useEffect(() => {
     if (debug) {
-      const locationSuggestions = suggestions.filter(s => s.type === "location");
-      const countrySuggestions = filteredSuggestions.filter(s => s.type === "location");
-      
+      const locationSuggestions = suggestions.filter(
+        s => s.type === "location"
+      );
+      const countrySuggestions = filteredSuggestions.filter(
+        s => s.type === "location"
+      );
+
       console.log("[SearchBar] State:", {
         query,
         totalSuggestions: suggestions.length,
@@ -148,7 +164,17 @@ export default function SearchBar({
         sampleFilteredSuggestions: filteredSuggestions.slice(0, 5),
       });
     }
-  }, [query, suggestions.length, filteredSuggestions.length, showSuggestions, highlightedIndex, debug, keepOpen, filteredSuggestions, suggestions]);
+  }, [
+    query,
+    suggestions.length,
+    filteredSuggestions.length,
+    showSuggestions,
+    highlightedIndex,
+    debug,
+    keepOpen,
+    filteredSuggestions,
+    suggestions,
+  ]);
 
   // Handle click outside to close suggestions (disabled when keepOpen is true)
   useEffect(() => {
@@ -167,7 +193,7 @@ export default function SearchBar({
     // Support both mouse and touch events for mobile
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("touchstart", handleClickOutside);
-    
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
@@ -196,7 +222,7 @@ export default function SearchBar({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
     setQuery(newQuery);
-    
+
     // Always show suggestions when there's a query
     if (newQuery.trim()) {
       setShowSuggestions(true);
@@ -215,7 +241,7 @@ export default function SearchBar({
     }
 
     setQuery(suggestion.label);
-    
+
     // Don't close if keepOpen is enabled
     if (!keepOpen) {
       setShowSuggestions(false);
@@ -230,17 +256,25 @@ export default function SearchBar({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowDown" && showSuggestions && filteredSuggestions.length > 0) {
+    if (
+      e.key === "ArrowDown" &&
+      showSuggestions &&
+      filteredSuggestions.length > 0
+    ) {
       e.preventDefault();
-      setHighlightedIndex((prev) =>
+      setHighlightedIndex(prev =>
         prev < filteredSuggestions.length - 1 ? prev + 1 : 0
       );
       return;
     }
 
-    if (e.key === "ArrowUp" && showSuggestions && filteredSuggestions.length > 0) {
+    if (
+      e.key === "ArrowUp" &&
+      showSuggestions &&
+      filteredSuggestions.length > 0
+    ) {
       e.preventDefault();
-      setHighlightedIndex((prev) =>
+      setHighlightedIndex(prev =>
         prev > 0 ? prev - 1 : filteredSuggestions.length - 1
       );
       return;
@@ -344,14 +378,14 @@ export default function SearchBar({
             {filteredSuggestions.map((suggestion, index) => (
               <li
                 key={`${suggestion.type}-${suggestion.id ?? suggestion.label}-${index}`}
-                ref={(el) => {
+                ref={el => {
                   if (el) suggestionRefs.current[index] = el;
                 }}
-                onMouseDown={(e) => {
+                onMouseDown={e => {
                   e.preventDefault();
                   selectSuggestion(suggestion);
                 }}
-                onTouchEnd={(e) => {
+                onTouchEnd={e => {
                   e.preventDefault();
                   selectSuggestion(suggestion);
                 }}
@@ -367,18 +401,22 @@ export default function SearchBar({
                 <span className={styles.suggestionIconWrapper}>
                   {getSuggestionIcon(suggestion.type)}
                 </span>
-                <span className={styles.suggestionLabel}>{suggestion.label}</span>
+                <span className={styles.suggestionLabel}>
+                  {suggestion.label}
+                </span>
                 {suggestion.detail && (
                   <span className={styles.suggestionDetail}>
                     {" "}
                     {suggestion.detail}
                   </span>
                 )}
-                {suggestion.type === "location" && suggestion.artistCount !== undefined && (
-                  <span className={styles.suggestionArtistCount}>
-                    {suggestion.artistCount} {suggestion.artistCount === 1 ? "artist" : "artists"}
-                  </span>
-                )}
+                {suggestion.type === "location" &&
+                  suggestion.artistCount !== undefined && (
+                    <span className={styles.suggestionArtistCount}>
+                      {suggestion.artistCount}{" "}
+                      {suggestion.artistCount === 1 ? "artist" : "artists"}
+                    </span>
+                  )}
                 {debug && (
                   <span className={styles.suggestionTypeBadge}>
                     {getTypeLabel(suggestion.type)}

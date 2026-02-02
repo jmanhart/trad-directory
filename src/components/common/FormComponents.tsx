@@ -75,7 +75,8 @@ export function Select({ className, children, ...props }: SelectProps) {
 }
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline";
+  variant?: "primary" | "secondary" | "outline" | "ghost";
+  size?: "small" | "medium" | "large";
   loading?: boolean;
   loadingText?: string;
   /** Optional icon element (e.g. SVG) shown before the label */
@@ -85,6 +86,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 export function Button({
   variant = "primary",
+  size = "medium",
   loading,
   loadingText,
   icon,
@@ -94,10 +96,14 @@ export function Button({
 }: ButtonProps) {
   const variantClass =
     styles[`button${variant.charAt(0).toUpperCase() + variant.slice(1)}`];
+  const sizeClass =
+    size !== "medium"
+      ? styles[`buttonSize${size.charAt(0).toUpperCase() + size.slice(1)}`]
+      : "";
   const withIconClass = icon ? styles.buttonWithIcon : "";
   return (
     <button
-      className={`${styles.button} ${variantClass} ${withIconClass} ${className || ""}`}
+      className={`${styles.button} ${variantClass} ${sizeClass} ${withIconClass} ${className || ""}`}
       disabled={loading || props.disabled}
       {...props}
     >

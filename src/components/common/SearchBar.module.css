@@ -43,7 +43,6 @@
   max-width: 840px;
 }
 
-
 .searchBar.large .input {
   padding: 18px 18px 18px 55px;
   font-size: 19px;
@@ -102,7 +101,29 @@
   height: 24px;
 }
 
+.iconCompact {
+  height: 14px;
+  width: 14px;
+  left: 10px;
+}
+
+.iconCompact svg {
+  width: 14px;
+  height: 14px;
+}
+
 /* SearchBar sizes */
+.compact .inputWrapper {
+  max-width: 280px;
+}
+
+.compact .input {
+  padding: 6px 8px 6px 28px;
+  font-size: 13px;
+  border-width: 2px;
+  min-height: 32px;
+}
+
 .small .input {
   padding: 8px 8px 8px 36px;
   font-size: 14px;
@@ -141,7 +162,7 @@
   /* Better scrolling on mobile */
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  
+
   /* Minimal scrollbar styling */
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
@@ -183,7 +204,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
   /* Better touch targets on mobile */
   min-height: 44px;
   touch-action: manipulation;

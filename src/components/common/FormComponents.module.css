@@ -115,20 +115,21 @@
   background-position: right var(--form-control-padding-x-large) center;
 }
 
-.button.small {
-  padding: var(--form-control-padding-y-small) var(--button-padding-x-small);
-  font-size: var(--font-size-sm);
-  min-height: calc(
-    var(--form-control-padding-y-small) * 2 + 1em * var(--line-height, 1.5)
-  );
-}
-
-.button.large {
+/* Button sizes: base = medium (default), large = biggest, small = smallest */
+.buttonSizeLarge {
   padding: var(--form-control-padding-y-large) var(--button-padding-x-large);
   font-size: var(--font-size-lg);
   min-height: calc(
     var(--form-control-padding-y-large) * 2 + 1em * var(--line-height, 1.5)
   );
+}
+
+.buttonSizeSmall {
+  padding: 0.125rem 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  min-height: auto;
+  height: auto;
 }
 
 .submitButton.small {
@@ -147,7 +148,7 @@
   );
 }
 
-/* Button variants */
+/* Button variants – base = medium size */
 .button {
   padding: var(--form-control-padding-y-medium) var(--button-padding-x-medium);
   font-size: var(--font-size-base);
@@ -210,6 +211,16 @@
 .buttonOutline:hover:not(:disabled) {
   background-color: var(--color-primary);
   color: white;
+}
+
+.buttonGhost {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: none;
+}
+
+.buttonGhost:hover:not(:disabled) {
+  text-decoration: underline;
 }
 
 .button:disabled {

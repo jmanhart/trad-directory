@@ -41,6 +41,7 @@
   z-index: 1;
   flex: 1;
   padding: 0;
+  padding-top: 52px; /* Space for fixed TopAppBar (12px*2 + ~28px content) */
   box-sizing: border-box;
   background-color: transparent; /* Transparent so background shows through */
 }
@@ -80,6 +81,8 @@
   color: var(--color-text-tertiary);
   font-weight: 500;
   transition: color 0.3s ease;
+  display: flex;
+  align-items: center;
 }
 
 .navLink:hover {

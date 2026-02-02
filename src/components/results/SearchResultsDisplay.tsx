@@ -1,5 +1,5 @@
-import React from "react";
 import styles from "../pages/SearchResults.module.css";
+import LocationResultsHeader from "./LocationResultsHeader";
 
 interface Artist {
   id: number;
@@ -29,16 +29,10 @@ export default function SearchResultsDisplay({
     <div>
       {searchQuery && (
         <div className={styles.searchInfo}>
-          <h2 className={styles.searchQuery}>
-            Results for:{" "}
-            <span className={styles.queryText}>&quot;{searchQuery}&quot;</span>
-          </h2>
-          {hasSearched && filteredResults.length > 0 && (
-            <p className={styles.resultsCount}>
-              {filteredResults.length} result
-              {filteredResults.length !== 1 ? "s" : ""} found
-            </p>
-          )}
+          <LocationResultsHeader
+            title={searchQuery}
+            resultsCount={hasSearched ? filteredResults.length : undefined}
+          />
         </div>
       )}
       {/* Intentionally no list rendering here; ResultsSection handles cards */}
