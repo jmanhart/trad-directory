@@ -26,13 +26,15 @@ function getRedisClient() {
   if (!redisAvailable) {
     return null;
   }
-  
+
+  // Only connect when a cache URL is explicitly set (avoids local dev spam when Redis isn't running)
+  const redisUrl = process.env.REDIS_URL || process.env.VALKEY_URL;
+  if (!redisUrl) {
+    return null;
+  }
+
   if (!redisClient) {
     try {
-      const redisUrl =
-        process.env.REDIS_URL ||
-        process.env.VALKEY_URL ||
-        "redis://localhost:6379";
       redisClient = new Redis(redisUrl, {
         connectTimeout: 5000,
         lazyConnect: true,
@@ -40,7 +42,6 @@ function getRedisClient() {
         maxRetriesPerRequest: 3,
       });
 
-      // Handle connection errors gracefully
       redisClient.on("error", (err: any) => {
         console.warn("Redis/Valkey connection error:", err.message);
       });

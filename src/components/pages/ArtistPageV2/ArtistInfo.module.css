@@ -1,0 +1,109 @@
+.section {
+  /* margin-bottom: var(--spacing-lg); */
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+@media (max-width: 600px) {
+  .section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .imageWrapper {
+    align-self: center;
+  }
+}
+
+.imageWrapper {
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+.content {
+  min-width: 0;
+  flex: 1;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--border-radius);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+}
+
+.name {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  margin: 0;
+}
+
+.instagramLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  display: inline-block;
+}
+
+.instagramLink:hover {
+  text-decoration: underline;
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.locationLine {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  grid-column: 1 / -1;
+}
+
+.locationIcon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+}
+
+.value {
+  color: var(--color-text-primary);
+}
+
+.link {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}

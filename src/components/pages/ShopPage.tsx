@@ -3,7 +3,11 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import { isNumericId } from "../../utils/slug";
 import ArtistCard from "../artist/ArtistCard";
+import ShopPageV2 from "./ShopPageV2";
 import styles from "./ShopPage.module.css";
+
+/** Set to true to use the new shop page (ShopPageV2) while you build it. */
+const USE_NEW_SHOP_PAGE = false;
 import InstagramLogoUrl from "/logo-instagram.svg";
 
 interface Artist {
@@ -87,6 +91,17 @@ export default function ShopPage() {
   };
 
   if (isLoading) {
+    if (USE_NEW_SHOP_PAGE) {
+      return (
+        <ShopPageV2
+          shop={null}
+          error={null}
+          isLoading
+          onBack={handleBack}
+          showBackButton={fromSearch}
+        />
+      );
+    }
     return (
       <div className={styles.container}>
         <div className={styles.card}>Loading shop details…</div>
@@ -95,10 +110,33 @@ export default function ShopPage() {
   }
 
   if (error || !shop) {
+    if (USE_NEW_SHOP_PAGE) {
+      return (
+        <ShopPageV2
+          shop={null}
+          error={error}
+          isLoading={false}
+          onBack={handleBack}
+          showBackButton={fromSearch}
+        />
+      );
+    }
     return (
       <div className={styles.container}>
         <div className={styles.card}>Unable to load shop. {error || ""}</div>
       </div>
+    );
+  }
+
+  if (USE_NEW_SHOP_PAGE) {
+    return (
+      <ShopPageV2
+        shop={shop}
+        error={null}
+        isLoading={false}
+        onBack={handleBack}
+        showBackButton={fromSearch}
+      />
     );
   }
 

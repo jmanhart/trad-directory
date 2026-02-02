@@ -17,34 +17,34 @@
   */
 
   /* Ink / Neutral */
-  --black-200: #1F1F1F;
+  --black-200: #1f1f1f;
   --black-300: #141414;
-  --black-400: #0A0A0A;
+  --black-400: #0a0a0a;
 
   /* Trad Core */
-  --red-200: #F07A76;
-  --red-300: #D9534F;
-  --red-400: #9C0101;
+  --red-200: #f07a76;
+  --red-300: #d9534f;
+  --red-400: #9c0101;
 
-  --yellow-200: #E8C866;
-  --yellow-300: #D4AF37;
-  --yellow-400: #B08900;
+  --yellow-200: #e8c866;
+  --yellow-300: #d4af37;
+  --yellow-400: #b08900;
 
-  --green-200: #4F8F63;
-  --green-300: #2F6B3F;
-  --green-400: #1F4D2B;
+  --green-200: #4f8f63;
+  --green-300: #2f6b3f;
+  --green-400: #1f4d2b;
 
-  --blue-200: #5C79B3;
-  --blue-300: #2F4F88;
-  --blue-400: #1B2E59;
+  --blue-200: #5c79b3;
+  --blue-300: #2f4f88;
+  --blue-400: #1b2e59;
 
-  --orange-200: #E08A45;
-  --orange-300: #C4621A;
-  --orange-400: #9E4A14;
+  --orange-200: #e08a45;
+  --orange-300: #c4621a;
+  --orange-400: #9e4a14;
 
-  --brown-200: #8C6553;
-  --brown-300: #6A4534;
-  --brown-400: #4A2F24;
+  --brown-200: #8c6553;
+  --brown-300: #6a4534;
+  --brown-400: #4a2f24;
 
   /*
     ----------------------------------------------
@@ -98,7 +98,7 @@
   */
 
   /* Surfaces */
-  --color-background: #FFF4F4; /* was #FFC4C4 (very pink) */
+  --color-background: #fff4f4; /* was #FFC4C4 (very pink) */
   --color-surface: #ffffff;
   --color-surface-muted: var(--gray-50);
 
@@ -111,6 +111,15 @@
   --color-border: color-mix(in srgb, var(--red-400) 35%, white);
   --border-width: 1.5px;
   --border-radius: 4px;
+
+  /*
+    ----------------------------------------------
+    SHADOWS (subtle, low intensity)
+    ----------------------------------------------
+  */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
 
   /* Brand / actions */
   --color-primary: var(--red-400);
@@ -131,6 +140,7 @@
     SPACING SCALE
     ----------------------------------------------
   */
+  --spacing-xxs: 0.125rem;
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
@@ -164,7 +174,9 @@
   /* Form control height calculation */
   /* With box-sizing: border-box, height includes padding + content + border */
   /* padding-top + padding-bottom + line-height (1.5 * font-size) + border-top + border-bottom */
-  --form-control-height-medium: calc(var(--form-control-padding-y-medium) * 2 + 1.5 * var(--font-size-base) + 2px);
+  --form-control-height-medium: calc(
+    var(--form-control-padding-y-medium) * 2 + 1.5 * var(--font-size-base) + 2px
+  );
 
   /*
     ----------------------------------------------
