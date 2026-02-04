@@ -28,7 +28,7 @@ export interface RecentlyAddedClickParams {
 }
 
 export interface HeroMessageClickParams {
-  link_type: 'artists' | 'shops';
+  link_type: 'artists' | 'shops' | 'countries';
   metric_value?: number;
 }
 

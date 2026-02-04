@@ -7,6 +7,9 @@ export default function Footer() {
   return (
     <footer className={styles.footer} role="contentinfo">
       <nav className={styles.nav} aria-label="Footer">
+        <Link to="/countries" className={styles.link}>
+          Countries
+        </Link>
         <Link to="/about" className={styles.link}>
           About
         </Link>

@@ -84,11 +84,22 @@ export default function HeroMessage() {
         />
       </Link>{" "}
       tattoo shops in{" "}
-      <TypeNumber
-        value={countryCount}
-        className={styles.metricNumberNoUnderline}
-        placeholder="--"
-      />{" "}
+      <Link
+        to="/countries"
+        className={styles.metricLink}
+        onClick={() =>
+          trackHeroMessageClick({
+            link_type: "countries",
+            metric_value: countryCount || undefined,
+          })
+        }
+      >
+        <TypeNumber
+          value={countryCount}
+          className={styles.metricNumber}
+          placeholder="--"
+        />
+      </Link>{" "}
       countries worldwide.
     </h1>
   );
