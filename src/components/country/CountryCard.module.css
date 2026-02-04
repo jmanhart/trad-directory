@@ -1,0 +1,69 @@
+/* Country card – hierarchy and layout aligned with ArtistCard */
+
+.cardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  margin: 0;
+  width: 100%;
+  position: relative;
+}
+
+.card {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: 1.25rem 1.5rem;
+  flex-direction: column;
+  display: flex;
+  align-items: stretch;
+  gap: var(--spacing-lg);
+  min-width: 0;
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px
+    color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.content {
+  min-width: 0;
+  flex: 1;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs);
+}
+
+.countryName {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.statsLine {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+@media (max-width: 600px) {
+  .card {
+    padding: 1rem 1.25rem;
+  }
+
+  .countryName {
+    font-size: var(--font-size-xl);
+  }
+}
