@@ -1,26 +1,26 @@
 import { Link } from "react-router-dom";
 import styles from "./Footer.module.css";
 
-const INSTAGRAM_URL = "https://www.instagram.com/trad_tattoo_directory/";
+interface FooterProps {
+  onOpenSuggestModal?: () => void;
+}
 
-export default function Footer() {
+export default function Footer({ onOpenSuggestModal }: FooterProps) {
   return (
     <footer className={styles.footer} role="contentinfo">
       <nav className={styles.nav} aria-label="Footer">
-        <Link to="/countries" className={styles.link}>
-          Countries
-        </Link>
+        {onOpenSuggestModal && (
+          <button
+            type="button"
+            className={styles.linkButton}
+            onClick={onOpenSuggestModal}
+          >
+            Suggest an Artist
+          </button>
+        )}
         <Link to="/about" className={styles.link}>
           About
         </Link>
-        <a
-          href={INSTAGRAM_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.link}
-        >
-          Instagram
-        </a>
       </nav>
     </footer>
   );

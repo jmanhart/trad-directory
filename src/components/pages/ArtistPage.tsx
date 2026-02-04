@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useSavedArtists } from "../../hooks/useSavedArtists";
 import { useAuth } from "../../contexts/AuthContext";
-import ReportIssueModal from "../../components/common/ReportIssueModal";
+import { ReportIssueModal } from "../../components/common/ReportIssueModal";
 import { isNumericId } from "../../utils/slug";
 import ArtistPageV2 from "./ArtistPageV2/index";
 import styles from "./ArtistPage.module.css";

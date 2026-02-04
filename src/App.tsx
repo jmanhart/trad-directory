@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -31,6 +32,8 @@ import AdminAllData from "./components/pages/admin/AdminAllData";
 import TopAppBar from "./components/common/TopAppBar";
 import AdminTopAppBar from "./components/common/AdminTopAppBar";
 import Footer from "./components/common/Footer";
+import { SuggestArtistModal } from "./components/common/SuggestArtistModal";
+import { ToastProvider } from "./components/common/Toast";
 import { usePageTracking } from "./hooks/usePageTracking";
 import ScatteredSvgBackground from "./components/ScatteredSvgBackground/ScatteredSvgBackground";
 
@@ -63,6 +66,7 @@ function AppContent() {
   const isHomePage = location.pathname === "/";
   const isAdminRoute = location.pathname.startsWith("/admin");
   const showFooter = !PAGES_WITHOUT_FOOTER.includes(location.pathname);
+  const [isAddArtistModalOpen, setIsAddArtistModalOpen] = useState(false);
 
   // Track page views on route changes
   usePageTracking();
@@ -70,8 +74,24 @@ function AppContent() {
   return (
     <div className={styles.appContainer}>
       <ScatteredSvgBackground preset="default" intensity="subtle" />
-      {isAdminRoute ? <AdminTopAppBar /> : <TopAppBar />}
-      {showFooter && <Footer />}
+      {isAdminRoute ? (
+        <AdminTopAppBar />
+      ) : (
+        <>
+          <TopAppBar />
+          <SuggestArtistModal
+            isOpen={isAddArtistModalOpen}
+            onClose={() => setIsAddArtistModalOpen(false)}
+          />
+        </>
+      )}
+      {showFooter && (
+        <Footer
+          onOpenSuggestModal={
+            !isAdminRoute ? () => setIsAddArtistModalOpen(true) : undefined
+          }
+        />
+      )}
       <main
         className={`${styles.mainContent} ${!showFooter ? styles.mainContentNoFixedFooter : ""}`}
       >
@@ -169,7 +189,9 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </Router>
   );
 }

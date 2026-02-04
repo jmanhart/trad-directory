@@ -1,40 +1,30 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import ReportIssueModal from "./ReportIssueModal";
 import { useState } from "react";
+import { ToastProvider } from "../Toast";
+import { ReportIssueModal } from "./index";
+import type { ArtistData } from "./types";
 
 const meta: Meta<typeof ReportIssueModal> = {
-  title: "Patterns/Forms",
+  title: "Patterns/Forms/ReportIssueModal",
   component: ReportIssueModal,
   tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
-    viewport: {
-      defaultViewport: "desktop",
-    },
+    viewport: { defaultViewport: "desktop" },
   },
+  decorators: [
+    Story => (
+      <ToastProvider>
+        <Story />
+      </ToastProvider>
+    ),
+  ],
 };
 
 export default meta;
 type Story = StoryObj<typeof ReportIssueModal>;
 
-// Wrapper component to control modal state
-const ModalWrapper = ({ mode, entityData, ...props }: any) => {
-  const [isOpen, setIsOpen] = useState(true);
-  return (
-    <ReportIssueModal
-      isOpen={isOpen}
-      onClose={() => setIsOpen(false)}
-      mode={mode}
-      entityData={entityData}
-      entityType="artist"
-      entityId="123"
-      pageUrl="https://example.com/artist/123"
-      {...props}
-    />
-  );
-};
-
-const mockArtistData = {
+const mockArtistData: ArtistData = {
   id: 123,
   name: "John Doe",
   instagram_handle: "johndoe_tattoo",
@@ -45,27 +35,32 @@ const mockArtistData = {
   shop_instagram_handle: "inkshop",
 };
 
-export const AddArtistForm: Story = {
-  parameters: {
-    layout: "fullscreen",
-  },
-  render: () => <ModalWrapper mode="new_artist" />,
+const ReportArtistWrapper = (
+  props: Partial<React.ComponentProps<typeof ReportIssueModal>>
+) => {
+  const [isOpen, setIsOpen] = useState(true);
+  return (
+    <ReportIssueModal
+      isOpen={isOpen}
+      onClose={() => setIsOpen(false)}
+      entityType="artist"
+      entityId="123"
+      pageUrl="https://example.com/artist/123"
+      entityData={mockArtistData}
+      {...props}
+    />
+  );
 };
 
 export const ReportBugForm: Story = {
-  parameters: {
-    layout: "fullscreen",
-  },
-  render: () => <ModalWrapper mode="report" entityData={mockArtistData} />,
+  parameters: { layout: "fullscreen" },
+  render: () => <ReportArtistWrapper />,
 };
 
 export const ReportBugFormMinimal: Story = {
-  parameters: {
-    layout: "fullscreen",
-  },
+  parameters: { layout: "fullscreen" },
   render: () => (
-    <ModalWrapper
-      mode="report"
+    <ReportArtistWrapper
       entityData={{
         id: 456,
         name: "Minimal Artist",

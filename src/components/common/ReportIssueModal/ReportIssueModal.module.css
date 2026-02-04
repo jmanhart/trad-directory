@@ -1,0 +1,41 @@
+.fieldRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fieldLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.currentValue {
+  font-size: 0.85rem;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+.fieldControls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.fieldControls select,
+.fieldControls input {
+  flex: 1;
+  min-width: 0;
+}
+
+.editButton {
+  padding: var(--form-control-padding-y-medium) var(--button-padding-x-medium);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  white-space: nowrap;
+  height: var(--form-control-height-medium);
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

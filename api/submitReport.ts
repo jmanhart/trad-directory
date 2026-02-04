@@ -2,12 +2,12 @@ import { createClient } from "@supabase/supabase-js";
 
 interface ReportSubmission {
   submission_type: "report" | "new_artist";
-  
+
   // For reports
   entity_type?: "artist" | "shop";
   entity_id?: string;
   changes?: Record<string, { current: string; suggested: string }>;
-  
+
   // For new_artist
   artist_name?: string;
   artist_instagram_handle?: string;
@@ -16,14 +16,11 @@ interface ReportSubmission {
   artist_country?: string;
   artist_shop_name?: string;
   artist_shop_instagram_handle?: string;
-  
+
   // Shared
   details?: string;
   reporter_email?: string;
   page_url: string;
-  
-  // Turnstile token (optional for now)
-  turnstile_token?: string;
 }
 
 export default async function handler(req: any, res: any) {
@@ -72,44 +69,6 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    // Verify Turnstile token
-    if (process.env.TURNSTILE_SECRET_KEY) {
-      if (!data.turnstile_token) {
-        res.status(400).json({ error: "Security verification required" });
-        return;
-      }
-
-      try {
-        const verifyResponse = await fetch(
-          "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              secret: process.env.TURNSTILE_SECRET_KEY,
-              response: data.turnstile_token,
-            }),
-          }
-        );
-        const verifyResult = await verifyResponse.json();
-        
-        if (!verifyResult.success) {
-          console.error("Turnstile verification failed:", verifyResult);
-          res.status(400).json({ 
-            error: "Security verification failed. Please try again.",
-            details: verifyResult["error-codes"] || []
-          });
-          return;
-        }
-      } catch (verifyError) {
-        console.error("Turnstile verification error:", verifyError);
-        res.status(500).json({ error: "Failed to verify security token" });
-        return;
-      }
-    } else {
-      console.warn("TURNSTILE_SECRET_KEY not set - skipping verification");
-    }
-
     // Prepare submission data for database
     const submissionData: any = {
       submission_type: data.submission_type,
@@ -123,28 +82,31 @@ export default async function handler(req: any, res: any) {
       // For reports, store entity info and changes in details as JSON
       submissionData.entity_type = data.entity_type || null;
       submissionData.entity_id = data.entity_id || null;
-      
+
       // Store changes as JSON string in details field
       // (We could also create a separate changes column, but details works for now)
       if (data.changes && Object.keys(data.changes).length > 0) {
         const changesText = Object.entries(data.changes)
-          .map(([field, { current, suggested }]) => 
-            `${field}: "${current}" → "${suggested}"`
+          .map(
+            ([field, { current, suggested }]) =>
+              `${field}: "${current}" → "${suggested}"`
           )
           .join("\n");
-        submissionData.details = data.details 
+        submissionData.details = data.details
           ? `${data.details}\n\nChanges:\n${changesText}`
           : `Changes:\n${changesText}`;
       }
     } else if (data.submission_type === "new_artist") {
       // For new artist submissions
       submissionData.artist_name = data.artist_name || null;
-      submissionData.artist_instagram_handle = data.artist_instagram_handle || null;
+      submissionData.artist_instagram_handle =
+        data.artist_instagram_handle || null;
       submissionData.artist_city = data.artist_city || null;
       submissionData.artist_state = data.artist_state || null;
       submissionData.artist_country = data.artist_country || null;
       submissionData.artist_shop_name = data.artist_shop_name || null;
-      submissionData.artist_shop_instagram_handle = data.artist_shop_instagram_handle || null;
+      submissionData.artist_shop_instagram_handle =
+        data.artist_shop_instagram_handle || null;
     }
 
     // Insert into submissions table
