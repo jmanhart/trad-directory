@@ -87,7 +87,22 @@
 
 .locationValue {
   color: var(--color-text-primary);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-md);
+}
+
+.instagramButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--font-size-base);
+  line-height: 1;
+}
+
+.instagramIcon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+  display: block;
 }
 
 @media (max-width: 600px) {

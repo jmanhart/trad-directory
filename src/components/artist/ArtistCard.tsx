@@ -62,11 +62,6 @@ export default function ArtistCard({
                 </span>
               )}
             </div>
-            {artist.instagram_handle && (
-              <span className={styles.instagramHandle}>
-                @{artist.instagram_handle}
-              </span>
-            )}
             {(locationString || artist.is_traveling) && (
               <div className={styles.locationLine}>
                 <GlobeIcon className={styles.locationIcon} aria-hidden />
@@ -85,8 +80,10 @@ export default function ArtistCard({
               e.stopPropagation();
               window.open(artistInstagramUrl, "_blank", "noopener,noreferrer");
             }}
+            className={styles.instagramButton}
           >
-            View Artist
+            <InstagramIcon className={styles.instagramIcon} aria-hidden />@
+            {artist.instagram_handle}
           </Button>
         )}
       </div>

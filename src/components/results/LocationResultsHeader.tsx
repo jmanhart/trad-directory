@@ -13,15 +13,15 @@ export default function LocationResultsHeader({
   resultsCount,
 }: LocationResultsHeaderProps) {
   return (
-    <div className={styles.line} aria-label="Location results">
+    <div className={styles.wrapper} aria-label="Location results">
       <div className={styles.titleBlock}>
         <GlobeIcon className={styles.icon} aria-hidden />
         <h2 className={styles.title}>{title}</h2>
       </div>
       {resultsCount !== undefined && resultsCount >= 0 && (
-        <span className={styles.resultsLine}>
+        <p className={styles.resultsLine}>
           {resultsCount} result{resultsCount !== 1 ? "s" : ""} found
-        </span>
+        </p>
       )}
     </div>
   );

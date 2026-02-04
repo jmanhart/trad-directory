@@ -1,10 +1,9 @@
-/* Single line: (icon + title) left, results count right */
+/* Title on first line; results count below in small font */
 
-.line {
+.wrapper {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  width: 100%;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .titleBlock {
@@ -28,8 +27,9 @@
 }
 
 .resultsLine {
-  font-size: var(--font-size-2xl);
-  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
   font-weight: 400;
   margin: 0;
+  margin-left: 2.5rem; /* align with title text (icon 2rem + gap 0.5rem) */
 }
