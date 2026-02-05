@@ -34,6 +34,7 @@ export default function ArtistPageV2({
       </div>
     );
   }
+  [];
 
   if (error || !artist) {
     return (

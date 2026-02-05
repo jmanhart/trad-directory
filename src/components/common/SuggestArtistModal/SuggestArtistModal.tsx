@@ -20,10 +20,8 @@ export interface SuggestArtistModalProps {
   onClose: () => void;
 }
 
-export default function SuggestArtistModal({
-  isOpen,
-  onClose,
-}: SuggestArtistModalProps) {
+export default function SuggestArtistModal(props: SuggestArtistModalProps) {
+  const { isOpen, onClose } = props;
   const { showToast } = useToast();
   const [newArtistName, setNewArtistName] = useState("");
   const [newArtistInstagram, setNewArtistInstagram] = useState("");

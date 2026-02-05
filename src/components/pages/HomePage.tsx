@@ -4,7 +4,7 @@ import { createSearchHandler } from "../../utils/navigation";
 import { type Suggestion } from "../../utils/suggestions";
 import { trackSearch } from "../../utils/analytics";
 import SearchBar from "../common/SearchBar";
-import HeroMessage from "../common/HeroMessage";
+import HeroMessageText from "../common/HeroMessageText";
 import styles from "./HomePage.module.css";
 import RecentlyAdded from "../recent/RecentlyAdded";
 
@@ -73,7 +73,7 @@ export default function HomePage() {
                 className={styles.logoSvg}
               />
             </div>
-            <HeroMessage />
+            <HeroMessageText />
           </div>
           <SearchBar
             onSearch={handleSearch}

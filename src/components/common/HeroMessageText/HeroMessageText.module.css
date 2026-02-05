@@ -1,0 +1,46 @@
+/* Same look and feel as HeroMessage, text-only numbers */
+.heroMessage {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-red-dark);
+  line-height: 1.25;
+  max-width: 800px;
+}
+
+.heroMessage strong {
+  font-weight: 700;
+}
+
+.metricNumberText {
+  font-weight: 700;
+  color: var(--color-red);
+  text-decoration: underline;
+}
+
+.metricLink {
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s ease;
+}
+
+.metricLink:hover {
+  opacity: 0.8;
+}
+
+/* Light mode styles */
+@media (prefers-color-scheme: light) {
+  .heroMessage {
+    color: #213547;
+  }
+}
+
+@media (max-width: 768px) {
+  .heroMessage {
+    font-size: 1.2rem;
+    max-width: 100%;
+    padding: 0 8px;
+    line-height: 1.4;
+  }
+}
