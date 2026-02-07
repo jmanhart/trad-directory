@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import {
   Message,
@@ -15,8 +16,13 @@ import {
   updateShop,
   fetchShopById,
   fetchCountries,
+  updateCity,
+  updateCountry,
+  updateSubmission,
+  type SubmissionStatus,
 } from "../../../services/adminApi";
 import { useAdminData } from "./useAdminData";
+import type { City } from "./adminTypes";
 import { getCityDisplayName } from "./adminUtils";
 import SearchIcon from "../../../assets/icons/searchIcon";
 import styles from "./AdminAllData.module.css";
@@ -64,6 +70,15 @@ interface ShopFormData {
   city_id: string;
 }
 
+interface CityFormData {
+  city_name: string;
+  state_id: string;
+}
+
+interface CountryFormData {
+  country_name: string;
+}
+
 type TabType =
   | "artists"
   | "shops"
@@ -88,6 +103,58 @@ type ShopSortColumn =
 type SortColumn = ArtistSortColumn | ShopSortColumn;
 type SortDirection = "asc" | "desc";
 
+function formatSubmissionStatus(status: string | undefined): string {
+  if (!status) return "—";
+  const labels: Record<string, string> = {
+    new: "New",
+    added: "Added",
+    deleted: "Deleted",
+    in_progress: "In progress",
+    resolved: "Resolved",
+    closed: "Closed",
+  };
+  return labels[status] ?? status;
+}
+
+function SubmissionActions({
+  submission,
+  updating,
+  onUpdateStatus,
+}: {
+  submission: { id: string; status?: string };
+  updating: boolean;
+  onUpdateStatus: (id: string, status: SubmissionStatus) => Promise<void>;
+}) {
+  const status = (submission.status || "new") as SubmissionStatus;
+  const isDeleted = status === "deleted";
+  return (
+    <div className={styles.submissionActions}>
+      {!isDeleted && (
+        <button
+          type="button"
+          className={styles.addedSubmissionButton}
+          onClick={() => onUpdateStatus(submission.id, "added")}
+          disabled={updating}
+          title="Mark as Added (saved in database)"
+        >
+          {updating ? "…" : "Added"}
+        </button>
+      )}
+      {!isDeleted && (
+        <button
+          type="button"
+          className={styles.deleteSubmissionButton}
+          onClick={() => onUpdateStatus(submission.id, "deleted")}
+          disabled={updating}
+          title="Remove from list (kept in database)"
+        >
+          {updating ? "…" : "Delete"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function AdminAllData() {
   const [activeTab, setActiveTab] = useState<TabType>("artists");
   const [artists, setArtists] = useState<Artist[]>([]);
@@ -96,6 +163,8 @@ export default function AdminAllData() {
     { id: number; country_name: string }[]
   >([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
+  const [newSubmissionsCount, setNewSubmissionsCount] = useState(0);
+  const [newBugsCount, setNewBugsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ type: "error"; text: string } | null>(
     null
@@ -119,9 +188,21 @@ export default function AdminAllData() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const { cities, shops } = useAdminData({
+  // City / country edit state
+  const [editingCityId, setEditingCityId] = useState<number | null>(null);
+  const [editingCountryId, setEditingCountryId] = useState<number | null>(null);
+  const [cityFormData, setCityFormData] = useState<CityFormData | null>(null);
+  const [countryFormData, setCountryFormData] =
+    useState<CountryFormData | null>(null);
+  const [originalCityFormData, setOriginalCityFormData] =
+    useState<CityFormData | null>(null);
+  const [originalCountryFormData, setOriginalCountryFormData] =
+    useState<CountryFormData | null>(null);
+
+  const { cities, shops, states, loading: dataLoading, refetch: refetchAdminData } = useAdminData({
     loadCities: true,
     loadShops: true,
+    loadStates: true,
   });
 
   useEffect(() => {
@@ -129,7 +210,34 @@ export default function AdminAllData() {
     loadStats();
     loadArtists();
     loadShops(false); // Load shops silently for stats
+    loadNewCounts();
   }, []);
+
+  const loadNewCounts = async () => {
+    const baseUrl = import.meta.env.VITE_API_URL || "/api";
+    try {
+      const [subRes, bugsRes] = await Promise.all([
+        fetch(`${baseUrl}/listSubmissions?type=new_artist`),
+        fetch(`${baseUrl}/listSubmissions?type=report`),
+      ]);
+      if (subRes.ok) {
+        const data = await subRes.json();
+        const count = (data.submissions || []).filter(
+          (s: { status?: string }) => s.status === "new"
+        ).length;
+        setNewSubmissionsCount(count);
+      }
+      if (bugsRes.ok) {
+        const data = await bugsRes.json();
+        const count = (data.submissions || []).filter(
+          (s: { status?: string }) => s.status === "new"
+        ).length;
+        setNewBugsCount(count);
+      }
+    } catch {
+      // Non-blocking; badges just stay 0
+    }
+  };
 
   useEffect(() => {
     // Reload data when switching tabs if needed
@@ -165,6 +273,11 @@ export default function AdminAllData() {
       // Only update if we're still on the same tab
       if (activeTab === "new_artists" || activeTab === "bugs") {
         setSubmissions(result.submissions || []);
+        const newCount = (result.submissions || []).filter(
+          (s: { status?: string }) => s.status === "new"
+        ).length;
+        if (activeTab === "new_artists") setNewSubmissionsCount(newCount);
+        else setNewBugsCount(newCount);
       }
     } catch (err) {
       console.error("Error loading submissions:", err);
@@ -382,6 +495,74 @@ export default function AdminAllData() {
     return sorted;
   }, [allShops, searchQuery, sortColumn, sortDirection]);
 
+  // Filter and sort cities (search only; sort by city name)
+  const filteredAndSortedCities = useMemo(() => {
+    let filtered = cities;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = cities.filter(
+        city =>
+          city.city_name.toLowerCase().includes(query) ||
+          (city.state_name && city.state_name.toLowerCase().includes(query)) ||
+          (city.country_name &&
+            city.country_name.toLowerCase().includes(query)) ||
+          city.id.toString().includes(query)
+      );
+    }
+    return [...filtered].sort((a, b) =>
+      a.city_name.localeCompare(b.city_name, undefined, { sensitivity: "base" })
+    );
+  }, [cities, searchQuery]);
+
+  // Filter and sort countries (search only; sort by country name)
+  const filteredAndSortedCountries = useMemo(() => {
+    let filtered = countries;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = countries.filter(
+        c =>
+          c.country_name.toLowerCase().includes(query) ||
+          c.id.toString().includes(query)
+      );
+    }
+    return [...filtered].sort((a, b) =>
+      a.country_name.localeCompare(b.country_name, undefined, {
+        sensitivity: "base",
+      })
+    );
+  }, [countries, searchQuery]);
+
+  // Hide "deleted" submissions from the admin table (they stay in DB)
+  const visibleSubmissions = useMemo(
+    () => submissions.filter((s: { status?: string }) => s.status !== "deleted"),
+    [submissions]
+  );
+
+  const [updatingSubmissionId, setUpdatingSubmissionId] = useState<
+    string | null
+  >(null);
+
+  const handleUpdateSubmissionStatus = async (
+    id: string,
+    status: SubmissionStatus
+  ) => {
+    try {
+      setUpdatingSubmissionId(id);
+      await updateSubmission(id, status);
+      await loadSubmissions();
+      await loadNewCounts(); // Keep both tab badges in sync
+    } catch (err) {
+      console.error("Failed to update submission status:", err);
+      setError({
+        type: "error",
+        text:
+          err instanceof Error ? err.message : "Failed to update submission",
+      });
+    } finally {
+      setUpdatingSubmissionId(null);
+    }
+  };
+
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -438,10 +619,16 @@ export default function AdminAllData() {
     setIsModalOpen(false);
     setFormData(null);
     setShopFormData(null);
+    setCityFormData(null);
+    setCountryFormData(null);
     setOriginalFormData(null);
     setOriginalShopFormData(null);
+    setOriginalCityFormData(null);
+    setOriginalCountryFormData(null);
     setEditingArtistId(null);
     setEditingShopId(null);
+    setEditingCityId(null);
+    setEditingCountryId(null);
     setSaveError(null);
   };
 
@@ -467,14 +654,31 @@ export default function AdminAllData() {
         JSON.stringify(shopFormData) !== JSON.stringify(originalShopFormData)
       );
     }
+    if (editingCityId && cityFormData && originalCityFormData) {
+      return (
+        JSON.stringify(cityFormData) !== JSON.stringify(originalCityFormData)
+      );
+    }
+    if (editingCountryId && countryFormData && originalCountryFormData) {
+      return (
+        JSON.stringify(countryFormData) !==
+        JSON.stringify(originalCountryFormData)
+      );
+    }
     return false;
   }, [
     formData,
     originalFormData,
     shopFormData,
     originalShopFormData,
+    cityFormData,
+    originalCityFormData,
+    countryFormData,
+    originalCountryFormData,
     editingArtistId,
     editingShopId,
+    editingCityId,
+    editingCountryId,
   ]);
 
   const handleEditShopClick = async (shopId: number) => {
@@ -562,6 +766,43 @@ export default function AdminAllData() {
       } finally {
         setSaving(false);
       }
+    } else if (editingCityId && cityFormData) {
+      try {
+        setSaving(true);
+        setSaveError(null);
+        await updateCity({
+          id: editingCityId,
+          city_name: cityFormData.city_name.trim(),
+          state_id: cityFormData.state_id
+            ? parseInt(cityFormData.state_id, 10)
+            : null,
+        });
+        await refetchAdminData();
+        handleCloseModal();
+      } catch (err) {
+        setSaveError(
+          err instanceof Error ? err.message : "Failed to save changes"
+        );
+      } finally {
+        setSaving(false);
+      }
+    } else if (editingCountryId && countryFormData) {
+      try {
+        setSaving(true);
+        setSaveError(null);
+        await updateCountry({
+          id: editingCountryId,
+          country_name: countryFormData.country_name.trim(),
+        });
+        await loadStats();
+        handleCloseModal();
+      } catch (err) {
+        setSaveError(
+          err instanceof Error ? err.message : "Failed to save changes"
+        );
+      } finally {
+        setSaving(false);
+      }
     }
   };
 
@@ -613,39 +854,53 @@ export default function AdminAllData() {
           items={[
             { id: "artists", label: "Artists" },
             { id: "shops", label: "Shops" },
-            { id: "bugs", label: "Bugs" },
-            { id: "new_artists", label: "Submissions" },
+            { id: "cities", label: "Cities" },
+            { id: "countries", label: "Countries" },
+            { id: "bugs", label: "Bugs", badge: newBugsCount },
+            { id: "new_artists", label: "Submissions", badge: newSubmissionsCount },
           ]}
           activeTab={activeTab}
           onTabChange={tabId => setActiveTab(tabId as TabType)}
         />
 
         {/* Search Bar */}
-        {(activeTab === "artists" || activeTab === "shops") && !loading && (
-          <div className={styles.searchContainer}>
-            <div className={styles.searchInputWrapper}>
-              <SearchIcon className={styles.searchIcon} aria-hidden />
-              <Input
-                type="text"
-                placeholder={
-                  activeTab === "artists"
-                    ? "Search artists by name, Instagram, location, shop, or ID..."
-                    : "Search shops by name, Instagram, location, address, or ID..."
-                }
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className={styles.searchInput}
-              />
+        {(activeTab === "artists" ||
+          activeTab === "shops" ||
+          activeTab === "cities" ||
+          activeTab === "countries") &&
+          !loading && (
+            <div className={styles.searchContainer}>
+              <div className={styles.searchInputWrapper}>
+                <SearchIcon className={styles.searchIcon} aria-hidden />
+                <Input
+                  type="text"
+                  placeholder={
+                    activeTab === "artists"
+                      ? "Search artists by name, Instagram, location, shop, or ID..."
+                      : activeTab === "shops"
+                        ? "Search shops by name, Instagram, location, address, or ID..."
+                        : activeTab === "cities"
+                          ? "Search cities by name, state, or country..."
+                          : "Search countries by name or ID..."
+                  }
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className={styles.searchInput}
+                />
+              </div>
+              {searchQuery && (
+                <span className={styles.resultCount}>
+                  {activeTab === "artists"
+                    ? `${filteredAndSortedArtists.length} of ${artists.length} artists`
+                    : activeTab === "shops"
+                      ? `${filteredAndSortedShops.length} of ${allShops.length} shops`
+                      : activeTab === "cities"
+                        ? `${filteredAndSortedCities.length} of ${cities.length} cities`
+                        : `${filteredAndSortedCountries.length} of ${countries.length} countries`}
+                </span>
+              )}
             </div>
-            {searchQuery && (
-              <span className={styles.resultCount}>
-                {activeTab === "artists"
-                  ? `${filteredAndSortedArtists.length} of ${artists.length} artists`
-                  : `${filteredAndSortedShops.length} of ${allShops.length} shops`}
-              </span>
-            )}
-          </div>
-        )}
+          )}
 
         {/* Content */}
         <div className={styles.content}>
@@ -851,13 +1106,113 @@ export default function AdminAllData() {
             </div>
           )}
 
+          {activeTab === "cities" && (
+            <div className={styles.tableWrapper}>
+              {dataLoading ? (
+                <div className={styles.loading}>Loading cities...</div>
+              ) : (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th className={styles.sortableHeader}>ID</th>
+                      <th className={styles.sortableHeader}>City</th>
+                      <th className={styles.sortableHeader}>State</th>
+                      <th className={styles.sortableHeader}>Country</th>
+                      <th className={styles.actionHeader}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAndSortedCities.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className={styles.emptyCell}>
+                          {searchQuery
+                            ? "No cities match your search"
+                            : "No cities found"}
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredAndSortedCities.map(city => (
+                        <tr key={city.id}>
+                          <td className={styles.idCell}>{city.id}</td>
+                          <td className={styles.nameCell}>
+                            {city.city_name}
+                          </td>
+                          <td className={styles.locationCell}>
+                            {city.state_name || "—"}
+                          </td>
+                          <td className={styles.locationCell}>
+                            {city.country_name || "—"}
+                          </td>
+                          <td className={styles.actionCell}>
+                            <button
+                              type="button"
+                              className={styles.editButton}
+                              onClick={() => handleEditCityClick(city)}
+                            >
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {activeTab === "countries" && (
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th className={styles.sortableHeader}>ID</th>
+                    <th className={styles.sortableHeader}>Country</th>
+                    <th className={styles.actionHeader}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAndSortedCountries.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className={styles.emptyCell}>
+                        {searchQuery
+                          ? "No countries match your search"
+                          : "No countries found"}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredAndSortedCountries.map(country => (
+                      <tr key={country.id}>
+                        <td className={styles.idCell}>{country.id}</td>
+                        <td className={styles.nameCell}>
+                          {country.country_name}
+                        </td>
+                        <td className={styles.actionCell}>
+                          <button
+                            type="button"
+                            className={styles.editButton}
+                            onClick={() =>
+                              handleEditCountryClick(country)
+                            }
+                          >
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
           {(activeTab === "new_artists" || activeTab === "bugs") && (
             <div className={styles.tableContainer}>
               {loading ? (
                 <div className={styles.loading}>Loading submissions...</div>
               ) : error ? (
                 <Message type="error" text={error.text} />
-              ) : submissions.length === 0 ? (
+              ) : visibleSubmissions.length === 0 ? (
                 <div className={styles.emptyCell}>
                   No {activeTab === "new_artists" ? "new artist" : "bug"}{" "}
                   submissions yet.
@@ -875,6 +1230,7 @@ export default function AdminAllData() {
                           <th>Location</th>
                           <th>Email</th>
                           <th>Status</th>
+                          <th className={styles.actionHeader}>Actions</th>
                         </>
                       ) : (
                         <>
@@ -883,12 +1239,13 @@ export default function AdminAllData() {
                           <th>Details</th>
                           <th>Email</th>
                           <th>Status</th>
+                          <th className={styles.actionHeader}>Actions</th>
                         </>
                       )}
                     </tr>
                   </thead>
                   <tbody>
-                    {submissions.map(submission => (
+                    {visibleSubmissions.map(submission => (
                       <tr key={submission.id}>
                         <td className={styles.idCell}>
                           {submission.id.substring(0, 8)}...
@@ -928,8 +1285,15 @@ export default function AdminAllData() {
                                 className={styles.statusBadge}
                                 data-status={submission.status}
                               >
-                                {submission.status}
+                                {formatSubmissionStatus(submission.status)}
                               </span>
+                            </td>
+                            <td className={styles.actionCell}>
+                              <SubmissionActions
+                                submission={submission}
+                                updating={updatingSubmissionId === submission.id}
+                                onUpdateStatus={handleUpdateSubmissionStatus}
+                              />
                             </td>
                           </>
                         ) : (
@@ -956,8 +1320,15 @@ export default function AdminAllData() {
                                 className={styles.statusBadge}
                                 data-status={submission.status}
                               >
-                                {submission.status}
+                                {formatSubmissionStatus(submission.status)}
                               </span>
+                            </td>
+                            <td className={styles.actionCell}>
+                              <SubmissionActions
+                                submission={submission}
+                                updating={updatingSubmissionId === submission.id}
+                                onUpdateStatus={handleUpdateSubmissionStatus}
+                              />
                             </td>
                           </>
                         )}
@@ -971,6 +1342,8 @@ export default function AdminAllData() {
 
           {activeTab !== "artists" &&
             activeTab !== "shops" &&
+            activeTab !== "cities" &&
+            activeTab !== "countries" &&
             activeTab !== "new_artists" &&
             activeTab !== "bugs" && (
               <div className={styles.comingSoon}>
@@ -980,13 +1353,22 @@ export default function AdminAllData() {
         </div>
       </div>
 
-      {/* Edit Modal */}
-      {isModalOpen && (
-        <div className={styles.modalOverlay} onClick={handleCloseModal}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+      {/* Edit Modal - portaled to body so it appears on top and works from any tab */}
+      {isModalOpen &&
+        createPortal(
+          <div className={styles.modalOverlay} onClick={handleCloseModal}>
+            <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>
-                {editingArtistId ? "Edit Artist" : "Edit Shop"}
+                {editingArtistId
+                  ? "Edit Artist"
+                  : editingShopId
+                    ? "Edit Shop"
+                    : editingCityId
+                      ? "Edit City"
+                      : editingCountryId
+                        ? "Edit Country"
+                        : "Edit"}
               </h2>
               <button className={styles.modalClose} onClick={handleCloseModal}>
                 ×
@@ -998,6 +1380,69 @@ export default function AdminAllData() {
                 <div className={styles.loading}>Loading artist data...</div>
               ) : editingShopId && loadingShop ? (
                 <div className={styles.loading}>Loading shop data...</div>
+              ) : editingCityId && cityFormData ? (
+                <>
+                  {saveError && <Message type="error" text={saveError} />}
+                  <form className={styles.modalForm}>
+                    <FormGroup>
+                      <Label htmlFor="city_name" required>
+                        City Name
+                      </Label>
+                      <Input
+                        type="text"
+                        id="city_name"
+                        value={cityFormData.city_name}
+                        onChange={e =>
+                          handleCityFormChange("city_name", e.target.value)
+                        }
+                        required
+                      />
+                    </FormGroup>
+                    <FormGroup>
+                      <Label htmlFor="city_state_id">State</Label>
+                      <Select
+                        id="city_state_id"
+                        value={cityFormData.state_id}
+                        onChange={e =>
+                          handleCityFormChange("state_id", e.target.value)
+                        }
+                      >
+                        <option value="">No state</option>
+                        {states.map(state => (
+                          <option key={state.id} value={state.id}>
+                            {state.state_name}
+                            {state.country_name
+                              ? ` (${state.country_name})`
+                              : ""}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormGroup>
+                  </form>
+                </>
+              ) : editingCountryId && countryFormData ? (
+                <>
+                  {saveError && <Message type="error" text={saveError} />}
+                  <form className={styles.modalForm}>
+                    <FormGroup>
+                      <Label htmlFor="country_name" required>
+                        Country Name
+                      </Label>
+                      <Input
+                        type="text"
+                        id="country_name"
+                        value={countryFormData.country_name}
+                        onChange={e =>
+                          handleCountryFormChange(
+                            "country_name",
+                            e.target.value
+                          )
+                        }
+                        required
+                      />
+                    </FormGroup>
+                  </form>
+                </>
               ) : editingArtistId && formData ? (
                 <>
                   {saveError && <Message type="error" text={saveError} />}
@@ -1263,7 +1708,9 @@ export default function AdminAllData() {
                     (editingArtistId &&
                       (!formData?.name || !formData?.city_id)) ||
                     (editingShopId &&
-                      (!shopFormData?.shop_name || !shopFormData?.city_id))
+                      (!shopFormData?.shop_name || !shopFormData?.city_id)) ||
+                    (editingCityId && !cityFormData?.city_name?.trim()) ||
+                    (editingCountryId && !countryFormData?.country_name?.trim())
                   }
                 >
                   {saving ? "Saving..." : "Save"}
@@ -1271,7 +1718,8 @@ export default function AdminAllData() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

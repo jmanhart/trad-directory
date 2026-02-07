@@ -402,6 +402,93 @@ export async function fetchShopById(id: number): Promise<any> {
   }
 }
 
+export interface UpdateCityData {
+  id: number;
+  city_name?: string;
+  state_id?: number | null;
+}
+
+export async function updateCity(data: UpdateCityData): Promise<void> {
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || "/api/updateCity";
+    const response = await fetch(apiUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+  } catch (error) {
+    console.error("Error updating city:", error);
+    throw error;
+  }
+}
+
+export interface UpdateCountryData {
+  id: number;
+  country_name?: string;
+  country_code?: string;
+}
+
+export async function updateCountry(data: UpdateCountryData): Promise<void> {
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || "/api/updateCountry";
+    const response = await fetch(apiUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+  } catch (error) {
+    console.error("Error updating country:", error);
+    throw error;
+  }
+}
+
+/** Allowed submission status values (stored in DB; "deleted" hides from admin list). */
+export const SUBMISSION_STATUSES = [
+  "new",
+  "added",
+  "deleted",
+  "in_progress",
+  "resolved",
+  "closed",
+] as const;
+
+export type SubmissionStatus = (typeof SUBMISSION_STATUSES)[number];
+
+export async function updateSubmission(
+  id: string,
+  status: SubmissionStatus
+): Promise<void> {
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || "/api/updateSubmission";
+    const response = await fetch(apiUrl, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+  } catch (error) {
+    console.error("Error updating submission:", error);
+    throw error;
+  }
+}
+
 interface AddArtistShopLinkData {
   artist_id: number;
   shop_id: number;

@@ -5,6 +5,8 @@ export interface TabItem {
   id: string;
   label: string;
   disabled?: boolean;
+  /** Optional count shown as a small badge when > 0 */
+  badge?: number;
 }
 
 export interface TabsProps {
@@ -19,6 +21,7 @@ export function Tabs({ items, activeTab, onTabChange, className }: TabsProps) {
     <div className={`${styles.tabs} ${className || ""}`}>
       {items.map(item => {
         const isActive = activeTab === item.id;
+        const showBadge = item.badge != null && item.badge > 0;
         return (
           <button
             key={item.id}
@@ -29,6 +32,11 @@ export function Tabs({ items, activeTab, onTabChange, className }: TabsProps) {
             type="button"
           >
             {item.label}
+            {showBadge && (
+              <span className={styles.badge} aria-label={`${item.badge} new`}>
+                {item.badge > 99 ? "99+" : item.badge}
+              </span>
+            )}
           </button>
         );
       })}

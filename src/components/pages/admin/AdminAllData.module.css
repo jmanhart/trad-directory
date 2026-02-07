@@ -395,6 +395,61 @@
   color: #6c757d;
 }
 
+.statusBadge[data-status="added"] {
+  background-color: rgba(40, 167, 69, 0.15);
+  color: #1e7e34;
+}
+
+.statusBadge[data-status="deleted"] {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.submissionActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.addedSubmissionButton {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  background: rgba(40, 167, 69, 0.15);
+  color: #1e7e34;
+  border: 1px solid rgba(40, 167, 69, 0.4);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+}
+
+.addedSubmissionButton:hover:not(:disabled) {
+  background-color: rgba(40, 167, 69, 0.25);
+}
+
+.addedSubmissionButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.deleteSubmissionButton {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  background: transparent;
+  color: #dc3545;
+  border: 1px solid rgba(220, 53, 69, 0.5);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+}
+
+.deleteSubmissionButton:hover:not(:disabled) {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.deleteSubmissionButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Modal Styles */
 .modalOverlay {
   position: fixed;
