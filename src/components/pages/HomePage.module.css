@@ -1,28 +1,32 @@
 /* HomePage.module.css */
 
+/* Viewport-sized so homepage never scrolls; only Recently Added list scrolls inside */
 .container {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  min-height: calc(100vh - 124px); /* 52px top + 72px bottom */
+  max-height: calc(100vh - 124px);
   max-width: 1200px;
   margin: 0 auto;
   padding: 0;
   font-family: Inter, system-ui, -apple-system, sans-serif;
   text-align: center;
   box-sizing: border-box;
+  overflow: hidden;
+  transform: scale(0.92);
+  transform-origin: top center;
 }
 
-/* Hero section - pushed down and centered like Google */
+/* Hero section - fixed height, does not shrink */
 .heroSection {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  flex: 1;
+  flex-shrink: 0;
   padding: clamp(4rem, 10vh, 8rem) 20px 2rem;
   box-sizing: border-box;
-  min-height: 0;
 }
 
 .heroContent {
@@ -57,10 +61,13 @@
   width: auto;
 }
 
-/* Recent section - below the search bar */
+/* Recent section - takes remaining space and shrinks so page never scrolls */
 .recentSection {
   width: 100%;
-  flex-shrink: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
 }
 
 .title {
@@ -108,10 +115,6 @@
 }
 
 @media (max-width: 768px) {
-  .container {
-    height: 100%;
-  }
-
   .heroSection {
     padding: 1rem 24px;
     gap: 1.5rem;
@@ -138,7 +141,7 @@
   }
 
   .recentSection {
-    margin-top: 2rem;
+    /* margin-top: 2rem; */
     width: 100%;
   }
 }

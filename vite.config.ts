@@ -61,6 +61,7 @@ export default defineConfig({
     include: ["@sentry/react"],
   },
   server: {
+    force: true, // Re-optimize deps on start; avoids 504 Outdated Optimize Dep
     proxy: {
       "/api": {
         target: "http://localhost:3001",

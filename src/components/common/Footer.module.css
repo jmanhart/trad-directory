@@ -6,7 +6,7 @@
   width: 100%;
   max-width: 525px;
   z-index: 1000;
-  background-color: transparent;
+  background-color: var(--color-surface);
   color: var(--color-text-primary);
   border-top: 1px solid var(--color-border);
   padding: 12px 20px;

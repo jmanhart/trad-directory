@@ -41,10 +41,11 @@
   z-index: 1;
   flex: 1;
   padding: 0;
-  padding-top: 52px; /* Space for fixed TopAppBar (12px*2 + ~28px content) */
-  padding-bottom: 52px; /* Space for fixed Footer */
+  padding-top: 52px;
+  padding-bottom: 72px;
   box-sizing: border-box;
-  background-color: transparent; /* Transparent so background shows through */
+  background-color: transparent;
+  overflow: auto;
 }
 
 .mainContentNoFixedFooter {
