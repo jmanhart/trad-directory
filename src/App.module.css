@@ -33,7 +33,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: white; /* White background for the app */
+  background-color: var(--gray-50); /* Same layer as scattered SVG background */
 }
 
 .mainContent {

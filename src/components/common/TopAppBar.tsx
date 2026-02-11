@@ -18,12 +18,7 @@ export default function TopAppBar() {
       <div className={styles.left}>
         {!isHomePage && (
           <Link to="/" className={styles.logoContainer}>
-            <img src="/TRAD-3.svg" alt="TRAD" className={styles.logo} />
-            <img
-              src="/DIRECTORY-3.svg"
-              alt="DIRECTORY"
-              className={styles.logo}
-            />
+            <img src="/TRAD-NEW-SMALL.svg" alt="TRAD" className={styles.logo} />
           </Link>
         )}
       </div>
