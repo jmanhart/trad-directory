@@ -22,7 +22,7 @@ export default function TopAppBar() {
           </Link>
         )}
       </div>
-      <div className={styles.right}>
+      <div className={styles.center}>
         {!isHomePage && (
           <SearchBar
             size="compact"
@@ -32,6 +32,7 @@ export default function TopAppBar() {
           />
         )}
       </div>
+      <div className={styles.right} aria-hidden="true" />
     </header>
   );
 }

@@ -20,16 +20,23 @@
 }
 
 .left {
-  flex-shrink: 0;
+  flex: 1;
   display: flex;
   align-items: center;
+  min-width: 0;
+}
+
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 1001; /* So search dropdown appears above header */
 }
 
 .right {
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-  z-index: 1001; /* So search dropdown appears above header */
+  flex: 1;
+  min-width: 0;
 }
 
 .logoContainer {
