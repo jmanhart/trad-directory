@@ -78,7 +78,7 @@ function AppContent() {
         <AdminTopAppBar />
       ) : (
         <>
-          <TopAppBar />
+          {!isHomePage && <TopAppBar />}
           <SuggestArtistModal
             isOpen={isAddArtistModalOpen}
             onClose={() => setIsAddArtistModalOpen(false)}
