@@ -12,7 +12,7 @@
   font-family: Inter, system-ui, -apple-system, sans-serif;
   text-align: center;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible; /* allow search suggestions dropdown to show (no clipping) */
   transform: scale(0.92);
   transform-origin: top center;
 }

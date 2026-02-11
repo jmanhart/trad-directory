@@ -205,6 +205,7 @@
   text-align: left;
   cursor: pointer;
   font-size: 16px;
+  font-weight: 600;
   color: var(--color-text-secondary);
   border-bottom: 1px solid var(--color-border);
   display: flex;
@@ -243,7 +244,8 @@
 
 .highlighted .suggestionIcon {
   opacity: 1;
-  color: var(--color-surface);
+  color: var(--color-red-dark);
+  fill: var(--color-red-dark);
 }
 
 .suggestionItem:last-child {
@@ -269,15 +271,15 @@
 /* Highlighted state - only for keyboard navigation (arrow keys) */
 .suggestionItem.highlighted {
   background-color: transparent;
-  color: var(--color-text-primary);
-  font-weight: 500;
+  color: var(--gray-900, #111827);
+  font-weight: 600;
   cursor: pointer;
 }
 
 .suggestionItem.highlighted:focus-visible {
   background-color: transparent;
-  color: var(--color-text-primary);
-  font-weight: 500;
+  color: var(--gray-900, #111827);
+  font-weight: 600;
 }
 
 .suggestionLabel {
@@ -300,7 +302,7 @@
 }
 
 .highlighted .suggestionDetail {
-  color: var(--color-text-tertiary);
+  color: var(--gray-700, #374151);
 }
 
 .suggestionArtistCount {
