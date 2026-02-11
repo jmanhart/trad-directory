@@ -28,7 +28,7 @@ export default function TopAppBar() {
             size="compact"
             onSearch={handleSearch}
             suggestions={suggestions}
-            placeholder="Search"
+            placeholder="Search by artist, shop, city, or country..."
           />
         )}
       </div>

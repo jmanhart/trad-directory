@@ -102,14 +102,14 @@
 }
 
 .iconCompact {
-  height: 14px;
-  width: 14px;
-  left: 10px;
+  height: 20px;
+  width: 20px;
+  left: 16px;
 }
 
 .iconCompact svg {
-  width: 14px;
-  height: 14px;
+  width: 20px;
+  height: 20px;
 }
 
 /* SearchBar sizes */
@@ -119,11 +119,15 @@
 }
 
 .compact .input {
-  padding: 6px 8px 6px 28px;
-  font-size: 13px;
+  padding: 10px 12px 10px 44px;
+  font-size: 16px;
   border-width: 2px;
-  min-height: 32px;
+  min-height: 44px;
   border-radius: 9999px;
+}
+
+.compact .input::placeholder {
+  font-size: 16px;
 }
 
 .small .input {
