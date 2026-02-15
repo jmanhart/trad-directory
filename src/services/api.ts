@@ -986,11 +986,11 @@ export async function fetchRecentShops(limit: number = 6) {
           ? shop.city[0]?.city_name
           : shop.city?.city_name || "N/A",
         state_name: Array.isArray(shop.city?.state)
-          ? shop.city.state[0]?.state_name
-          : shop.city.state?.state_name || "N/A",
+          ? shop.city?.state?.[0]?.state_name
+          : shop.city?.state?.state_name || "N/A",
         country_name: Array.isArray(shop.city?.country)
-          ? shop.city.country[0]?.country_name
-          : shop.city.country?.country_name || "N/A",
+          ? shop.city?.country?.[0]?.country_name
+          : shop.city?.country?.country_name || "N/A",
       }));
     }
 
@@ -1005,11 +1005,11 @@ export async function fetchRecentShops(limit: number = 6) {
         ? shop.city[0]?.city_name
         : shop.city?.city_name || "N/A",
       state_name: Array.isArray(shop.city?.state)
-        ? shop.city.state[0]?.state_name
-        : shop.city.state?.state_name || "N/A",
+        ? shop.city?.state?.[0]?.state_name
+        : shop.city?.state?.state_name || "N/A",
       country_name: Array.isArray(shop.city?.country)
-        ? shop.city.country[0]?.country_name
-        : shop.city.country?.country_name || "N/A",
+        ? shop.city?.country?.[0]?.country_name
+        : shop.city?.country?.country_name || "N/A",
     }));
   } catch (err) {
     console.error("Unhandled error in fetchRecentShops:", err);
