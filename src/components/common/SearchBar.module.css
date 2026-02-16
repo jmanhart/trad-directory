@@ -355,6 +355,12 @@
 
 /* Mobile optimizations */
 @media (max-width: 768px) {
+  .compact .inputWrapper {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
   .searchBar.large .inputWrapper {
     max-width: 100%;
     padding: 0 0;
