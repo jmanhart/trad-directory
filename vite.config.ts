@@ -50,6 +50,9 @@ export default defineConfig({
       },
     },
   },
+  esbuild: {
+    pure: ["console.log", "console.warn"],
+  },
   define: {
     __SENTRY_RELEASE__: JSON.stringify(`tattoo-directory@${version}`),
     global: "globalThis",
