@@ -4,17 +4,10 @@ import { getShopUrl } from "../../services/api";
 import GlobeIcon from "../../assets/icons/globeIcon";
 import { Button } from "../common/FormComponents";
 import styles from "./ShopCard.module.css";
+import type { Shop } from "../../types";
 
 interface ShopCardProps {
-  shop: {
-    id: number;
-    shop_name: string;
-    slug?: string | null;
-    instagram_handle?: string | null;
-    city_name?: string;
-    state_name?: string;
-    country_name?: string;
-  };
+  shop: Shop;
 }
 
 export default function ShopCard({ shop }: ShopCardProps) {

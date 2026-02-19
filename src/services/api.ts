@@ -1,6 +1,7 @@
 import { supabase } from "./supabaseClient";
 import { createClient } from "@supabase/supabase-js";
 import { generateUniqueSlug } from "../utils/slug";
+import type { Artist, Shop, ShopWithArtists, City, Country } from "../types";
 
 /**
  * Helper function to get artist URL (uses slug if available, falls back to ID)
@@ -114,7 +115,7 @@ function extractLocationData(city: any): {
 }
 
 // Fetch all tattoo shops with their associated artists
-export async function fetchTattooShopsWithArtists() {
+export async function fetchTattooShopsWithArtists(): Promise<Artist[]> {
   try {
     const { data, error } = await supabase.from("artists").select(`
         id,
@@ -229,7 +230,7 @@ export async function fetchTattooShopsWithArtists() {
 }
 
 // Fetch an individual artist by ID
-export async function fetchArtistById(id: number) {
+export async function fetchArtistById(id: number): Promise<Artist> {
   try {
     const { data, error } = await supabase
       .from("artists")
@@ -282,7 +283,7 @@ export async function fetchArtistById(id: number) {
 }
 
 // Fetch an individual shop by ID, including its artists
-export async function fetchShopById(id: number) {
+export async function fetchShopById(id: number): Promise<ShopWithArtists> {
   try {
     const { data, error } = await supabase
       .from("tattoo_shops")
@@ -390,7 +391,7 @@ export async function fetchTopCitiesByArtistCount(
   const artists = await fetchTattooShopsWithArtists();
   const counts = new Map<string, number>();
 
-  for (const a of artists as any[]) {
+  for (const a of artists) {
     const key = a.city_name || "N/A";
     counts.set(key, (counts.get(key) || 0) + 1);
   }
@@ -404,7 +405,7 @@ export async function fetchTopCitiesByArtistCount(
 }
 
 // Search artists using the same data source as top cities for consistency
-export async function searchArtists(query: string) {
+export async function searchArtists(query: string): Promise<Artist[]> {
   // Use the same data source as fetchTattooShopsWithArtists for consistency
   const allArtists = await fetchTattooShopsWithArtists();
 
@@ -489,7 +490,7 @@ export async function searchArtists(query: string) {
 }
 
 /** Search shops by name, location, or Instagram handle. */
-export async function searchShops(query: string) {
+export async function searchShops(query: string): Promise<Shop[]> {
   const allShops = await fetchAllShops();
   const normalizedQuery = query.toLowerCase().trim().replace(/^@/, "");
 
@@ -519,7 +520,7 @@ export async function searchShops(query: string) {
 }
 
 // Fetch recently added artists (ordered by id descending, limit to most recent)
-export async function fetchRecentArtists(limit: number = 6) {
+export async function fetchRecentArtists(limit: number = 6): Promise<Artist[]> {
   try {
     // Try to fetch with created_at first, fallback to without if it fails
     let query = supabase
@@ -669,7 +670,7 @@ export async function fetchRecentArtists(limit: number = 6) {
 }
 
 // Fetch all tattoo shops
-export async function fetchAllShops() {
+export async function fetchAllShops(): Promise<Shop[]> {
   try {
     const { data, error } = await supabase
       .from("tattoo_shops")
@@ -719,9 +720,7 @@ export async function fetchAllShops() {
 }
 
 // Fetch all countries
-export async function fetchAllCountries(): Promise<
-  { id: number; country_name: string }[]
-> {
+export async function fetchAllCountries(): Promise<Country[]> {
   try {
     const { data, error } = await supabase
       .from("countries")
@@ -751,7 +750,7 @@ export async function fetchAllCountries(): Promise<
 }
 
 // Fetch recently added countries (ordered by created_at or id descending, limit to most recent)
-export async function fetchRecentCountries(limit: number = 6) {
+export async function fetchRecentCountries(limit: number = 6): Promise<Country[]> {
   try {
     let query = supabase
       .from("countries")
@@ -812,7 +811,7 @@ export async function fetchRecentCountries(limit: number = 6) {
 }
 
 // Fetch recently added cities (ordered by created_at or id descending, limit to most recent)
-export async function fetchRecentCities(limit: number = 6) {
+export async function fetchRecentCities(limit: number = 6): Promise<City[]> {
   try {
     // Use the same pattern as fetchRecentArtists - country is nested directly under city
     let query = supabase
@@ -916,7 +915,7 @@ export async function fetchRecentCities(limit: number = 6) {
 }
 
 // Fetch recently added tattoo shops (ordered by id descending, limit to most recent)
-export async function fetchRecentShops(limit: number = 6) {
+export async function fetchRecentShops(limit: number = 6): Promise<Shop[]> {
   try {
     // Try to fetch with created_at first, fallback to without if it fails
     let query = supabase

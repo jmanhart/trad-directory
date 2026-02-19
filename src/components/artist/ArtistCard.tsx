@@ -6,20 +6,7 @@ import { getArtistUrl } from "../../services/api";
 import InstagramIcon from "../../assets/icons/instagramIcon";
 import GlobeIcon from "../../assets/icons/globeIcon";
 import { Button } from "../common/FormComponents";
-
-interface Artist {
-  id: number;
-  name: string;
-  slug?: string | null;
-  instagram_handle?: string;
-  shop_name?: string;
-  shop_instagram_handle?: string;
-  city_name?: string;
-  state_name?: string;
-  country_name?: string;
-  created_at?: string | null;
-  is_traveling?: boolean;
-}
+import type { Artist } from "../../types";
 
 interface ArtistCardProps {
   artist: Artist;

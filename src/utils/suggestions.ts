@@ -1,12 +1,4 @@
-export interface Artist {
-  id: number;
-  name: string;
-  instagram_handle?: string | null;
-  city_name?: string;
-  state_name?: string;
-  country_name?: string;
-  shop_name?: string | null;
-}
+import type { Artist, Shop } from "../types";
 
 export interface Suggestion {
   label: string;
@@ -182,16 +174,6 @@ export function buildSuggestions(
   });
 
   return [...artistSuggestions, ...shopSuggestions, ...locationSuggestions];
-}
-
-export interface Shop {
-  id: number;
-  shop_name: string;
-  instagram_handle?: string | null;
-  city_name?: string;
-  state_name?: string;
-  country_name?: string;
-  address?: string | null;
 }
 
 /**

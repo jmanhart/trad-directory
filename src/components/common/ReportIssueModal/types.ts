@@ -1,20 +1,24 @@
-export interface ArtistData {
-  id: number;
-  name: string;
-  instagram_handle?: string | null;
-  city_name?: string;
-  state_name?: string;
-  country_name?: string;
-  shop_name?: string | null;
-  shop_instagram_handle?: string | null;
-}
+import type { Artist, Shop } from "../../../types";
 
-export interface ShopData {
-  id: number;
-  shop_name: string;
-  instagram_handle?: string | null;
-  address?: string | null;
-  city_name?: string;
-  state_name?: string;
-  country_name?: string;
-}
+export type ArtistData = Pick<
+  Artist,
+  | "id"
+  | "name"
+  | "instagram_handle"
+  | "city_name"
+  | "state_name"
+  | "country_name"
+  | "shop_name"
+  | "shop_instagram_handle"
+>;
+
+export type ShopData = Pick<
+  Shop,
+  | "id"
+  | "shop_name"
+  | "instagram_handle"
+  | "address"
+  | "city_name"
+  | "state_name"
+  | "country_name"
+>;
