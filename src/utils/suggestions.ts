@@ -49,31 +49,46 @@ export function buildSuggestions(
   let artistsWithoutCountry = 0;
   
   artists.forEach((artist) => {
-    // Count artists per city (normalize to handle case/whitespace differences)
-    if (artist.city_name && artist.city_name !== "N/A") {
-      const normalizedCity = artist.city_name.trim();
-      locationCounts.set(
-        normalizedCity,
-        (locationCounts.get(normalizedCity) || 0) + 1
-      );
-    }
-    // Count artists per state (normalize to handle case/whitespace differences)
-    if (artist.state_name && artist.state_name !== "N/A") {
-      const normalizedState = artist.state_name.trim();
-      locationCounts.set(
-        normalizedState,
-        (locationCounts.get(normalizedState) || 0) + 1
-      );
-    }
-    // Count artists per country (normalize to handle case/whitespace differences)
-    if (artist.country_name && artist.country_name !== "N/A") {
+    // Use all locations if available, otherwise fall back to flat primary fields
+    const locations = artist.locations?.length ? artist.locations : [{
+      city_name: artist.city_name,
+      state_name: artist.state_name,
+      country_name: artist.country_name,
+      is_primary: true,
+    }];
+
+    let hasCountry = false;
+    locations.forEach((loc) => {
+      // Count artists per city (normalize to handle case/whitespace differences)
+      if (loc.city_name && loc.city_name !== "N/A") {
+        const normalizedCity = loc.city_name.trim();
+        locationCounts.set(
+          normalizedCity,
+          (locationCounts.get(normalizedCity) || 0) + 1
+        );
+      }
+      // Count artists per state (normalize to handle case/whitespace differences)
+      if (loc.state_name && loc.state_name !== "N/A") {
+        const normalizedState = loc.state_name.trim();
+        locationCounts.set(
+          normalizedState,
+          (locationCounts.get(normalizedState) || 0) + 1
+        );
+      }
+      // Count artists per country (normalize to handle case/whitespace differences)
+      if (loc.country_name && loc.country_name !== "N/A") {
+        hasCountry = true;
+        const normalizedCountry = loc.country_name.trim();
+        countriesInArtistData.add(normalizedCountry);
+        locationCounts.set(
+          normalizedCountry,
+          (locationCounts.get(normalizedCountry) || 0) + 1
+        );
+      }
+    });
+
+    if (hasCountry) {
       artistsWithCountry++;
-      const normalizedCountry = artist.country_name.trim();
-      countriesInArtistData.add(normalizedCountry);
-      locationCounts.set(
-        normalizedCountry,
-        (locationCounts.get(normalizedCountry) || 0) + 1
-      );
     } else {
       artistsWithoutCountry++;
     }

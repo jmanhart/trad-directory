@@ -1,3 +1,5 @@
+import type { ArtistLocation } from "../../../types/entities";
+
 export interface ArtistPageV2Artist {
   id: number;
   name: string;
@@ -9,4 +11,5 @@ export interface ArtistPageV2Artist {
   shop_id?: number | null;
   shop_name?: string | null;
   shop_instagram_handle?: string | null;
+  locations?: ArtistLocation[];
 }

@@ -101,24 +101,36 @@ export default function UnitedStatesMapPage() {
     async function loadArtists() {
       try {
         const artists = await fetchTattooShopsWithArtists();
-        // Count artists per state (only USA states)
+        // Count artists per state (only USA states), across all locations
         const counts = new Map<string, number>();
         artists.forEach((artist) => {
-          const country = artist.country_name?.toLowerCase().trim();
-          const stateName = artist.state_name;
-          
-          // Check if it's a US state: either country is USA, or country is N/A but state maps to US state code
-          const stateCode = getStateCode(stateName);
-          if (stateCode) {
-            // If we can map the state to a code, it's a US state
-            // Include if: country is USA, OR country is N/A/missing (assume US if state is valid)
-            const isUSA = country && /^united states|^usa|^u\.s\.|^u\.s\.a\./i.test(country);
-            const countryMissing = !country || country === "n/a";
-            
-            if (isUSA || countryMissing) {
-              counts.set(stateCode, (counts.get(stateCode) || 0) + 1);
+          // Use all locations if available, otherwise fall back to flat primary fields
+          const locations = artist.locations?.length ? artist.locations : [{
+            city_name: artist.city_name,
+            state_name: artist.state_name,
+            country_name: artist.country_name,
+            is_primary: true,
+          }];
+
+          // Track which state codes we've already counted for this artist
+          // to avoid double-counting if they have multiple locations in the same state
+          const countedStates = new Set<string>();
+
+          locations.forEach((loc) => {
+            const country = loc.country_name?.toLowerCase().trim();
+            const stateName = loc.state_name;
+
+            const stateCode = getStateCode(stateName);
+            if (stateCode && !countedStates.has(stateCode)) {
+              const isUSA = country && /^united states|^usa|^u\.s\.|^u\.s\.a\./i.test(country);
+              const countryMissing = !country || country === "n/a";
+
+              if (isUSA || countryMissing) {
+                counts.set(stateCode, (counts.get(stateCode) || 0) + 1);
+                countedStates.add(stateCode);
+              }
             }
-          }
+          });
         });
         setStateArtistCounts(counts);
       } catch (err) {

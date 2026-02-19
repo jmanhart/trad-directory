@@ -77,6 +77,35 @@ export default async function handler(req: any, res: any) {
       );
     }
 
+    // Dual-write: also insert into artist_location
+    // Look up the shop's city_id to use for the location row
+    const { data: shopData } = await supabase
+      .from("tattoo_shops")
+      .select("city_id")
+      .eq("id", data.shop_id)
+      .single();
+
+    // Check if a primary location already exists for this artist
+    const { data: existingPrimary } = await supabase
+      .from("artist_location")
+      .select("id")
+      .eq("artist_id", data.artist_id)
+      .eq("is_primary", true)
+      .maybeSingle();
+
+    const { error: locError } = await supabase
+      .from("artist_location")
+      .insert({
+        artist_id: data.artist_id,
+        shop_id: data.shop_id,
+        city_id: shopData?.city_id || null,
+        is_primary: !existingPrimary, // primary only if no primary exists yet
+      });
+
+    if (locError) {
+      console.warn(`Failed to insert artist_location: ${locError.message}`);
+    }
+
     res.status(200).json({
       success: true,
       message: "Artist-shop link created successfully",

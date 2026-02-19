@@ -20,6 +20,18 @@ export default function ArtistInfo({ artist, imageUrl }: ArtistInfoProps) {
     : null;
   const locationString = formatArtistLocation(artist);
 
+  // Build secondary location strings
+  const secondaryLocations = (artist.locations || [])
+    .filter(loc => !loc.is_primary)
+    .map(loc => {
+      const locStr = formatArtistLocation(loc);
+      if (loc.shop_name && loc.shop_name !== "N/A") {
+        return `${locStr} (${loc.shop_name})`;
+      }
+      return locStr;
+    })
+    .filter(Boolean);
+
   return (
     <section className={styles.section} aria-label="Artist information">
       {/* <div className={styles.imageWrapper}>
@@ -47,6 +59,13 @@ export default function ArtistInfo({ artist, imageUrl }: ArtistInfoProps) {
             <div className={styles.locationLine}>
               <GlobeIcon className={styles.locationIcon} aria-hidden />
               <span className={styles.value}>{locationString}</span>
+            </div>
+          )}
+          {secondaryLocations.length > 0 && (
+            <div className={styles.locationLine}>
+              <span className={styles.value}>
+                Also in: {secondaryLocations.join("; ")}
+              </span>
             </div>
           )}
         </div>

@@ -1,3 +1,14 @@
+export interface ArtistLocation {
+  city_name: string;
+  state_name: string;
+  country_name: string;
+  shop_id?: number | null;
+  shop_name?: string | null;
+  shop_slug?: string | null;
+  shop_instagram_handle?: string | null;
+  is_primary: boolean;
+}
+
 export interface Artist {
   id: number;
   name: string;
@@ -12,6 +23,7 @@ export interface Artist {
   shop_name: string;
   shop_slug?: string | null;
   shop_instagram_handle?: string | null;
+  locations: ArtistLocation[];
 }
 
 export interface Shop {

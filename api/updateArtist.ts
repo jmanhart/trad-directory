@@ -90,6 +90,46 @@ export default async function handler(req: any, res: any) {
       }
     }
 
+    // Dual-write: update artist_location primary row when city_id or shop_id changes
+    if (data.city_id !== undefined || data.shop_id !== undefined) {
+      const locUpdate: any = {};
+      if (data.city_id !== undefined) locUpdate.city_id = data.city_id || null;
+      if (data.shop_id !== undefined) locUpdate.shop_id = data.shop_id || null;
+
+      // Try to update the existing primary row
+      const { data: existingLoc } = await supabase
+        .from("artist_location")
+        .select("id")
+        .eq("artist_id", id)
+        .eq("is_primary", true)
+        .maybeSingle();
+
+      if (existingLoc) {
+        const { error: locError } = await supabase
+          .from("artist_location")
+          .update(locUpdate)
+          .eq("id", existingLoc.id);
+
+        if (locError) {
+          console.warn(`Failed to update artist_location: ${locError.message}`);
+        }
+      } else {
+        // No primary row exists yet — insert one
+        const { error: locError } = await supabase
+          .from("artist_location")
+          .insert({
+            artist_id: id,
+            city_id: data.city_id || updatedArtist.city_id || null,
+            shop_id: data.shop_id || null,
+            is_primary: true,
+          });
+
+        if (locError) {
+          console.warn(`Failed to insert artist_location: ${locError.message}`);
+        }
+      }
+    }
+
     res.status(200).json({
       success: true,
       artist_id: id,

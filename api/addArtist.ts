@@ -273,6 +273,25 @@ export default async function handler(req: any, res: any) {
       }
     }
 
+    // Step 8: Insert into artist_location (dual-write)
+    {
+      const locationData: any = {
+        artist_id: newArtist.id,
+        city_id: cityId,
+        is_primary: true,
+      };
+      if (data.shop_id) {
+        locationData.shop_id = data.shop_id;
+      }
+      const { error: locError } = await supabase
+        .from("artist_location")
+        .insert(locationData);
+
+      if (locError) {
+        console.warn(`Failed to insert artist_location: ${locError.message}`);
+      }
+    }
+
     res.status(200).json({
       success: true,
       artist_id: newArtist.id,
