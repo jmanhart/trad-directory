@@ -44,6 +44,8 @@ export function initSentry() {
       Sentry.browserTracingIntegration(),
       // Browser profiling integration for performance analysis
       Sentry.browserProfilingIntegration(),
+      // Session replay integration - captures DOM recordings
+      Sentry.replayIntegration(),
     ],
 
     // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
