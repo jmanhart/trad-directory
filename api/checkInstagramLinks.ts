@@ -53,6 +53,16 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
+  const checkInId = Sentry.captureCheckIn(
+    { monitorSlug: "instagram-link-checker", status: "in_progress" },
+    {
+      schedule: { type: "crontab", value: "*/15 2-6 * * *" },
+      checkinMargin: 5,
+      maxRuntime: 10,
+      timezone: "Etc/UTC",
+    }
+  );
+
   try {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
       console.error("Missing Supabase environment variables");
@@ -244,7 +254,7 @@ export default async function handler(req: any, res: any) {
       console.error("Error updating cursor:", updateCursorError);
     }
 
-    // Flush Sentry events before response
+    Sentry.captureCheckIn({ checkInId, monitorSlug: "instagram-link-checker", status: "ok" });
     await Sentry.flush(5000);
 
     res.status(200).json({
@@ -255,6 +265,7 @@ export default async function handler(req: any, res: any) {
       totalHandles,
     });
   } catch (error: any) {
+    Sentry.captureCheckIn({ checkInId, monitorSlug: "instagram-link-checker", status: "error" });
     Sentry.captureException(error);
     await Sentry.flush(5000);
     console.error("Error in checkInstagramLinks:", error);

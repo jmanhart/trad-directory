@@ -19,7 +19,9 @@ import {
   updateCity,
   updateCountry,
   updateSubmission,
+  fetchBrokenLinks,
   type SubmissionStatus,
+  type BrokenLinkResult,
 } from "../../../services/adminApi";
 import { useAdminData } from "./useAdminData";
 import type { City } from "./adminTypes";
@@ -86,7 +88,8 @@ type TabType =
   | "countries"
   | "states"
   | "new_artists"
-  | "bugs";
+  | "bugs"
+  | "broken_links";
 type ArtistSortColumn =
   | "id"
   | "name"
@@ -165,6 +168,8 @@ export default function AdminAllData() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [newSubmissionsCount, setNewSubmissionsCount] = useState(0);
   const [newBugsCount, setNewBugsCount] = useState(0);
+  const [brokenLinks, setBrokenLinks] = useState<BrokenLinkResult[]>([]);
+  const [brokenLinksCount, setBrokenLinksCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ type: "error"; text: string } | null>(
     null
@@ -234,6 +239,13 @@ export default function AdminAllData() {
         ).length;
         setNewBugsCount(count);
       }
+      // Also fetch broken links count
+      try {
+        const blData = await fetchBrokenLinks();
+        setBrokenLinksCount(blData.length);
+      } catch {
+        // Non-blocking
+      }
     } catch {
       // Non-blocking; badges just stay 0
     }
@@ -248,8 +260,27 @@ export default function AdminAllData() {
     } else if (activeTab === "new_artists" || activeTab === "bugs") {
       // Always reload submissions when switching to these tabs to get latest data
       loadSubmissions();
+    } else if (activeTab === "broken_links") {
+      loadBrokenLinks();
     }
   }, [activeTab]);
+
+  const loadBrokenLinks = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchBrokenLinks();
+      setBrokenLinks(data);
+      setBrokenLinksCount(data.length);
+    } catch (err) {
+      setError({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to load broken links",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadSubmissions = async () => {
     try {
@@ -858,6 +889,7 @@ export default function AdminAllData() {
             { id: "countries", label: "Countries" },
             { id: "bugs", label: "Bugs", badge: newBugsCount },
             { id: "new_artists", label: "Submissions", badge: newSubmissionsCount },
+            { id: "broken_links", label: "Broken Links", badge: brokenLinksCount },
           ]}
           activeTab={activeTab}
           onTabChange={tabId => setActiveTab(tabId as TabType)}
@@ -1340,12 +1372,72 @@ export default function AdminAllData() {
             </div>
           )}
 
+          {activeTab === "broken_links" && (
+            <div className={styles.tableWrapper}>
+              {loading ? (
+                <div className={styles.loading}>Loading broken links...</div>
+              ) : brokenLinks.length === 0 ? (
+                <div className={styles.emptyCell}>
+                  No broken links found.
+                </div>
+              ) : (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Name</th>
+                      <th>Instagram</th>
+                      <th>Status</th>
+                      <th>Error</th>
+                      <th>Last Checked</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {brokenLinks.map((link, idx) => (
+                      <tr key={`${link.entity_type}-${link.entity_id}-${idx}`}>
+                        <td className={styles.nameCell}>
+                          {link.entity_type === "artist" ? "Artist" : "Shop"}
+                        </td>
+                        <td className={styles.nameCell}>{link.entity_name}</td>
+                        <td className={styles.instagramCell}>
+                          <a
+                            href={`https://instagram.com/${link.instagram_handle.replace("@", "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.link}
+                          >
+                            @{link.instagram_handle.replace("@", "")}
+                          </a>
+                        </td>
+                        <td>
+                          <span
+                            className={styles.statusBadge}
+                            data-status="broken"
+                          >
+                            {link.status_code ?? "N/A"}
+                          </span>
+                        </td>
+                        <td className={styles.detailsCell}>
+                          {link.error_message || "—"}
+                        </td>
+                        <td>
+                          {new Date(link.checked_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
           {activeTab !== "artists" &&
             activeTab !== "shops" &&
             activeTab !== "cities" &&
             activeTab !== "countries" &&
             activeTab !== "new_artists" &&
-            activeTab !== "bugs" && (
+            activeTab !== "bugs" &&
+            activeTab !== "broken_links" && (
               <div className={styles.comingSoon}>
                 <p>Coming soon: {activeTab} table view</p>
               </div>

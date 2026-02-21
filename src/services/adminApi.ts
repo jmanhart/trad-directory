@@ -525,6 +525,33 @@ export async function addArtistShopLink(
   }
 }
 
+export interface BrokenLinkResult {
+  entity_type: "artist" | "shop";
+  entity_id: number;
+  entity_name: string;
+  instagram_handle: string;
+  status_code: number | null;
+  error_message: string | null;
+  checked_at: string;
+}
+
+export async function fetchBrokenLinks(): Promise<BrokenLinkResult[]> {
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || "/api/listBrokenLinks";
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch broken links: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result.brokenLinks || [];
+  } catch (error) {
+    console.error("Error fetching broken links:", error);
+    throw error;
+  }
+}
+
 interface BrokenLink {
   url: string;
   handle: string;

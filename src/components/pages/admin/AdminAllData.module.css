@@ -405,6 +405,11 @@
   color: #dc3545;
 }
 
+.statusBadge[data-status="broken"] {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
 .submissionActions {
   display: flex;
   align-items: center;
