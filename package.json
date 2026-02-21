@@ -22,10 +22,12 @@
     "release:major": "npm run version:major && npm run build",
     "release": "node scripts/release.js",
     "deploy": "vercel --prod",
-    "deploy:preview": "vercel"
+    "deploy:preview": "vercel",
+    "check-links": "node scripts/checkInstagramLinks.js"
   },
   "dependencies": {
     "@sentry/browser": "^10.0.0",
+    "@sentry/node": "^10.39.0",
     "@sentry/react": "^10.0.0",
     "@sentry/tracing": "^7.120.3",
     "@supabase/supabase-js": "^2.46.1",

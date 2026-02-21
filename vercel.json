@@ -33,5 +33,11 @@
       "main": true,
       "develop": true
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/checkInstagramLinks",
+      "schedule": "*/15 2-6 * * *"
+    }
+  ]
 }
