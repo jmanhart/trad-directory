@@ -158,13 +158,17 @@ async function main() {
           "User-Agent":
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         },
-        redirect: "follow",
+        redirect: "manual",
       });
 
       clearTimeout(timeoutId);
       statusCode = response.status;
 
-      if (response.status !== 200) {
+      // Instagram redirects all unauthenticated profile views to /accounts/login/
+      // A 302 redirect means Instagram recognizes the URL — the profile likely exists.
+      // Only a 404 reliably indicates the profile doesn't exist / handle changed.
+      // A 429 is rate limiting, not a broken link.
+      if (response.status === 404) {
         isBroken = true;
       }
     } catch (error) {
