@@ -1,11 +1,7 @@
 import React from "react";
 import styles from "./ArtistPageV2.module.css";
 import ArtistInfo from "./ArtistInfo";
-import ArtistPortfolio from "./ArtistPortfolio";
 import type { ArtistPageV2Artist } from "./types";
-
-/** Set to false to hide the portfolio section while you design the rest. */
-const SHOW_ARTIST_PORTFOLIO = true;
 
 export type { ArtistPageV2Artist } from "./types";
 
@@ -34,7 +30,6 @@ export default function ArtistPageV2({
       </div>
     );
   }
-  [];
 
   if (error || !artist) {
     return (
