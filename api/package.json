@@ -9,8 +9,7 @@
     "deploy": "vercel --prod"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.46.1",
-    "ioredis": "^5.3.2"
+    "@supabase/supabase-js": "^2.46.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

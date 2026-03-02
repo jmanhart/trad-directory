@@ -1,6 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 import { Artist } from "./types";
-import { withCache, CacheManager, CACHE_TTL } from "./cache";
 
 export default async function handler(req: any, res: any) {
   // Set CORS headers
@@ -28,109 +27,92 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    // Check if environment variables are available
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
       console.error("Missing Supabase environment variables");
       res.status(500).json({ error: "Server configuration error" });
       return;
     }
 
-    // Use caching for search results
-    const cacheKey = CacheManager.searchKey(query);
-    const searchResults = await withCache(
-      cacheKey,
-      CACHE_TTL.SEARCH_RESULTS,
-      async () => {
-        // Initialize Supabase client
-        const supabase = createClient(
-          process.env.SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_KEY!
-        );
-
-        // Search for artists in Supabase - optimized approach
-        // Get artists with their city and shop information
-        const { data: artists, error } = await supabase
-          .from("artists")
-          .select(
-            `
-            id,
-            name,
-            instagram_handle,
-            city: cities (
-              city_name,
-              state: states (state_name),
-              country: countries (country_name)
-            ),
-            artist_shop (
-              shop: tattoo_shops (id, shop_name, instagram_handle)
-            )
-          `
-          )
-          .limit(200); // Increased limit to ensure we get results
-
-        if (error) {
-          console.error("Supabase error:", error);
-          throw new Error(`Database query failed: ${error.message}`);
-        }
-
-        // Transform the data and filter based on query
-        const normalizedQuery = query.toLowerCase().trim().replace(/^@/, "");
-
-        if (!normalizedQuery) {
-          return {
-            results: [],
-            count: 0,
-            query,
-          };
-        }
-
-        const allResults: Artist[] = (artists || []).map((artist: any) => ({
-          id: artist.id,
-          name: artist.name,
-          instagram_handle: artist.instagram_handle || null,
-          city_name: Array.isArray(artist.city)
-            ? artist.city[0]?.city_name
-            : artist.city?.city_name || null,
-          state_name: Array.isArray(artist.city?.state)
-            ? artist.city.state[0]?.state_name
-            : artist.city.state?.state_name || null,
-          country_name: Array.isArray(artist.city?.country)
-            ? artist.city.country[0]?.country_name
-            : artist.city.country?.country_name || null,
-          shop_id: artist.artist_shop?.[0]?.shop?.id || null,
-          shop_name: artist.artist_shop?.[0]?.shop?.shop_name || null,
-          shop_instagram_handle:
-            artist.artist_shop?.[0]?.shop?.instagram_handle || null,
-        }));
-
-        // Filter results based on query - exclude "N/A" values
-        const results = allResults.filter((artist) => {
-          const cityName = artist.city_name?.toLowerCase();
-          const stateName = artist.state_name?.toLowerCase();
-          const countryName = artist.country_name?.toLowerCase();
-          const shopName = artist.shop_name?.toLowerCase();
-          const artistName = artist.name?.toLowerCase();
-          const instagramHandle = artist.instagram_handle?.toLowerCase();
-
-          return (
-            (artistName && artistName.includes(normalizedQuery)) ||
-            (instagramHandle && instagramHandle.includes(normalizedQuery)) ||
-            (cityName && cityName !== "n/a" && cityName.includes(normalizedQuery)) ||
-            (stateName && stateName !== "n/a" && stateName.includes(normalizedQuery)) ||
-            (countryName && countryName !== "n/a" && countryName.includes(normalizedQuery)) ||
-            (shopName && shopName !== "n/a" && shopName.includes(normalizedQuery))
-          );
-        });
-
-        return {
-          results,
-          count: results.length,
-          query,
-        };
-      }
+    const supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_KEY!
     );
 
-    res.status(200).json(searchResults);
+    const { data: artists, error } = await supabase
+      .from("artists")
+      .select(
+        `
+        id,
+        name,
+        instagram_handle,
+        city: cities (
+          city_name,
+          state: states (state_name),
+          country: countries (country_name)
+        ),
+        artist_shop (
+          shop: tattoo_shops (id, shop_name, instagram_handle)
+        )
+      `
+      )
+      .limit(200);
+
+    if (error) {
+      console.error("Supabase error:", error);
+      throw new Error(`Database query failed: ${error.message}`);
+    }
+
+    // Transform the data and filter based on query
+    const normalizedQuery = query.toLowerCase().trim().replace(/^@/, "");
+
+    if (!normalizedQuery) {
+      res.status(200).json({ results: [], count: 0, query });
+      return;
+    }
+
+    const allResults: Artist[] = (artists || []).map((artist: any) => ({
+      id: artist.id,
+      name: artist.name,
+      instagram_handle: artist.instagram_handle || null,
+      city_name: Array.isArray(artist.city)
+        ? artist.city[0]?.city_name
+        : artist.city?.city_name || null,
+      state_name: Array.isArray(artist.city?.state)
+        ? artist.city.state[0]?.state_name
+        : artist.city.state?.state_name || null,
+      country_name: Array.isArray(artist.city?.country)
+        ? artist.city.country[0]?.country_name
+        : artist.city.country?.country_name || null,
+      shop_id: artist.artist_shop?.[0]?.shop?.id || null,
+      shop_name: artist.artist_shop?.[0]?.shop?.shop_name || null,
+      shop_instagram_handle:
+        artist.artist_shop?.[0]?.shop?.instagram_handle || null,
+    }));
+
+    // Filter results based on query - exclude "N/A" values
+    const results = allResults.filter((artist) => {
+      const cityName = artist.city_name?.toLowerCase();
+      const stateName = artist.state_name?.toLowerCase();
+      const countryName = artist.country_name?.toLowerCase();
+      const shopName = artist.shop_name?.toLowerCase();
+      const artistName = artist.name?.toLowerCase();
+      const instagramHandle = artist.instagram_handle?.toLowerCase();
+
+      return (
+        (artistName && artistName.includes(normalizedQuery)) ||
+        (instagramHandle && instagramHandle.includes(normalizedQuery)) ||
+        (cityName && cityName !== "n/a" && cityName.includes(normalizedQuery)) ||
+        (stateName && stateName !== "n/a" && stateName.includes(normalizedQuery)) ||
+        (countryName && countryName !== "n/a" && countryName.includes(normalizedQuery)) ||
+        (shopName && shopName !== "n/a" && shopName.includes(normalizedQuery))
+      );
+    });
+
+    res.status(200).json({
+      results,
+      count: results.length,
+      query,
+    });
   } catch (error) {
     console.error("Unexpected error:", error);
     res.status(500).json({
