@@ -301,7 +301,6 @@ export default async function handler(req: any, res: any) {
     console.error("Error adding artist:", error);
     res.status(500).json({
       error: "Failed to add artist",
-      details: error instanceof Error ? error.message : String(error),
     });
   }
 }

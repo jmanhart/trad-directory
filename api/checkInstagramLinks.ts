@@ -8,11 +8,8 @@ const MIN_DELAY_MS = 3000;
 const MAX_DELAY_MS = 5000;
 const FETCH_TIMEOUT_MS = 10000;
 
-const SENTRY_DSN =
-  "https://7edc30300e65a3b770a659a6bcc98dac@o4508215900766208.ingest.us.sentry.io/4509713269260288";
-
 Sentry.init({
-  dsn: SENTRY_DSN,
+  dsn: process.env.SENTRY_DSN,
   environment: process.env.NODE_ENV || "production",
 });
 
@@ -275,7 +272,6 @@ export default async function handler(req: any, res: any) {
     console.error("Error in checkInstagramLinks:", error);
     res.status(500).json({
       error: "Failed to check links",
-      details: error.message,
     });
   }
 }

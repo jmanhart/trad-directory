@@ -42,7 +42,6 @@ export default async function handler(req: any, res: any) {
       console.error("Supabase error fetching cities:", citiesError);
       res.status(500).json({
         error: "Database query failed",
-        details: citiesError.message,
       });
       return;
     }
@@ -72,7 +71,6 @@ export default async function handler(req: any, res: any) {
         console.error("Supabase error fetching states:", statesError);
         res.status(500).json({
           error: "Database query failed",
-          details: statesError.message,
         });
         return;
       }
@@ -110,7 +108,6 @@ export default async function handler(req: any, res: any) {
     console.error("Unexpected error:", error);
     res.status(500).json({
       error: "Internal server error",
-      details: (error as Error).message,
     });
   }
 }

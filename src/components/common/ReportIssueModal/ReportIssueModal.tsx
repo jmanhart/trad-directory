@@ -112,7 +112,6 @@ export default function ReportIssueModal({
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitError(null);
-    setSubmitSuccess(false);
 
     try {
       if (editingFields.size === 0) {

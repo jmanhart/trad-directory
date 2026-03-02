@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ShopCard from "./ShopCard";
 import styles from "./ShopList.module.css";
-import { supabase } from "../../services/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 interface Shop {
   id: number;

@@ -114,7 +114,6 @@ export default async function handler(req: any, res: any) {
     console.error("Error adding artist-shop link:", error);
     res.status(500).json({
       error: "Failed to add link",
-      details: error instanceof Error ? error.message : String(error),
     });
   }
 }

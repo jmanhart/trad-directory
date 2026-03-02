@@ -66,7 +66,6 @@ export default async function handler(req: any, res: any) {
       console.error("Supabase error updating artist:", updateError);
       res.status(500).json({
         error: "Database update failed",
-        details: updateError.message,
       });
       return;
     }
@@ -139,7 +138,6 @@ export default async function handler(req: any, res: any) {
     console.error("Error updating artist:", error);
     res.status(500).json({
       error: "Failed to update artist",
-      details: error instanceof Error ? error.message : String(error),
     });
   }
 }

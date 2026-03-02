@@ -119,8 +119,6 @@ export default async function handler(req: any, res: any) {
     res.status(200).json(shopsData);
   } catch (error) {
     console.error("Unexpected error:", error);
-    res
-      .status(500)
-      .json({ error: "Internal server error", details: error.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 }

@@ -120,7 +120,6 @@ export default async function handler(req: any, res: any) {
       console.error("Supabase error inserting submission:", insertError);
       res.status(500).json({
         error: "Failed to submit report",
-        details: insertError.message,
       });
       return;
     }
@@ -135,7 +134,6 @@ export default async function handler(req: any, res: any) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     res.status(500).json({
       error: "Internal server error",
-      details: errorMessage,
     });
   }
 }

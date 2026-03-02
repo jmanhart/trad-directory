@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "../../../services/supabaseClient";
+import { supabase } from "../../../lib/supabaseClient";
 import { trackHeroMessageClick } from "../../../utils/analytics";
 import styles from "./HeroMessageText.module.css";
 

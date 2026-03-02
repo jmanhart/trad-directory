@@ -49,7 +49,6 @@ export default async function handler(req: any, res: any) {
       console.error("Supabase error updating city:", error);
       res.status(500).json({
         error: "Database update failed",
-        details: error.message,
       });
       return;
     }
@@ -63,7 +62,6 @@ export default async function handler(req: any, res: any) {
     console.error("Error updating city:", error);
     res.status(500).json({
       error: "Failed to update city",
-      details: error instanceof Error ? error.message : String(error),
     });
   }
 }

@@ -1,4 +1,4 @@
-import { supabase } from "./supabaseClient";
+import { supabase } from "../lib/supabaseClient";
 import { createClient } from "@supabase/supabase-js";
 import { generateUniqueSlug } from "../utils/slug";
 import type { Artist, ArtistLocation, Shop, ShopWithArtists, City, Country } from "../types";

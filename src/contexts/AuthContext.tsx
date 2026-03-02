@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session, AuthError } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabaseClient";
+import { setUserContext, clearUserContext } from "../utils/sentry";
 
 interface AuthContextType {
   user: User | null;
@@ -32,6 +33,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // Sync Sentry user context with auth state
+      if (session?.user) {
+        setUserContext(session.user.id, session.user.email);
+      } else {
+        clearUserContext();
+      }
     });
 
     return () => subscription.unsubscribe();

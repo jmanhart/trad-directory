@@ -130,7 +130,6 @@ export default async function handler(req: any, res: any) {
     console.error("Error adding shop:", error);
     res.status(500).json({
       error: "Failed to add shop",
-      details: error instanceof Error ? error.message : String(error),
     });
   }
 }

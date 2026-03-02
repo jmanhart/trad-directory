@@ -29,7 +29,6 @@
     "@sentry/browser": "^10.0.0",
     "@sentry/node": "^10.39.0",
     "@sentry/react": "^10.0.0",
-    "@sentry/tracing": "^7.120.3",
     "@supabase/supabase-js": "^2.46.1",
     "@vercel/analytics": "^1.3.2",
     "axios": "^1.7.8",

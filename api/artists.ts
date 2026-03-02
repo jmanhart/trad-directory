@@ -66,9 +66,7 @@ export default async function handler(req: any, res: any) {
 
     if (error) {
       console.error("Supabase error:", error);
-      res
-        .status(500)
-        .json({ error: "Database query failed", details: error.message });
+      res.status(500).json({ error: "Database query failed" });
       return;
     }
 
@@ -104,7 +102,6 @@ export default async function handler(req: any, res: any) {
       .status(500)
       .json({
         error: "Internal server error",
-        details: (error as Error).message,
       });
   }
 }
