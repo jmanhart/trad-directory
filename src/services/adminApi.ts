@@ -1,3 +1,12 @@
+const ADMIN_API_KEY = import.meta.env.VITE_ADMIN_PASSWORD || "";
+
+function adminHeaders(): Record<string, string> {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${ADMIN_API_KEY}`,
+  };
+}
+
 interface AddArtistData {
   name: string;
   instagram_handle?: string;
@@ -24,16 +33,14 @@ export async function addArtist(data: AddArtistData): Promise<number> {
 
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: adminHeaders(),
       body: JSON.stringify(data),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+        errorData.error || `HTTP error! status: ${response.status}`
       );
     }
 
@@ -135,16 +142,14 @@ export async function addShop(data: AddShopData): Promise<number> {
 
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: adminHeaders(),
       body: JSON.stringify(data),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+        errorData.error || `HTTP error! status: ${response.status}`
       );
     }
 
@@ -199,16 +204,14 @@ export async function addCity(data: AddCityData): Promise<number> {
 
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: adminHeaders(),
       body: JSON.stringify(data),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+        errorData.error || `HTTP error! status: ${response.status}`
       );
     }
 
@@ -236,16 +239,14 @@ export async function addCountry(data: AddCountryData): Promise<number> {
 
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: adminHeaders(),
       body: JSON.stringify(data),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+        errorData.error || `HTTP error! status: ${response.status}`
       );
     }
 
@@ -300,16 +301,14 @@ export async function updateArtist(data: UpdateArtistData): Promise<void> {
 
     const response = await fetch(apiUrl, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: adminHeaders(),
       body: JSON.stringify(data),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+        errorData.error || `HTTP error! status: ${response.status}`
       );
     }
   } catch (error) {
@@ -361,16 +360,14 @@ export async function updateShop(data: UpdateShopData): Promise<void> {
 
     const response = await fetch(apiUrl, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: adminHeaders(),
       body: JSON.stringify(data),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+        errorData.error || `HTTP error! status: ${response.status}`
       );
     }
   } catch (error) {
@@ -413,13 +410,13 @@ export async function updateCity(data: UpdateCityData): Promise<void> {
     const apiUrl = import.meta.env.VITE_API_URL || "/api/updateCity";
     const response = await fetch(apiUrl, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: adminHeaders(),
       body: JSON.stringify(data),
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+        errorData.error || `HTTP error! status: ${response.status}`
       );
     }
   } catch (error) {
@@ -439,13 +436,13 @@ export async function updateCountry(data: UpdateCountryData): Promise<void> {
     const apiUrl = import.meta.env.VITE_API_URL || "/api/updateCountry";
     const response = await fetch(apiUrl, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: adminHeaders(),
       body: JSON.stringify(data),
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+        errorData.error || `HTTP error! status: ${response.status}`
       );
     }
   } catch (error) {
@@ -474,13 +471,13 @@ export async function updateSubmission(
     const apiUrl = import.meta.env.VITE_API_URL || "/api/updateSubmission";
     const response = await fetch(apiUrl, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: adminHeaders(),
       body: JSON.stringify({ id, status }),
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+        errorData.error || `HTTP error! status: ${response.status}`
       );
     }
   } catch (error) {
@@ -507,16 +504,14 @@ export async function addArtistShopLink(
 
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: adminHeaders(),
       body: JSON.stringify(data),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.details || errorData.error || `HTTP error! status: ${response.status}`
+        errorData.error || `HTTP error! status: ${response.status}`
       );
     }
   } catch (error) {
@@ -538,7 +533,9 @@ export interface BrokenLinkResult {
 export async function fetchBrokenLinks(): Promise<BrokenLinkResult[]> {
   try {
     const apiUrl = import.meta.env.VITE_API_URL || "/api/listBrokenLinks";
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: { Authorization: `Bearer ${ADMIN_API_KEY}` },
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch broken links: ${response.status}`);

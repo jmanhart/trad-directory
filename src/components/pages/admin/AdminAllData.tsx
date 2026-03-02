@@ -221,9 +221,12 @@ export default function AdminAllData() {
   const loadNewCounts = async () => {
     const baseUrl = import.meta.env.VITE_API_URL || "/api";
     try {
+      const authHeaders = {
+        Authorization: `Bearer ${import.meta.env.VITE_ADMIN_PASSWORD || ""}`,
+      };
       const [subRes, bugsRes] = await Promise.all([
-        fetch(`${baseUrl}/listSubmissions?type=new_artist`),
-        fetch(`${baseUrl}/listSubmissions?type=report`),
+        fetch(`${baseUrl}/listSubmissions?type=new_artist`, { headers: authHeaders }),
+        fetch(`${baseUrl}/listSubmissions?type=report`, { headers: authHeaders }),
       ]);
       if (subRes.ok) {
         const data = await subRes.json();
@@ -292,7 +295,11 @@ export default function AdminAllData() {
 
       console.log("Loading submissions:", { type, apiUrl });
 
-      const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl, {
+        headers: {
+          Authorization: `Bearer ${import.meta.env.VITE_ADMIN_PASSWORD || ""}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
