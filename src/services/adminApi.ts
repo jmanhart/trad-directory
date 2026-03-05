@@ -55,7 +55,9 @@ export async function addArtist(data: AddArtistData): Promise<number> {
 /**
  * Fetch all countries for dropdown
  */
-export async function fetchCountries(): Promise<{ id: number; country_name: string }[]> {
+export async function fetchCountries(): Promise<
+  { id: number; country_name: string }[]
+> {
   try {
     const apiUrl = import.meta.env.VITE_API_URL || "/api/listCountries";
     const response = await fetch(apiUrl);
@@ -104,7 +106,9 @@ export async function fetchCities(): Promise<
 /**
  * Fetch all shops for dropdown
  */
-export async function fetchShops(): Promise<{ id: number; shop_name: string }[]> {
+export async function fetchShops(): Promise<
+  { id: number; shop_name: string }[]
+> {
   try {
     const apiUrl = import.meta.env.VITE_API_URL || "/api/listShops";
     const response = await fetch(apiUrl);
@@ -328,7 +332,9 @@ export async function fetchArtistById(id: number): Promise<any> {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.details || errorData.error || `Failed to fetch artist: ${response.status}`
+        errorData.details ||
+          errorData.error ||
+          `Failed to fetch artist: ${response.status}`
       );
     }
 
@@ -387,7 +393,9 @@ export async function fetchShopById(id: number): Promise<any> {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.details || errorData.error || `Failed to fetch shop: ${response.status}`
+        errorData.details ||
+          errorData.error ||
+          `Failed to fetch shop: ${response.status}`
       );
     }
 
@@ -581,6 +589,59 @@ export async function checkInstagramLinks(): Promise<CheckLinksResponse> {
     return result;
   } catch (error) {
     console.error("Error checking Instagram links:", error);
+    throw error;
+  }
+}
+
+export async function addArtistLocation(
+  artistId: number,
+  cityId: number,
+  shopId?: number
+): Promise<void> {
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || "/api/addArtistLocation";
+    const body: Record<string, number> = {
+      artist_id: artistId,
+      city_id: cityId,
+    };
+    if (shopId) body.shop_id = shopId;
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: adminHeaders(),
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+  } catch (error) {
+    console.error("Error adding artist location:", error);
+    throw error;
+  }
+}
+
+export async function deleteArtistLocation(locationId: number): Promise<void> {
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || "/api/deleteArtistLocation";
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: adminHeaders(),
+      body: JSON.stringify({ id: locationId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+  } catch (error) {
+    console.error("Error deleting artist location:", error);
     throw error;
   }
 }

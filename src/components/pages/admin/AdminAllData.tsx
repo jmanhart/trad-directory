@@ -20,6 +20,8 @@ import {
   updateCountry,
   updateSubmission,
   fetchBrokenLinks,
+  addArtistLocation,
+  deleteArtistLocation,
   type SubmissionStatus,
   type BrokenLinkResult,
 } from "../../../services/adminApi";
@@ -204,7 +206,23 @@ export default function AdminAllData() {
   const [originalCountryFormData, setOriginalCountryFormData] =
     useState<CountryFormData | null>(null);
 
-  const { cities, shops, states, loading: dataLoading, refetch: refetchAdminData } = useAdminData({
+  // Secondary locations state
+  const [artistLocations, setArtistLocations] = useState<any[]>([]);
+  const [addingLocation, setAddingLocation] = useState(false);
+  const [deletingLocationId, setDeletingLocationId] = useState<number | null>(
+    null
+  );
+  const [newLocationCityId, setNewLocationCityId] = useState("");
+  const [newLocationShopId, setNewLocationShopId] = useState("");
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  const {
+    cities,
+    shops,
+    states,
+    loading: dataLoading,
+    refetch: refetchAdminData,
+  } = useAdminData({
     loadCities: true,
     loadShops: true,
     loadStates: true,
@@ -225,8 +243,12 @@ export default function AdminAllData() {
         Authorization: `Bearer ${import.meta.env.VITE_ADMIN_PASSWORD || ""}`,
       };
       const [subRes, bugsRes] = await Promise.all([
-        fetch(`${baseUrl}/listSubmissions?type=new_artist`, { headers: authHeaders }),
-        fetch(`${baseUrl}/listSubmissions?type=report`, { headers: authHeaders }),
+        fetch(`${baseUrl}/listSubmissions?type=new_artist`, {
+          headers: authHeaders,
+        }),
+        fetch(`${baseUrl}/listSubmissions?type=report`, {
+          headers: authHeaders,
+        }),
       ]);
       if (subRes.ok) {
         const data = await subRes.json();
@@ -278,7 +300,8 @@ export default function AdminAllData() {
     } catch (err) {
       setError({
         type: "error",
-        text: err instanceof Error ? err.message : "Failed to load broken links",
+        text:
+          err instanceof Error ? err.message : "Failed to load broken links",
       });
     } finally {
       setLoading(false);
@@ -572,7 +595,8 @@ export default function AdminAllData() {
 
   // Hide "deleted" submissions from the admin table (they stay in DB)
   const visibleSubmissions = useMemo(
-    () => submissions.filter((s: { status?: string }) => s.status !== "deleted"),
+    () =>
+      submissions.filter((s: { status?: string }) => s.status !== "deleted"),
     [submissions]
   );
 
@@ -615,6 +639,92 @@ export default function AdminAllData() {
     return sortDirection === "asc" ? "↑" : "↓";
   };
 
+  const handleEditCityClick = (city: City) => {
+    setSaveError(null);
+    const formData: CityFormData = {
+      city_name: city.city_name,
+      state_id: city.state_id?.toString() || "",
+    };
+    setCityFormData(formData);
+    setOriginalCityFormData(JSON.parse(JSON.stringify(formData)));
+    setEditingCityId(city.id);
+    setIsModalOpen(true);
+  };
+
+  const handleEditCountryClick = (country: {
+    id: number;
+    country_name: string;
+  }) => {
+    setSaveError(null);
+    const formData: CountryFormData = {
+      country_name: country.country_name,
+    };
+    setCountryFormData(formData);
+    setOriginalCountryFormData(JSON.parse(JSON.stringify(formData)));
+    setEditingCountryId(country.id);
+    setIsModalOpen(true);
+  };
+
+  const handleCityFormChange = (field: keyof CityFormData, value: string) => {
+    if (!cityFormData) return;
+    setCityFormData({ ...cityFormData, [field]: value });
+  };
+
+  const handleCountryFormChange = (
+    field: keyof CountryFormData,
+    value: string
+  ) => {
+    if (!countryFormData) return;
+    setCountryFormData({ ...countryFormData, [field]: value });
+  };
+
+  const refreshArtistLocations = async (artistId: number) => {
+    try {
+      const artist = await fetchArtistById(artistId);
+      setArtistLocations(artist.locations || []);
+    } catch {
+      // Non-blocking
+    }
+  };
+
+  const handleAddSecondaryLocation = async () => {
+    if (!editingArtistId || !newLocationCityId) return;
+    try {
+      setAddingLocation(true);
+      setLocationError(null);
+      await addArtistLocation(
+        editingArtistId,
+        parseInt(newLocationCityId),
+        newLocationShopId ? parseInt(newLocationShopId) : undefined
+      );
+      setNewLocationCityId("");
+      setNewLocationShopId("");
+      await refreshArtistLocations(editingArtistId);
+    } catch (err) {
+      setLocationError(
+        err instanceof Error ? err.message : "Failed to add location"
+      );
+    } finally {
+      setAddingLocation(false);
+    }
+  };
+
+  const handleDeleteSecondaryLocation = async (locationId: number) => {
+    if (!editingArtistId) return;
+    try {
+      setDeletingLocationId(locationId);
+      setLocationError(null);
+      await deleteArtistLocation(locationId);
+      await refreshArtistLocations(editingArtistId);
+    } catch (err) {
+      setLocationError(
+        err instanceof Error ? err.message : "Failed to delete location"
+      );
+    } finally {
+      setDeletingLocationId(null);
+    }
+  };
+
   const handleRetry = () => {
     if (activeTab === "artists") {
       loadArtists();
@@ -642,6 +752,7 @@ export default function AdminAllData() {
 
       setFormData(formData);
       setOriginalFormData(JSON.parse(JSON.stringify(formData)));
+      setArtistLocations(artist.locations || []);
       setEditingArtistId(artistId);
       setIsModalOpen(true);
     } catch (err) {
@@ -668,6 +779,10 @@ export default function AdminAllData() {
     setEditingCityId(null);
     setEditingCountryId(null);
     setSaveError(null);
+    setArtistLocations([]);
+    setNewLocationCityId("");
+    setNewLocationShopId("");
+    setLocationError(null);
   };
 
   const handleFormChange = (
@@ -895,8 +1010,16 @@ export default function AdminAllData() {
             { id: "cities", label: "Cities" },
             { id: "countries", label: "Countries" },
             { id: "bugs", label: "Bugs", badge: newBugsCount },
-            { id: "new_artists", label: "Submissions", badge: newSubmissionsCount },
-            { id: "broken_links", label: "Broken Links", badge: brokenLinksCount },
+            {
+              id: "new_artists",
+              label: "Submissions",
+              badge: newSubmissionsCount,
+            },
+            {
+              id: "broken_links",
+              label: "Broken Links",
+              badge: brokenLinksCount,
+            },
           ]}
           activeTab={activeTab}
           onTabChange={tabId => setActiveTab(tabId as TabType)}
@@ -1173,9 +1296,7 @@ export default function AdminAllData() {
                       filteredAndSortedCities.map(city => (
                         <tr key={city.id}>
                           <td className={styles.idCell}>{city.id}</td>
-                          <td className={styles.nameCell}>
-                            {city.city_name}
-                          </td>
+                          <td className={styles.nameCell}>{city.city_name}</td>
                           <td className={styles.locationCell}>
                             {city.state_name || "—"}
                           </td>
@@ -1230,9 +1351,7 @@ export default function AdminAllData() {
                           <button
                             type="button"
                             className={styles.editButton}
-                            onClick={() =>
-                              handleEditCountryClick(country)
-                            }
+                            onClick={() => handleEditCountryClick(country)}
                           >
                             Edit
                           </button>
@@ -1330,7 +1449,9 @@ export default function AdminAllData() {
                             <td className={styles.actionCell}>
                               <SubmissionActions
                                 submission={submission}
-                                updating={updatingSubmissionId === submission.id}
+                                updating={
+                                  updatingSubmissionId === submission.id
+                                }
                                 onUpdateStatus={handleUpdateSubmissionStatus}
                               />
                             </td>
@@ -1365,7 +1486,9 @@ export default function AdminAllData() {
                             <td className={styles.actionCell}>
                               <SubmissionActions
                                 submission={submission}
-                                updating={updatingSubmissionId === submission.id}
+                                updating={
+                                  updatingSubmissionId === submission.id
+                                }
                                 onUpdateStatus={handleUpdateSubmissionStatus}
                               />
                             </td>
@@ -1384,9 +1507,7 @@ export default function AdminAllData() {
               {loading ? (
                 <div className={styles.loading}>Loading broken links...</div>
               ) : brokenLinks.length === 0 ? (
-                <div className={styles.emptyCell}>
-                  No broken links found.
-                </div>
+                <div className={styles.emptyCell}>No broken links found.</div>
               ) : (
                 <table className={styles.table}>
                   <thead>
@@ -1457,369 +1578,454 @@ export default function AdminAllData() {
         createPortal(
           <div className={styles.modalOverlay} onClick={handleCloseModal}>
             <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>
-                {editingArtistId
-                  ? "Edit Artist"
-                  : editingShopId
-                    ? "Edit Shop"
-                    : editingCityId
-                      ? "Edit City"
-                      : editingCountryId
-                        ? "Edit Country"
-                        : "Edit"}
-              </h2>
-              <button className={styles.modalClose} onClick={handleCloseModal}>
-                ×
-              </button>
-            </div>
-
-            <div className={styles.modalContent}>
-              {editingArtistId && loadingArtist ? (
-                <div className={styles.loading}>Loading artist data...</div>
-              ) : editingShopId && loadingShop ? (
-                <div className={styles.loading}>Loading shop data...</div>
-              ) : editingCityId && cityFormData ? (
-                <>
-                  {saveError && <Message type="error" text={saveError} />}
-                  <form className={styles.modalForm}>
-                    <FormGroup>
-                      <Label htmlFor="city_name" required>
-                        City Name
-                      </Label>
-                      <Input
-                        type="text"
-                        id="city_name"
-                        value={cityFormData.city_name}
-                        onChange={e =>
-                          handleCityFormChange("city_name", e.target.value)
-                        }
-                        required
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label htmlFor="city_state_id">State</Label>
-                      <Select
-                        id="city_state_id"
-                        value={cityFormData.state_id}
-                        onChange={e =>
-                          handleCityFormChange("state_id", e.target.value)
-                        }
-                      >
-                        <option value="">No state</option>
-                        {states.map(state => (
-                          <option key={state.id} value={state.id}>
-                            {state.state_name}
-                            {state.country_name
-                              ? ` (${state.country_name})`
-                              : ""}
-                          </option>
-                        ))}
-                      </Select>
-                    </FormGroup>
-                  </form>
-                </>
-              ) : editingCountryId && countryFormData ? (
-                <>
-                  {saveError && <Message type="error" text={saveError} />}
-                  <form className={styles.modalForm}>
-                    <FormGroup>
-                      <Label htmlFor="country_name" required>
-                        Country Name
-                      </Label>
-                      <Input
-                        type="text"
-                        id="country_name"
-                        value={countryFormData.country_name}
-                        onChange={e =>
-                          handleCountryFormChange(
-                            "country_name",
-                            e.target.value
-                          )
-                        }
-                        required
-                      />
-                    </FormGroup>
-                  </form>
-                </>
-              ) : editingArtistId && formData ? (
-                <>
-                  {saveError && <Message type="error" text={saveError} />}
-
-                  <form className={styles.modalForm}>
-                    <FormGroup>
-                      <Label htmlFor="name" required>
-                        Name
-                      </Label>
-                      <Input
-                        type="text"
-                        id="name"
-                        value={formData.name}
-                        onChange={e => handleFormChange("name", e.target.value)}
-                        required
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Label htmlFor="instagram_handle">Instagram Handle</Label>
-                      <Input
-                        type="text"
-                        id="instagram_handle"
-                        value={formData.instagram_handle}
-                        onChange={e =>
-                          handleFormChange("instagram_handle", e.target.value)
-                        }
-                        placeholder="@username or username"
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Label htmlFor="gender">Gender</Label>
-                      <Input
-                        type="text"
-                        id="gender"
-                        value={formData.gender}
-                        onChange={e =>
-                          handleFormChange("gender", e.target.value)
-                        }
-                        placeholder="Gender"
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Label htmlFor="url">URL</Label>
-                      <Input
-                        type="url"
-                        id="url"
-                        value={formData.url}
-                        onChange={e => handleFormChange("url", e.target.value)}
-                        placeholder="https://example.com"
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Label htmlFor="contact">Contact</Label>
-                      <Input
-                        type="text"
-                        id="contact"
-                        value={formData.contact}
-                        onChange={e =>
-                          handleFormChange("contact", e.target.value)
-                        }
-                        placeholder="Email or phone number"
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Label htmlFor="city_id" required>
-                        City
-                      </Label>
-                      <Select
-                        id="city_id"
-                        value={formData.city_id}
-                        onChange={e =>
-                          handleFormChange("city_id", e.target.value)
-                        }
-                        required
-                      >
-                        <option value="">Select a city</option>
-                        {cities.map(city => (
-                          <option key={city.id} value={city.id}>
-                            {getCityDisplayName(city)}
-                          </option>
-                        ))}
-                      </Select>
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Label htmlFor="shop_id">Shop (optional)</Label>
-                      <Select
-                        id="shop_id"
-                        value={formData.shop_id}
-                        onChange={e =>
-                          handleFormChange("shop_id", e.target.value)
-                        }
-                      >
-                        <option value="">No shop</option>
-                        {shops.map(shop => (
-                          <option key={shop.id} value={shop.id}>
-                            {shop.shop_name}
-                          </option>
-                        ))}
-                      </Select>
-                    </FormGroup>
-
-                    <FormGroup>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                        }}
-                      >
-                        <Input
-                          type="checkbox"
-                          id="is_traveling"
-                          checked={formData.is_traveling}
-                          onChange={e =>
-                            handleFormChange("is_traveling", e.target.checked)
-                          }
-                        />
-                        <Label
-                          htmlFor="is_traveling"
-                          style={{ margin: 0, cursor: "pointer" }}
-                        >
-                          Traveling Artist
-                        </Label>
-                      </div>
-                    </FormGroup>
-                  </form>
-                </>
-              ) : editingShopId && shopFormData ? (
-                <>
-                  {saveError && <Message type="error" text={saveError} />}
-
-                  <form className={styles.modalForm}>
-                    <FormGroup>
-                      <Label htmlFor="shop_name" required>
-                        Shop Name
-                      </Label>
-                      <Input
-                        type="text"
-                        id="shop_name"
-                        value={shopFormData.shop_name}
-                        onChange={e =>
-                          handleShopFormChange("shop_name", e.target.value)
-                        }
-                        required
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Label htmlFor="shop_instagram_handle">
-                        Instagram Handle
-                      </Label>
-                      <Input
-                        type="text"
-                        id="shop_instagram_handle"
-                        value={shopFormData.instagram_handle}
-                        onChange={e =>
-                          handleShopFormChange(
-                            "instagram_handle",
-                            e.target.value
-                          )
-                        }
-                        placeholder="@username or username"
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Label htmlFor="shop_address">Address</Label>
-                      <Input
-                        type="text"
-                        id="shop_address"
-                        value={shopFormData.address}
-                        onChange={e =>
-                          handleShopFormChange("address", e.target.value)
-                        }
-                        placeholder="Street address"
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Label htmlFor="shop_contact">Contact</Label>
-                      <Input
-                        type="text"
-                        id="shop_contact"
-                        value={shopFormData.contact}
-                        onChange={e =>
-                          handleShopFormChange("contact", e.target.value)
-                        }
-                        placeholder="Email or other contact"
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Label htmlFor="shop_phone_number">Phone Number</Label>
-                      <Input
-                        type="tel"
-                        id="shop_phone_number"
-                        value={shopFormData.phone_number}
-                        onChange={e =>
-                          handleShopFormChange("phone_number", e.target.value)
-                        }
-                        placeholder="Phone number"
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Label htmlFor="shop_website_url">Website URL</Label>
-                      <Input
-                        type="url"
-                        id="shop_website_url"
-                        value={shopFormData.website_url}
-                        onChange={e =>
-                          handleShopFormChange("website_url", e.target.value)
-                        }
-                        placeholder="https://example.com"
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Label htmlFor="shop_city_id" required>
-                        City
-                      </Label>
-                      <Select
-                        id="shop_city_id"
-                        value={shopFormData.city_id}
-                        onChange={e =>
-                          handleShopFormChange("city_id", e.target.value)
-                        }
-                        required
-                      >
-                        <option value="">Select a city</option>
-                        {cities.map(city => (
-                          <option key={city.id} value={city.id}>
-                            {getCityDisplayName(city)}
-                          </option>
-                        ))}
-                      </Select>
-                    </FormGroup>
-                  </form>
-                </>
-              ) : null}
-            </div>
-
-            <div className={styles.modalFooter}>
-              <button
-                className={styles.cancelButton}
-                onClick={handleCloseModal}
-                disabled={saving}
-              >
-                Cancel
-              </button>
-              {hasChanges && (
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>
+                  {editingArtistId
+                    ? "Edit Artist"
+                    : editingShopId
+                      ? "Edit Shop"
+                      : editingCityId
+                        ? "Edit City"
+                        : editingCountryId
+                          ? "Edit Country"
+                          : "Edit"}
+                </h2>
                 <button
-                  className={styles.saveButton}
-                  onClick={handleSave}
-                  disabled={
-                    saving ||
-                    (editingArtistId &&
-                      (!formData?.name || !formData?.city_id)) ||
-                    (editingShopId &&
-                      (!shopFormData?.shop_name || !shopFormData?.city_id)) ||
-                    (editingCityId && !cityFormData?.city_name?.trim()) ||
-                    (editingCountryId && !countryFormData?.country_name?.trim())
-                  }
+                  className={styles.modalClose}
+                  onClick={handleCloseModal}
                 >
-                  {saving ? "Saving..." : "Save"}
+                  ×
                 </button>
-              )}
+              </div>
+
+              <div className={styles.modalContent}>
+                {editingArtistId && loadingArtist ? (
+                  <div className={styles.loading}>Loading artist data...</div>
+                ) : editingShopId && loadingShop ? (
+                  <div className={styles.loading}>Loading shop data...</div>
+                ) : editingCityId && cityFormData ? (
+                  <>
+                    {saveError && <Message type="error" text={saveError} />}
+                    <form className={styles.modalForm}>
+                      <FormGroup>
+                        <Label htmlFor="city_name" required>
+                          City Name
+                        </Label>
+                        <Input
+                          type="text"
+                          id="city_name"
+                          value={cityFormData.city_name}
+                          onChange={e =>
+                            handleCityFormChange("city_name", e.target.value)
+                          }
+                          required
+                        />
+                      </FormGroup>
+                      <FormGroup>
+                        <Label htmlFor="city_state_id">State</Label>
+                        <Select
+                          id="city_state_id"
+                          value={cityFormData.state_id}
+                          onChange={e =>
+                            handleCityFormChange("state_id", e.target.value)
+                          }
+                        >
+                          <option value="">No state</option>
+                          {states.map(state => (
+                            <option key={state.id} value={state.id}>
+                              {state.state_name}
+                              {state.country_name
+                                ? ` (${state.country_name})`
+                                : ""}
+                            </option>
+                          ))}
+                        </Select>
+                      </FormGroup>
+                    </form>
+                  </>
+                ) : editingCountryId && countryFormData ? (
+                  <>
+                    {saveError && <Message type="error" text={saveError} />}
+                    <form className={styles.modalForm}>
+                      <FormGroup>
+                        <Label htmlFor="country_name" required>
+                          Country Name
+                        </Label>
+                        <Input
+                          type="text"
+                          id="country_name"
+                          value={countryFormData.country_name}
+                          onChange={e =>
+                            handleCountryFormChange(
+                              "country_name",
+                              e.target.value
+                            )
+                          }
+                          required
+                        />
+                      </FormGroup>
+                    </form>
+                  </>
+                ) : editingArtistId && formData ? (
+                  <>
+                    {saveError && <Message type="error" text={saveError} />}
+
+                    <form className={styles.modalForm}>
+                      <FormGroup>
+                        <Label htmlFor="name" required>
+                          Name
+                        </Label>
+                        <Input
+                          type="text"
+                          id="name"
+                          value={formData.name}
+                          onChange={e =>
+                            handleFormChange("name", e.target.value)
+                          }
+                          required
+                        />
+                      </FormGroup>
+
+                      <FormGroup>
+                        <Label htmlFor="instagram_handle">
+                          Instagram Handle
+                        </Label>
+                        <Input
+                          type="text"
+                          id="instagram_handle"
+                          value={formData.instagram_handle}
+                          onChange={e =>
+                            handleFormChange("instagram_handle", e.target.value)
+                          }
+                          placeholder="@username or username"
+                        />
+                      </FormGroup>
+
+                      <FormGroup>
+                        <Label htmlFor="gender">Gender</Label>
+                        <Input
+                          type="text"
+                          id="gender"
+                          value={formData.gender}
+                          onChange={e =>
+                            handleFormChange("gender", e.target.value)
+                          }
+                          placeholder="Gender"
+                        />
+                      </FormGroup>
+
+                      <FormGroup>
+                        <Label htmlFor="url">URL</Label>
+                        <Input
+                          type="url"
+                          id="url"
+                          value={formData.url}
+                          onChange={e =>
+                            handleFormChange("url", e.target.value)
+                          }
+                          placeholder="https://example.com"
+                        />
+                      </FormGroup>
+
+                      <FormGroup>
+                        <Label htmlFor="contact">Contact</Label>
+                        <Input
+                          type="text"
+                          id="contact"
+                          value={formData.contact}
+                          onChange={e =>
+                            handleFormChange("contact", e.target.value)
+                          }
+                          placeholder="Email or phone number"
+                        />
+                      </FormGroup>
+
+                      <FormGroup>
+                        <Label htmlFor="city_id" required>
+                          City
+                        </Label>
+                        <Select
+                          id="city_id"
+                          value={formData.city_id}
+                          onChange={e =>
+                            handleFormChange("city_id", e.target.value)
+                          }
+                          required
+                        >
+                          <option value="">Select a city</option>
+                          {cities.map(city => (
+                            <option key={city.id} value={city.id}>
+                              {getCityDisplayName(city)}
+                            </option>
+                          ))}
+                        </Select>
+                      </FormGroup>
+
+                      <FormGroup>
+                        <Label htmlFor="shop_id">Shop (optional)</Label>
+                        <Select
+                          id="shop_id"
+                          value={formData.shop_id}
+                          onChange={e =>
+                            handleFormChange("shop_id", e.target.value)
+                          }
+                        >
+                          <option value="">No shop</option>
+                          {shops.map(shop => (
+                            <option key={shop.id} value={shop.id}>
+                              {shop.shop_name}
+                            </option>
+                          ))}
+                        </Select>
+                      </FormGroup>
+
+                      <FormGroup>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                          }}
+                        >
+                          <Input
+                            type="checkbox"
+                            id="is_traveling"
+                            checked={formData.is_traveling}
+                            onChange={e =>
+                              handleFormChange("is_traveling", e.target.checked)
+                            }
+                          />
+                          <Label
+                            htmlFor="is_traveling"
+                            style={{ margin: 0, cursor: "pointer" }}
+                          >
+                            Traveling Artist
+                          </Label>
+                        </div>
+                      </FormGroup>
+                    </form>
+
+                    {/* Secondary Locations */}
+                    <div className={styles.secondaryLocations}>
+                      <h3 className={styles.secondaryLocationsTitle}>
+                        Secondary Locations
+                      </h3>
+
+                      {locationError && (
+                        <Message type="error" text={locationError} />
+                      )}
+
+                      {artistLocations
+                        .filter(loc => !loc.is_primary)
+                        .map(loc => (
+                          <div key={loc.id} className={styles.locationRow}>
+                            <span className={styles.locationText}>
+                              {[loc.city_name, loc.state_name, loc.country_name]
+                                .filter(Boolean)
+                                .join(", ")}
+                              {loc.shop_name ? ` — ${loc.shop_name}` : ""}
+                            </span>
+                            <button
+                              type="button"
+                              className={styles.locationDeleteButton}
+                              onClick={() =>
+                                handleDeleteSecondaryLocation(loc.id)
+                              }
+                              disabled={deletingLocationId === loc.id}
+                              title="Remove secondary location"
+                            >
+                              {deletingLocationId === loc.id ? "..." : "×"}
+                            </button>
+                          </div>
+                        ))}
+
+                      {artistLocations.filter(loc => !loc.is_primary).length ===
+                        0 && (
+                        <div className={styles.locationEmpty}>
+                          No secondary locations
+                        </div>
+                      )}
+
+                      <div className={styles.addLocationRow}>
+                        <Select
+                          value={newLocationCityId}
+                          onChange={e => setNewLocationCityId(e.target.value)}
+                        >
+                          <option value="">City...</option>
+                          {cities.map(city => (
+                            <option key={city.id} value={city.id}>
+                              {getCityDisplayName(city)}
+                            </option>
+                          ))}
+                        </Select>
+                        <Select
+                          value={newLocationShopId}
+                          onChange={e => setNewLocationShopId(e.target.value)}
+                        >
+                          <option value="">Shop (optional)</option>
+                          {shops.map(shop => (
+                            <option key={shop.id} value={shop.id}>
+                              {shop.shop_name}
+                            </option>
+                          ))}
+                        </Select>
+                        <button
+                          type="button"
+                          className={styles.addLocationButton}
+                          onClick={handleAddSecondaryLocation}
+                          disabled={!newLocationCityId || addingLocation}
+                        >
+                          {addingLocation ? "..." : "Add"}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : editingShopId && shopFormData ? (
+                  <>
+                    {saveError && <Message type="error" text={saveError} />}
+
+                    <form className={styles.modalForm}>
+                      <FormGroup>
+                        <Label htmlFor="shop_name" required>
+                          Shop Name
+                        </Label>
+                        <Input
+                          type="text"
+                          id="shop_name"
+                          value={shopFormData.shop_name}
+                          onChange={e =>
+                            handleShopFormChange("shop_name", e.target.value)
+                          }
+                          required
+                        />
+                      </FormGroup>
+
+                      <FormGroup>
+                        <Label htmlFor="shop_instagram_handle">
+                          Instagram Handle
+                        </Label>
+                        <Input
+                          type="text"
+                          id="shop_instagram_handle"
+                          value={shopFormData.instagram_handle}
+                          onChange={e =>
+                            handleShopFormChange(
+                              "instagram_handle",
+                              e.target.value
+                            )
+                          }
+                          placeholder="@username or username"
+                        />
+                      </FormGroup>
+
+                      <FormGroup>
+                        <Label htmlFor="shop_address">Address</Label>
+                        <Input
+                          type="text"
+                          id="shop_address"
+                          value={shopFormData.address}
+                          onChange={e =>
+                            handleShopFormChange("address", e.target.value)
+                          }
+                          placeholder="Street address"
+                        />
+                      </FormGroup>
+
+                      <FormGroup>
+                        <Label htmlFor="shop_contact">Contact</Label>
+                        <Input
+                          type="text"
+                          id="shop_contact"
+                          value={shopFormData.contact}
+                          onChange={e =>
+                            handleShopFormChange("contact", e.target.value)
+                          }
+                          placeholder="Email or other contact"
+                        />
+                      </FormGroup>
+
+                      <FormGroup>
+                        <Label htmlFor="shop_phone_number">Phone Number</Label>
+                        <Input
+                          type="tel"
+                          id="shop_phone_number"
+                          value={shopFormData.phone_number}
+                          onChange={e =>
+                            handleShopFormChange("phone_number", e.target.value)
+                          }
+                          placeholder="Phone number"
+                        />
+                      </FormGroup>
+
+                      <FormGroup>
+                        <Label htmlFor="shop_website_url">Website URL</Label>
+                        <Input
+                          type="url"
+                          id="shop_website_url"
+                          value={shopFormData.website_url}
+                          onChange={e =>
+                            handleShopFormChange("website_url", e.target.value)
+                          }
+                          placeholder="https://example.com"
+                        />
+                      </FormGroup>
+
+                      <FormGroup>
+                        <Label htmlFor="shop_city_id" required>
+                          City
+                        </Label>
+                        <Select
+                          id="shop_city_id"
+                          value={shopFormData.city_id}
+                          onChange={e =>
+                            handleShopFormChange("city_id", e.target.value)
+                          }
+                          required
+                        >
+                          <option value="">Select a city</option>
+                          {cities.map(city => (
+                            <option key={city.id} value={city.id}>
+                              {getCityDisplayName(city)}
+                            </option>
+                          ))}
+                        </Select>
+                      </FormGroup>
+                    </form>
+                  </>
+                ) : null}
+              </div>
+
+              <div className={styles.modalFooter}>
+                <button
+                  className={styles.cancelButton}
+                  onClick={handleCloseModal}
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+                {hasChanges && (
+                  <button
+                    className={styles.saveButton}
+                    onClick={handleSave}
+                    disabled={
+                      saving ||
+                      (editingArtistId &&
+                        (!formData?.name || !formData?.city_id)) ||
+                      (editingShopId &&
+                        (!shopFormData?.shop_name || !shopFormData?.city_id)) ||
+                      (editingCityId && !cityFormData?.city_name?.trim()) ||
+                      (editingCountryId &&
+                        !countryFormData?.country_name?.trim())
+                    }
+                  >
+                    {saving ? "Saving..." : "Save"}
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

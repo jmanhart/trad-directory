@@ -63,8 +63,9 @@ export default function ArtistInfo({ artist, imageUrl }: ArtistInfoProps) {
           )}
           {secondaryLocations.length > 0 && (
             <div className={styles.locationLine}>
+              <GlobeIcon className={styles.locationIcon} aria-hidden />
               <span className={styles.value}>
-                Also in: {secondaryLocations.join("; ")}
+                {secondaryLocations.join("; ")}
               </span>
             </div>
           )}

@@ -44,7 +44,7 @@ export default async function handler(req: any, res: any) {
         name,
         instagram_handle,
         is_traveling,
-        city: cities (
+        city: cities!artists_city_id_fkey (
           city_name,
           state: states (state_name),
           country: countries (country_name)

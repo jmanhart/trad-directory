@@ -20,7 +20,7 @@ const ARTIST_SELECT = `
   contact,
   city_id,
   is_traveling,
-  city: cities (
+  city: cities!artists_city_id_fkey (
     id,
     city_name,
     state: states (state_name),
@@ -114,7 +114,26 @@ export default async function handler(req: any, res: any) {
         throw errorById;
       }
 
+      const { data: locationsById } = await supabase
+        .from("artist_location")
+        .select(
+          `
+          id,
+          is_primary,
+          city_id,
+          shop_id,
+          city: cities (
+            city_name,
+            state: states (state_name),
+            country: countries (country_name)
+          ),
+          shop: tattoo_shops (id, shop_name, slug, instagram_handle)
+        `
+        )
+        .eq("artist_id", artistById.id);
+
       const result = formatArtist(artistById);
+      result.locations = formatLocations(locationsById || []);
       res.status(200).json({ result });
       return;
     }
@@ -132,12 +151,55 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
+    // Fetch secondary locations
+    const { data: locations } = await supabase
+      .from("artist_location")
+      .select(
+        `
+        id,
+        is_primary,
+        city_id,
+        shop_id,
+        city: cities (
+          city_name,
+          state: states (state_name),
+          country: countries (country_name)
+        ),
+        shop: tattoo_shops (id, shop_name, slug, instagram_handle)
+      `
+      )
+      .eq("artist_id", artistData.id);
+
     const result = formatArtist(artistData);
+    result.locations = formatLocations(locations || []);
     res.status(200).json({ result });
   } catch (error: any) {
     console.error("Unexpected error in /api/artists/[id]:", error);
     res.status(500).json({ error: "Internal server error" });
   }
+}
+
+function formatLocations(rows: any[]): any[] {
+  return rows.map(row => {
+    const city = Array.isArray(row.city) ? row.city[0] : row.city;
+    const shop = Array.isArray(row.shop) ? row.shop[0] : row.shop;
+    return {
+      id: row.id,
+      city_id: row.city_id,
+      city_name: city?.city_name || null,
+      state_name: Array.isArray(city?.state)
+        ? city.state[0]?.state_name
+        : city?.state?.state_name || null,
+      country_name: Array.isArray(city?.country)
+        ? city.country[0]?.country_name
+        : city?.country?.country_name || null,
+      shop_id: row.shop_id || null,
+      shop_name: shop?.shop_name || null,
+      shop_slug: shop?.slug || null,
+      shop_instagram_handle: shop?.instagram_handle || null,
+      is_primary: row.is_primary,
+    };
+  });
 }
 
 function formatArtist(data: any): Artist & Record<string, any> {

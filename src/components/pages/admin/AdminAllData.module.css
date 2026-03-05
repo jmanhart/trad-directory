@@ -595,6 +595,105 @@
   cursor: not-allowed;
 }
 
+/* Secondary Locations */
+.secondaryLocations {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.secondaryLocationsTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 1rem;
+}
+
+.locationRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  margin-bottom: 0.5rem;
+  background-color: var(--color-background);
+}
+
+.locationText {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.locationDeleteButton {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  border-radius: var(--border-radius);
+  color: #dc3545;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.locationDeleteButton:hover:not(:disabled) {
+  background-color: rgba(220, 53, 69, 0.1);
+  border-color: #dc3545;
+}
+
+.locationDeleteButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.locationEmpty {
+  font-size: 0.85rem;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+  padding: 0.5rem 0;
+}
+
+.addLocationRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.addLocationRow select {
+  flex: 1;
+  min-width: 0;
+}
+
+.addLocationButton {
+  padding: 0.5rem 1rem;
+  background-color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--border-radius);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.addLocationButton:hover:not(:disabled) {
+  background-color: var(--color-red-dark);
+  border-color: var(--color-red-dark);
+}
+
+.addLocationButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1400px) {
   .table {
