@@ -32,6 +32,11 @@ export default function ArtistCard({
     is_traveling: artist.is_traveling,
   });
 
+  const secondaryLocations = (artist.locations || [])
+    .filter(loc => !loc.is_primary)
+    .map(loc => formatArtistLocation(loc))
+    .filter(Boolean);
+
   return (
     <Link
       to={getArtistUrl(artist)}
@@ -52,7 +57,15 @@ export default function ArtistCard({
             {(locationString || artist.is_traveling) && (
               <div className={styles.locationLine}>
                 <GlobeIcon className={styles.locationIcon} aria-hidden />
-                <span className={styles.locationValue}>{locationString}</span>
+                <span className={styles.locationValue}>
+                  {locationString}
+                  {secondaryLocations.length > 0 && (
+                    <span className={styles.secondaryLocations}>
+                      {" + "}
+                      {secondaryLocations.join(", ")}
+                    </span>
+                  )}
+                </span>
               </div>
             )}
           </div>

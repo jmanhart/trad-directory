@@ -19,9 +19,15 @@ const ARTIST_SELECT = `
   url,
   contact,
   city_id,
+  secondary_city_id,
   is_traveling,
   city: cities!artists_city_id_fkey (
     id,
+    city_name,
+    state: states (state_name),
+    country: countries (country_name)
+  ),
+  secondary_city: cities!secondary_city_id (
     city_name,
     state: states (state_name),
     country: countries (country_name)
@@ -134,6 +140,7 @@ export default async function handler(req: any, res: any) {
 
       const result = formatArtist(artistById);
       result.locations = formatLocations(locationsById || []);
+      mergeSecondaryCity(result, artistById);
       res.status(200).json({ result });
       return;
     }
@@ -172,6 +179,7 @@ export default async function handler(req: any, res: any) {
 
     const result = formatArtist(artistData);
     result.locations = formatLocations(locations || []);
+    mergeSecondaryCity(result, artistData);
     res.status(200).json({ result });
   } catch (error: any) {
     console.error("Unexpected error in /api/artists/[id]:", error);
@@ -199,6 +207,32 @@ function formatLocations(rows: any[]): any[] {
       shop_instagram_handle: shop?.instagram_handle || null,
       is_primary: row.is_primary,
     };
+  });
+}
+
+function mergeSecondaryCity(result: any, rawData: any) {
+  const sc = Array.isArray(rawData.secondary_city)
+    ? rawData.secondary_city[0]
+    : rawData.secondary_city;
+  if (!sc?.city_name) return;
+
+  const alreadyExists = (result.locations || []).some(
+    (l: any) => !l.is_primary && l.city_name === sc.city_name
+  );
+  if (alreadyExists) return;
+
+  const state = Array.isArray(sc.state) ? sc.state[0] : sc.state;
+  const country = Array.isArray(sc.country) ? sc.country[0] : sc.country;
+
+  result.locations.push({
+    city_name: sc.city_name,
+    state_name: state?.state_name || null,
+    country_name: country?.country_name || null,
+    shop_id: null,
+    shop_name: null,
+    shop_slug: null,
+    shop_instagram_handle: null,
+    is_primary: false,
   });
 }
 

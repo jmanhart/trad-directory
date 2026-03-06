@@ -90,6 +90,10 @@
   font-size: var(--font-size-md);
 }
 
+.secondaryLocations {
+  color: var(--color-text-secondary);
+}
+
 .instagramButton {
   display: inline-flex;
   align-items: center;
