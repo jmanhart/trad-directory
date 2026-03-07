@@ -36,6 +36,13 @@
   margin-top: 2rem;
 }
 
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
 .noResults {
   text-align: center;
   margin-top: 20px;

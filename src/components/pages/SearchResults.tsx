@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { searchArtists, searchShops } from "../../services/api";
+import { useListControls } from "../../hooks/useListControls";
 import ResultsSection from "../results/ResultsSection";
 import SearchResultsDisplay from "../results/SearchResultsDisplay";
-// import SearchBar from "../common/SearchBar";
+import ListToolbar from "../common/ListToolbar";
+import Pagination from "../common/Pagination";
 import { trackSearch } from "../../utils/analytics";
 import styles from "./SearchResults.module.css";
 import { addBreadcrumb, captureException, Sentry } from "../../utils/sentry";
@@ -132,6 +134,30 @@ function SearchResults() {
     }
   };
 
+  // Combine artists + shops for pagination
+  const allResults = hasSearched
+    ? [...filteredArtists, ...filteredShops]
+    : [...artists, ...shops];
+
+  const noopFilter = useCallback(() => true, []);
+
+  const {
+    viewMode,
+    setViewMode,
+    currentPage,
+    setCurrentPage,
+    perPage,
+    setPerPage,
+    totalPages,
+    totalFiltered,
+    showingFrom,
+    showingTo,
+  } = useListControls({
+    items: allResults,
+    storageKey: "search",
+    filterFn: noopFilter,
+  });
+
   const handleBackToHome = () => {
     navigate("/");
   };
@@ -161,6 +187,26 @@ function SearchResults() {
   const hasNoResults =
     hasSearched && filteredArtists.length === 0 && filteredShops.length === 0;
 
+  // Paginate artists and shops separately
+  const displayArtists = hasSearched ? filteredArtists : artists;
+  const displayShops = hasSearched ? filteredShops : shops;
+
+  const startIdx = (currentPage - 1) * perPage;
+  const endIdx = startIdx + perPage;
+
+  // Create combined paginated view
+  const combinedLength = displayArtists.length + displayShops.length;
+  const paginatedArtists = displayArtists.slice(
+    Math.max(0, startIdx),
+    Math.min(displayArtists.length, endIdx)
+  );
+  const shopStartIdx = Math.max(0, startIdx - displayArtists.length);
+  const shopEndIdx = Math.max(0, endIdx - displayArtists.length);
+  const paginatedShops =
+    endIdx > displayArtists.length
+      ? displayShops.slice(shopStartIdx, shopEndIdx)
+      : [];
+
   return (
     <div className={styles.container}>
       <SearchResultsDisplay
@@ -170,6 +216,19 @@ function SearchResults() {
         filteredShops={filteredShops}
         navigate={navigate}
       />
+
+      {combinedLength > 0 && (
+        <ListToolbar
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          perPage={perPage}
+          onPerPageChange={setPerPage}
+          totalResults={totalFiltered}
+          showingFrom={showingFrom}
+          showingTo={showingTo}
+        />
+      )}
+
       {hasNoResults && (
         <div className={styles.noResults}>
           <h3>No results found</h3>
@@ -183,13 +242,22 @@ function SearchResults() {
         </div>
       )}
       <ResultsSection
-        artists={filteredArtists}
-        shops={filteredShops}
+        artists={paginatedArtists}
+        shops={paginatedShops}
         hasSearched={hasSearched}
         showAllIfNoSearch={true}
-        allArtists={artists}
-        allShops={shops}
+        allArtists={paginatedArtists}
+        allShops={paginatedShops}
+        viewMode={viewMode}
       />
+
+      {combinedLength > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      )}
     </div>
   );
 }

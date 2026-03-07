@@ -1,19 +1,34 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { fetchAllShops } from "../../services/api";
+import { useListControls } from "../../hooks/useListControls";
 import ShopCard from "../shop/ShopCard";
+import ShopRow from "../shop/ShopRow";
+import ShopFilters from "../shop/ShopFilters";
 import LocationResultsHeader from "../results/LocationResultsHeader";
+import ListToolbar from "../common/ListToolbar";
+import Pagination from "../common/Pagination";
+import type { Shop } from "../../types";
 import styles from "./AllShopsPage.module.css";
 
-interface Shop {
-  id: number;
-  shop_name: string;
-  slug?: string | null;
-  instagram_handle?: string;
-  address?: string;
-  city_name?: string;
-  state_name?: string;
-  country_name?: string;
-  created_at?: string | null;
+function shopFilterFn(
+  shop: Shop,
+  filters: Record<string, string>
+): boolean {
+  if (filters.country && shop.country_name !== filters.country) return false;
+  return true;
+}
+
+function shopSortFn(
+  a: Shop,
+  b: Shop,
+  filters: Record<string, string>
+): number {
+  if (filters.sort === "recent") {
+    const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return dateB - dateA;
+  }
+  return a.shop_name.localeCompare(b.shop_name);
 }
 
 export default function AllShopsPage() {
@@ -38,6 +53,38 @@ export default function AllShopsPage() {
     loadShops();
   }, []);
 
+  const filterFn = useCallback(shopFilterFn, []);
+  const sortFn = useCallback(shopSortFn, []);
+
+  const {
+    viewMode,
+    setViewMode,
+    filters,
+    setFilter,
+    clearFilters,
+    activeFilterCount,
+    currentPage,
+    setCurrentPage,
+    perPage,
+    setPerPage,
+    totalPages,
+    totalFiltered,
+    paginatedItems,
+    showingFrom,
+    showingTo,
+  } = useListControls({
+    items: shops,
+    storageKey: "shops",
+    filterFn,
+    sortFn,
+  });
+
+  const availableCountries = useMemo(
+    () =>
+      [...new Set(shops.map(s => s.country_name).filter(Boolean))].sort(),
+    [shops]
+  );
+
   if (isLoading) {
     return (
       <div className={styles.container}>
@@ -57,20 +104,56 @@ export default function AllShopsPage() {
   return (
     <div className={styles.container}>
       <div className={styles.searchInfo}>
-        <LocationResultsHeader title="All Shops" resultsCount={shops.length} />
+        <LocationResultsHeader
+          title="All Shops"
+          resultsCount={totalFiltered}
+        />
       </div>
 
-      <div className={styles.grid}>
-        {shops.map(shop => (
-          <ShopCard key={shop.id} shop={shop} />
-        ))}
-      </div>
+      <ListToolbar
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        activeFilterCount={activeFilterCount}
+        perPage={perPage}
+        onPerPageChange={setPerPage}
+        totalResults={totalFiltered}
+        showingFrom={showingFrom}
+        showingTo={showingTo}
+        filterContent={
+          <ShopFilters
+            filters={filters}
+            onFilterChange={setFilter}
+            onClear={clearFilters}
+            availableCountries={availableCountries}
+          />
+        }
+      />
 
-      {shops.length === 0 && (
-        <div className={styles.noResults}>
-          <p>No shops found.</p>
+      {viewMode === "grid" ? (
+        <div className={styles.grid}>
+          {paginatedItems.map(shop => (
+            <ShopCard key={shop.id} shop={shop} />
+          ))}
+        </div>
+      ) : (
+        <div className={styles.list}>
+          {paginatedItems.map(shop => (
+            <ShopRow key={shop.id} shop={shop} />
+          ))}
         </div>
       )}
+
+      {paginatedItems.length === 0 && (
+        <div className={styles.noResults}>
+          <p>No shops found. Try adjusting your filters.</p>
+        </div>
+      )}
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

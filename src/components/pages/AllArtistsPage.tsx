@@ -1,19 +1,35 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { fetchTattooShopsWithArtists } from "../../services/api";
+import { useListControls } from "../../hooks/useListControls";
 import ArtistCard from "../artist/ArtistCard";
+import ArtistRow from "../artist/ArtistRow";
+import ArtistFilters from "../artist/ArtistFilters";
 import LocationResultsHeader from "../results/LocationResultsHeader";
+import ListToolbar from "../common/ListToolbar";
+import Pagination from "../common/Pagination";
+import type { Artist } from "../../types";
 import styles from "./AllArtistsPage.module.css";
 
-interface Artist {
-  id: number;
-  name: string;
-  instagram_handle?: string;
-  shop_name?: string;
-  shop_id?: number;
-  city_name?: string;
-  state_name?: string;
-  country_name?: string;
-  created_at?: string | null;
+function artistFilterFn(
+  artist: Artist,
+  filters: Record<string, string>
+): boolean {
+  if (filters.country && artist.country_name !== filters.country) return false;
+  if (filters.traveling === "true" && !artist.is_traveling) return false;
+  return true;
+}
+
+function artistSortFn(
+  a: Artist,
+  b: Artist,
+  filters: Record<string, string>
+): number {
+  if (filters.sort === "recent") {
+    const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return dateB - dateA;
+  }
+  return a.name.localeCompare(b.name);
 }
 
 export default function AllArtistsPage() {
@@ -38,6 +54,38 @@ export default function AllArtistsPage() {
     loadArtists();
   }, []);
 
+  const filterFn = useCallback(artistFilterFn, []);
+  const sortFn = useCallback(artistSortFn, []);
+
+  const {
+    viewMode,
+    setViewMode,
+    filters,
+    setFilter,
+    clearFilters,
+    activeFilterCount,
+    currentPage,
+    setCurrentPage,
+    perPage,
+    setPerPage,
+    totalPages,
+    totalFiltered,
+    paginatedItems,
+    showingFrom,
+    showingTo,
+  } = useListControls({
+    items: artists,
+    storageKey: "artists",
+    filterFn,
+    sortFn,
+  });
+
+  const availableCountries = useMemo(
+    () =>
+      [...new Set(artists.map(a => a.country_name).filter(Boolean))].sort(),
+    [artists]
+  );
+
   if (isLoading) {
     return (
       <div className={styles.container}>
@@ -59,21 +107,54 @@ export default function AllArtistsPage() {
       <div className={styles.searchInfo}>
         <LocationResultsHeader
           title="All Artists"
-          resultsCount={artists.length}
+          resultsCount={totalFiltered}
         />
       </div>
 
-      <div className={styles.grid}>
-        {artists.map(artist => (
-          <ArtistCard key={artist.id} artist={artist} />
-        ))}
-      </div>
+      <ListToolbar
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        activeFilterCount={activeFilterCount}
+        perPage={perPage}
+        onPerPageChange={setPerPage}
+        totalResults={totalFiltered}
+        showingFrom={showingFrom}
+        showingTo={showingTo}
+        filterContent={
+          <ArtistFilters
+            filters={filters}
+            onFilterChange={setFilter}
+            onClear={clearFilters}
+            availableCountries={availableCountries}
+          />
+        }
+      />
 
-      {artists.length === 0 && (
-        <div className={styles.noResults}>
-          <p>No artists found. Try adjusting your search.</p>
+      {viewMode === "grid" ? (
+        <div className={styles.grid}>
+          {paginatedItems.map(artist => (
+            <ArtistCard key={artist.id} artist={artist} />
+          ))}
+        </div>
+      ) : (
+        <div className={styles.list}>
+          {paginatedItems.map(artist => (
+            <ArtistRow key={artist.id} artist={artist} />
+          ))}
         </div>
       )}
+
+      {paginatedItems.length === 0 && (
+        <div className={styles.noResults}>
+          <p>No artists found. Try adjusting your filters.</p>
+        </div>
+      )}
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

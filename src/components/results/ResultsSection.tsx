@@ -1,7 +1,10 @@
 import { useState } from "react";
 import ArtistCard from "../artist/ArtistCard";
+import ArtistRow from "../artist/ArtistRow";
 import ShopCard from "../shop/ShopCard";
+import ShopRow from "../shop/ShopRow";
 import { Tabs } from "../common/Tabs";
+import type { ViewMode } from "../../hooks/useListControls";
 import styles from "./ResultsSection.module.css";
 
 const ARTISTS_TAB_ID = "artists";
@@ -36,6 +39,57 @@ interface ResultsSectionProps {
   showAllIfNoSearch?: boolean;
   allArtists?: Artist[];
   allShops?: Shop[];
+  viewMode?: ViewMode;
+}
+
+function ArtistList({
+  artists,
+  viewMode = "grid",
+}: {
+  artists: Artist[];
+  viewMode?: ViewMode;
+}) {
+  if (viewMode === "row") {
+    return (
+      <div className={styles.list}>
+        {artists.map(artist => (
+          <ArtistRow key={`artist-${artist.id}`} artist={artist} />
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className={styles.grid}>
+      {artists.map(artist => (
+        <ArtistCard key={`artist-${artist.id}`} artist={artist} />
+      ))}
+    </div>
+  );
+}
+
+function ShopList({
+  shops,
+  viewMode = "grid",
+}: {
+  shops: Shop[];
+  viewMode?: ViewMode;
+}) {
+  if (viewMode === "row") {
+    return (
+      <div className={styles.list}>
+        {shops.map(shop => (
+          <ShopRow key={`shop-${shop.id}`} shop={shop} />
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className={styles.grid}>
+      {shops.map(shop => (
+        <ShopCard key={`shop-${shop.id}`} shop={shop} />
+      ))}
+    </div>
+  );
 }
 
 export default function ResultsSection({
@@ -45,6 +99,7 @@ export default function ResultsSection({
   showAllIfNoSearch = false,
   allArtists = [],
   allShops = [],
+  viewMode = "grid",
 }: ResultsSectionProps) {
   const [activeTab, setActiveTab] = useState(ARTISTS_TAB_ID);
 
@@ -73,18 +128,10 @@ export default function ResultsSection({
             onTabChange={setActiveTab}
           />
           {activeTab === ARTISTS_TAB_ID && (
-            <div className={styles.grid}>
-              {artistsToDisplay.map(artist => (
-                <ArtistCard key={`artist-${artist.id}`} artist={artist} />
-              ))}
-            </div>
+            <ArtistList artists={artistsToDisplay} viewMode={viewMode} />
           )}
           {activeTab === SHOPS_TAB_ID && (
-            <div className={styles.grid}>
-              {shopsToDisplay.map(shop => (
-                <ShopCard key={`shop-${shop.id}`} shop={shop} />
-              ))}
-            </div>
+            <ShopList shops={shopsToDisplay} viewMode={viewMode} />
           )}
         </div>
       );
@@ -94,21 +141,13 @@ export default function ResultsSection({
         {allArtists.length > 0 && (
           <>
             <h2 className={styles.sectionTitle}>Artists</h2>
-            <div className={styles.grid}>
-              {allArtists.map(artist => (
-                <ArtistCard key={`artist-${artist.id}`} artist={artist} />
-              ))}
-            </div>
+            <ArtistList artists={allArtists} viewMode={viewMode} />
           </>
         )}
         {allShops.length > 0 && (
           <>
             <h2 className={styles.sectionTitle}>Shops</h2>
-            <div className={styles.grid}>
-              {allShops.map(shop => (
-                <ShopCard key={`shop-${shop.id}`} shop={shop} />
-              ))}
-            </div>
+            <ShopList shops={allShops} viewMode={viewMode} />
           </>
         )}
       </div>
@@ -128,18 +167,10 @@ export default function ResultsSection({
           onTabChange={setActiveTab}
         />
         {activeTab === ARTISTS_TAB_ID && (
-          <div className={styles.grid}>
-            {artistsToDisplay.map(artist => (
-              <ArtistCard key={`artist-${artist.id}`} artist={artist} />
-            ))}
-          </div>
+          <ArtistList artists={artistsToDisplay} viewMode={viewMode} />
         )}
         {activeTab === SHOPS_TAB_ID && (
-          <div className={styles.grid}>
-            {shopsToDisplay.map(shop => (
-              <ShopCard key={`shop-${shop.id}`} shop={shop} />
-            ))}
-          </div>
+          <ShopList shops={shopsToDisplay} viewMode={viewMode} />
         )}
       </div>
     );
@@ -148,18 +179,10 @@ export default function ResultsSection({
   return (
     <div className={styles.resultsContainer}>
       {hasArtists && (
-        <div className={styles.grid}>
-          {artistsToDisplay.map(artist => (
-            <ArtistCard key={`artist-${artist.id}`} artist={artist} />
-          ))}
-        </div>
+        <ArtistList artists={artistsToDisplay} viewMode={viewMode} />
       )}
       {hasShops && (
-        <div className={styles.grid}>
-          {shopsToDisplay.map(shop => (
-            <ShopCard key={`shop-${shop.id}`} shop={shop} />
-          ))}
-        </div>
+        <ShopList shops={shopsToDisplay} viewMode={viewMode} />
       )}
       {!hasArtists && !hasShops && (
         <p className={styles.noResults}>No results found. Please try again.</p>
