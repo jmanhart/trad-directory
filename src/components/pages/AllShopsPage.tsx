@@ -65,13 +65,9 @@ export default function AllShopsPage() {
     activeFilterCount,
     currentPage,
     setCurrentPage,
-    perPage,
-    setPerPage,
     totalPages,
     totalFiltered,
     paginatedItems,
-    showingFrom,
-    showingTo,
   } = useListControls({
     items: shops,
     storageKey: "shops",
@@ -114,11 +110,6 @@ export default function AllShopsPage() {
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         activeFilterCount={activeFilterCount}
-        perPage={perPage}
-        onPerPageChange={setPerPage}
-        totalResults={totalFiltered}
-        showingFrom={showingFrom}
-        showingTo={showingTo}
         filterContent={
           <ShopFilters
             filters={filters}

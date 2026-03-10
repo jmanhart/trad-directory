@@ -66,13 +66,9 @@ export default function AllArtistsPage() {
     activeFilterCount,
     currentPage,
     setCurrentPage,
-    perPage,
-    setPerPage,
     totalPages,
     totalFiltered,
     paginatedItems,
-    showingFrom,
-    showingTo,
   } = useListControls({
     items: artists,
     storageKey: "artists",
@@ -115,11 +111,6 @@ export default function AllArtistsPage() {
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         activeFilterCount={activeFilterCount}
-        perPage={perPage}
-        onPerPageChange={setPerPage}
-        totalResults={totalFiltered}
-        showingFrom={showingFrom}
-        showingTo={showingTo}
         filterContent={
           <ArtistFilters
             filters={filters}

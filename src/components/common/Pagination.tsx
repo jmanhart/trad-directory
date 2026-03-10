@@ -7,24 +7,28 @@ interface PaginationProps {
 }
 
 function getPageNumbers(current: number, total: number): (number | "...")[] {
-  if (total <= 7) {
+  if (total <= 5) {
     return Array.from({ length: total }, (_, i) => i + 1);
   }
 
-  const pages: (number | "...")[] = [1];
+  const pages: (number | "...")[] = [];
 
-  if (current > 3) pages.push("...");
+  // Show up to 5 pages centred around current
+  let start = Math.max(1, current - 2);
+  let end = start + 4;
 
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
+  if (end > total) {
+    end = total;
+    start = Math.max(1, end - 4);
+  }
+
+  if (start > 1) pages.push("...");
 
   for (let i = start; i <= end; i++) {
     pages.push(i);
   }
 
-  if (current < total - 2) pages.push("...");
-
-  pages.push(total);
+  if (end < total) pages.push("...");
 
   return pages;
 }

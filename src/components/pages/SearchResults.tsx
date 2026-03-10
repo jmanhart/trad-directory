@@ -147,11 +147,8 @@ function SearchResults() {
     currentPage,
     setCurrentPage,
     perPage,
-    setPerPage,
     totalPages,
     totalFiltered,
-    showingFrom,
-    showingTo,
   } = useListControls({
     items: allResults,
     storageKey: "search",
@@ -221,11 +218,6 @@ function SearchResults() {
         <ListToolbar
           viewMode={viewMode}
           onViewModeChange={setViewMode}
-          perPage={perPage}
-          onPerPageChange={setPerPage}
-          totalResults={totalFiltered}
-          showingFrom={showingFrom}
-          showingTo={showingTo}
         />
       )}
 

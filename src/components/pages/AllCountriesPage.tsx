@@ -1,9 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import {
-  fetchAllCountries,
-  fetchTattooShopsWithArtists,
-  fetchAllShops,
-} from "../../services/api";
+import { useState, useEffect, useCallback } from "react";
+import { fetchCountriesWithCounts } from "../../services/api";
 import { useListControls } from "../../hooks/useListControls";
 import CountryCard, { type CountryCardData } from "../country/CountryCard";
 import CountryRow from "../country/CountryRow";
@@ -12,11 +8,6 @@ import LocationResultsHeader from "../results/LocationResultsHeader";
 import ListToolbar from "../common/ListToolbar";
 import Pagination from "../common/Pagination";
 import styles from "./AllCountriesPage.module.css";
-
-function normalizeCountryName(name: string | undefined | null): string {
-  if (!name || name === "N/A") return "";
-  return name.trim();
-}
 
 function countrySortFn(
   a: CountryCardData,
@@ -29,14 +20,8 @@ function countrySortFn(
 }
 
 export default function AllCountriesPage() {
-  const [countries, setCountries] = useState<
-    { id: number; country_name: string }[]
-  >([]);
-  const [artists, setArtists] = useState<
-    { id: number; country_name?: string }[]
-  >([]);
-  const [shops, setShops] = useState<
-    { id: number; country_name?: string }[]
+  const [countriesWithCounts, setCountriesWithCounts] = useState<
+    CountryCardData[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,14 +30,8 @@ export default function AllCountriesPage() {
     async function loadData() {
       try {
         setIsLoading(true);
-        const [countriesData, artistsData, shopsData] = await Promise.all([
-          fetchAllCountries(),
-          fetchTattooShopsWithArtists(),
-          fetchAllShops(),
-        ]);
-        setCountries(countriesData);
-        setArtists(artistsData);
-        setShops(shopsData);
+        const data = await fetchCountriesWithCounts();
+        setCountriesWithCounts(data);
       } catch (err) {
         console.error("Error loading countries data:", err);
         setError("Failed to load countries");
@@ -63,34 +42,6 @@ export default function AllCountriesPage() {
 
     loadData();
   }, []);
-
-  const countriesWithCounts: CountryCardData[] = useMemo(() => {
-    const artistCountByCountry: Record<string, number> = {};
-    const shopCountByCountry: Record<string, number> = {};
-
-    artists.forEach(a => {
-      const key = normalizeCountryName(a.country_name);
-      if (key)
-        artistCountByCountry[key] = (artistCountByCountry[key] ?? 0) + 1;
-    });
-
-    shops.forEach(s => {
-      const key = normalizeCountryName(s.country_name);
-      if (key) shopCountByCountry[key] = (shopCountByCountry[key] ?? 0) + 1;
-    });
-
-    return countries.map(c => {
-      const name = c.country_name;
-      const artistCount = artistCountByCountry[name] ?? 0;
-      const shopCount = shopCountByCountry[name] ?? 0;
-      return {
-        id: c.id,
-        country_name: name,
-        artistCount,
-        shopCount,
-      };
-    });
-  }, [countries, artists, shops]);
 
   const sortFn = useCallback(countrySortFn, []);
 
@@ -103,13 +54,9 @@ export default function AllCountriesPage() {
     activeFilterCount,
     currentPage,
     setCurrentPage,
-    perPage,
-    setPerPage,
     totalPages,
     totalFiltered,
     paginatedItems,
-    showingFrom,
-    showingTo,
   } = useListControls({
     items: countriesWithCounts,
     storageKey: "countries",
@@ -145,11 +92,6 @@ export default function AllCountriesPage() {
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         activeFilterCount={activeFilterCount}
-        perPage={perPage}
-        onPerPageChange={setPerPage}
-        totalResults={totalFiltered}
-        showingFrom={showingFrom}
-        showingTo={showingTo}
         filterContent={
           <CountryFilters
             filters={filters}

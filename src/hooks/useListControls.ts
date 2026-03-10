@@ -24,7 +24,7 @@ function getStoredViewMode(): ViewMode {
 
 export function useListControls<T>({
   items,
-  defaultPerPage = 25,
+  defaultPerPage = 50,
   filterFn,
   sortFn,
 }: UseListControlsOptions<T>) {

@@ -737,6 +737,74 @@ export async function fetchAllCountries(): Promise<Country[]> {
   }
 }
 
+/**
+ * Fetch all countries with artist and shop counts.
+ * Counts artists via artist_location → cities → countries join so that
+ * every location (not just primary) is counted and each artist is only
+ * counted once per country.
+ */
+export async function fetchCountriesWithCounts(): Promise<
+  { id: number; country_name: string; artistCount: number; shopCount: number }[]
+> {
+  try {
+    // 1. All countries
+    const { data: countries, error: cErr } = await supabase
+      .from("countries")
+      .select("id, country_name")
+      .order("country_name");
+
+    if (cErr) throw new Error(cErr.message);
+
+    // 2. Artist counts: join artist_location → cities to get country_id,
+    //    then count distinct artist_id per country.
+    const { data: artistLocs, error: alErr } = await supabase
+      .from("artist_location")
+      .select("artist_id, city:cities!inner(country_id)");
+
+    if (alErr) throw new Error(alErr.message);
+
+    const artistCountByCountryId: Record<number, Set<number>> = {};
+    (artistLocs || []).forEach((row: any) => {
+      const countryId = Array.isArray(row.city)
+        ? row.city[0]?.country_id
+        : row.city?.country_id;
+      if (countryId != null) {
+        if (!artistCountByCountryId[countryId])
+          artistCountByCountryId[countryId] = new Set();
+        artistCountByCountryId[countryId].add(row.artist_id);
+      }
+    });
+
+    // 3. Shop counts: tattoo_shops → cities → countries
+    const { data: shops, error: sErr } = await supabase
+      .from("tattoo_shops")
+      .select("id, city:cities!inner(country_id)");
+
+    if (sErr) throw new Error(sErr.message);
+
+    const shopCountByCountryId: Record<number, number> = {};
+    (shops || []).forEach((row: any) => {
+      const countryId = Array.isArray(row.city)
+        ? row.city[0]?.country_id
+        : row.city?.country_id;
+      if (countryId != null) {
+        shopCountByCountryId[countryId] =
+          (shopCountByCountryId[countryId] ?? 0) + 1;
+      }
+    });
+
+    return (countries || []).map((c: any) => ({
+      id: c.id,
+      country_name: c.country_name,
+      artistCount: artistCountByCountryId[c.id]?.size ?? 0,
+      shopCount: shopCountByCountryId[c.id] ?? 0,
+    }));
+  } catch (err) {
+    console.error("Error in fetchCountriesWithCounts:", err);
+    throw err;
+  }
+}
+
 // Fetch recently added countries (ordered by created_at or id descending, limit to most recent)
 export async function fetchRecentCountries(limit: number = 6): Promise<Country[]> {
   try {

@@ -41,17 +41,6 @@ export default function ArtistFilters({
         ))}
       </select>
 
-      <label className={styles.checkbox}>
-        <input
-          type="checkbox"
-          checked={filters.traveling === "true"}
-          onChange={e =>
-            onFilterChange("traveling", e.target.checked ? "true" : "")
-          }
-        />
-        Traveling only
-      </label>
-
       {hasFilters && (
         <button
           className={styles.clearBtn}
