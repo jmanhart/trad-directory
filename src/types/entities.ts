@@ -47,6 +47,8 @@ export interface City {
   city_name: string;
   state_name?: string | null;
   country_name?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   created_at?: string | null;
 }
 

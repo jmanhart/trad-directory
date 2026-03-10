@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { requireAdminAuth } from "./_middleware/auth";
+import { geocodeCity } from "./_utils/geocode";
 
 interface AddCityData {
   city_name: string;
@@ -56,6 +57,31 @@ export default async function handler(req: any, res: any) {
 
     if (data.state_id) {
       cityData.state_id = data.state_id;
+    }
+
+    // Look up state/country names for geocoding
+    let stateName: string | null = null;
+    let countryName: string | null = null;
+    if (data.state_id) {
+      const { data: stateRow } = await supabase
+        .from("states")
+        .select("state_name, country:countries(country_name)")
+        .eq("id", data.state_id)
+        .single();
+      if (stateRow) {
+        stateName = stateRow.state_name;
+        const country = Array.isArray(stateRow.country)
+          ? stateRow.country[0]
+          : stateRow.country;
+        countryName = (country as any)?.country_name || null;
+      }
+    }
+
+    // Geocode the city
+    const coords = await geocodeCity(data.city_name, stateName, countryName);
+    if (coords) {
+      cityData.latitude = coords.lat;
+      cityData.longitude = coords.lng;
     }
 
     const { data: newCity, error: cityError } = await supabase

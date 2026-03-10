@@ -77,7 +77,7 @@ export default function HeroMessageText() {
       </Link>{" "}
       tattoo shops in{" "}
       <Link
-        to="/countries"
+        to="/map"
         className={styles.metricLink}
         onClick={() =>
           trackHeroMessageClick({

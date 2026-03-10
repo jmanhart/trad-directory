@@ -35,7 +35,7 @@ export default async function handler(req: any, res: any) {
     // Fetch all cities first (without relationships to avoid null FK issues)
     const { data: cities, error: citiesError } = await supabase
       .from("cities")
-      .select("id, city_name, state_id")
+      .select("id, city_name, state_id, latitude, longitude")
       .order("city_name");
 
     if (citiesError) {
@@ -100,6 +100,8 @@ export default async function handler(req: any, res: any) {
         state_name: state?.state_name || null,
         country_id: state?.country_id || null,
         country_name: state?.country_name || null,
+        latitude: city.latitude || null,
+        longitude: city.longitude || null,
       };
     });
 

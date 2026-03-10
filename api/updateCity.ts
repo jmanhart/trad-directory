@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { requireAdminAuth } from "./_middleware/auth";
+import { geocodeCity } from "./_utils/geocode";
 
 export default async function handler(req: any, res: any) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -40,6 +41,42 @@ export default async function handler(req: any, res: any) {
     const updateData: any = {};
     if (data.city_name !== undefined) updateData.city_name = data.city_name;
     if (data.state_id !== undefined) updateData.state_id = data.state_id || null;
+
+    // Re-geocode if city name or state changed
+    if (data.city_name !== undefined || data.state_id !== undefined) {
+      // Fetch current city to fill in any unchanged fields
+      const { data: currentCity } = await supabase
+        .from("cities")
+        .select("city_name, state_id")
+        .eq("id", id)
+        .single();
+
+      const cityName = data.city_name ?? currentCity?.city_name;
+      const stateId = data.state_id !== undefined ? data.state_id : currentCity?.state_id;
+
+      let stateName: string | null = null;
+      let countryName: string | null = null;
+      if (stateId) {
+        const { data: stateRow } = await supabase
+          .from("states")
+          .select("state_name, country:countries(country_name)")
+          .eq("id", stateId)
+          .single();
+        if (stateRow) {
+          stateName = stateRow.state_name;
+          const country = Array.isArray(stateRow.country)
+            ? stateRow.country[0]
+            : stateRow.country;
+          countryName = (country as any)?.country_name || null;
+        }
+      }
+
+      const coords = await geocodeCity(cityName, stateName, countryName);
+      if (coords) {
+        updateData.latitude = coords.lat;
+        updateData.longitude = coords.lng;
+      }
+    }
 
     const { data: updated, error } = await supabase
       .from("cities")

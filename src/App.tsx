@@ -14,6 +14,7 @@ import AllArtistsPage from "./components/pages/AllArtistsPage";
 import AllShopsPage from "./components/pages/AllShopsPage";
 import AllCountriesPage from "./components/pages/AllCountriesPage";
 import UnitedStatesMapPage from "./components/pages/UnitedStatesMapPage";
+import MapPage from "./components/pages/MapPage";
 import TypeTestingPage from "./components/pages/TypeTestingPage";
 import styles from "./App.module.css";
 import { Sentry } from "./utils/sentry";
@@ -59,7 +60,7 @@ const SentryApp = Sentry.withErrorBoundary(App, {
   },
 });
 
-const PAGES_WITHOUT_FOOTER = ["/artists", "/shops", "/countries"];
+const PAGES_WITHOUT_FOOTER = ["/artists", "/shops", "/countries", "/map"];
 
 function AppContent() {
   const location = useLocation();
@@ -102,6 +103,7 @@ function AppContent() {
           <Route path="/countries" element={<AllCountriesPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/united-states" element={<UnitedStatesMapPage />} />
+          <Route path="/map" element={<MapPage />} />
           <Route path="/type-test" element={<TypeTestingPage />} />
           <Route path="/shop/:slugOrId" element={<ShopPage />} />
           <Route path="/search-results" element={<SearchResults />} />
