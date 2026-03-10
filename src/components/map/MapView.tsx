@@ -12,6 +12,8 @@ import styles from "./MapView.module.css";
 
 const WORLD_GEO_URL =
   "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+const US_STATES_GEO_URL =
+  "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
 export interface CityDot {
   cityName: string;
@@ -20,6 +22,7 @@ export interface CityDot {
   lat: number;
   lng: number;
   artistCount: number;
+  shopCount: number;
 }
 
 // Map country names from our DB to Natural Earth GeoJSON names
@@ -40,6 +43,7 @@ interface MapViewProps {
   cityData: CityDot[];
   onCountrySelect?: (countryName: string | null) => void;
   onCityClick?: (city: CityDot) => void;
+  selectedCity?: CityDot | null;
 }
 
 function getDotRadius(
@@ -68,6 +72,7 @@ export default function MapView({
   cityData,
   onCountrySelect,
   onCityClick,
+  selectedCity,
 }: MapViewProps) {
   const isMobile = useIsMobile();
   const [hovered, setHovered] = useState<
@@ -93,8 +98,9 @@ export default function MapView({
     }
   };
 
+  const maxZoom = 20;
   const handleZoomIn = () =>
-    setPosition(p => ({ ...p, zoom: Math.min(p.zoom * 1.5, 8) }));
+    setPosition(p => ({ ...p, zoom: Math.min(p.zoom * 1.5, maxZoom) }));
   const handleZoomOut = () =>
     setPosition(p => ({ ...p, zoom: Math.max(p.zoom / 1.5, 1) }));
   const handleReset = useCallback(() => {
@@ -148,6 +154,25 @@ export default function MapView({
     [cityData, onCountrySelect]
   );
 
+  const handleDotClick = useCallback(
+    (city: CityDot) => {
+      // Center map on the clicked city
+      setPosition(prev => ({
+        coordinates: [city.lng, city.lat],
+        zoom: Math.max(prev.zoom, 6),
+      }));
+      setJumpKey(k => k + 1);
+      setHovered(null);
+      onCityClick?.(city);
+    },
+    [onCityClick]
+  );
+
+  const isSelected = (city: CityDot) =>
+    selectedCity?.cityName === city.cityName &&
+    selectedCity?.lat === city.lat &&
+    selectedCity?.lng === city.lng;
+
   return (
     <div className={styles.mapWrapper} onMouseMove={handleMouseMove}>
       <div className={styles.zoomControls}>
@@ -196,7 +221,7 @@ export default function MapView({
             })
           }
           minZoom={1}
-          maxZoom={8}
+          maxZoom={maxZoom}
           filterZoomEvent={filterZoomEvent}
         >
           <Geographies geography={WORLD_GEO_URL}>
@@ -231,14 +256,31 @@ export default function MapView({
               })
             }
           </Geographies>
+          <Geographies geography={US_STATES_GEO_URL}>
+            {({ geographies }) =>
+              geographies.map(geo => (
+                <Geography
+                  key={geo.rsmKey}
+                  geography={geo}
+                  fill="none"
+                  stroke="var(--color-surface)"
+                  strokeWidth={0.3}
+                  style={{
+                    default: { outline: "none" },
+                    hover: { outline: "none" },
+                    pressed: { outline: "none" },
+                  }}
+                />
+              ))
+            }
+          </Geographies>
           {cityData.map((city, i) => {
             const baseR = getDotRadius(city.artistCount, maxCount, isMobile);
             const r = isMobile
-              ? Math.max(4, baseR / Math.sqrt(position.zoom))
-              : baseR / position.zoom;
-            const tapR = isMobile
-              ? Math.max(10, r)
-              : 0;
+              ? Math.max(2, baseR / position.zoom)
+              : Math.max(1.5, baseR / position.zoom);
+            const tapR = isMobile ? Math.max(10, r) : 0;
+            const selected = isSelected(city);
             return (
               <Marker
                 key={`${city.cityName}-${city.lat}-${city.lng}-${i}`}
@@ -248,14 +290,27 @@ export default function MapView({
                   <circle
                     r={tapR}
                     fill="transparent"
-                    onClick={() => onCityClick?.(city)}
+                    onClick={() => handleDotClick(city)}
                     style={{ cursor: "pointer" }}
+                  />
+                )}
+                {selected && (
+                  <circle
+                    r={r + 3 / position.zoom}
+                    fill="none"
+                    stroke="var(--color-primary)"
+                    strokeWidth={2 / position.zoom}
+                    className={styles.pulseRing}
                   />
                 )}
                 <circle
                   r={r}
-                  fill="var(--color-primary)"
-                  fillOpacity={0.8}
+                  fill={
+                    selected
+                      ? "var(--color-primary-hover)"
+                      : "var(--color-primary)"
+                  }
+                  fillOpacity={selected ? 1 : 0.8}
                   stroke="var(--color-surface)"
                   strokeWidth={1 / position.zoom}
                   onMouseEnter={
@@ -269,7 +324,7 @@ export default function MapView({
                           });
                         }
                   }
-                  onClick={() => onCityClick?.(city)}
+                  onClick={() => handleDotClick(city)}
                   onMouseLeave={
                     isMobile ? undefined : () => setHovered(null)
                   }
@@ -286,6 +341,7 @@ export default function MapView({
           stateName={hovered.stateName}
           countryName={hovered.countryName}
           artistCount={hovered.artistCount}
+          shopCount={hovered.shopCount}
           x={hovered.x}
           y={hovered.y}
         />

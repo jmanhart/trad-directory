@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { fetchTattooShopsWithArtists } from "../../services/api";
 import type { Artist } from "../../types/entities";
+import useIsMobile from "../../hooks/useIsMobile";
 import MapView, { CityDot } from "../../components/map/MapView";
 import CityDetailCard from "../../components/map/CityDetailCard";
 import styles from "./MapPage.module.css";
@@ -18,6 +19,7 @@ interface MapCity {
 }
 
 export default function MapPage() {
+  const isMobile = useIsMobile();
   const [cityDots, setCityDots] = useState<CityDot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(
@@ -43,6 +45,7 @@ export default function MapPage() {
           lat: c.latitude,
           lng: c.longitude,
           artistCount: c.artist_count,
+          shopCount: c.shop_count,
         }));
         setCityDots(dots);
       } catch (err) {
@@ -160,20 +163,11 @@ export default function MapPage() {
           cityData={cityDots}
           onCountrySelect={setSelectedCountry}
           onCityClick={handleCityClick}
+          selectedCity={selectedCity}
         />
       )}
 
-      {selectedCity ? (
-        <CityDetailCard
-          cityName={selectedCity.cityName}
-          stateName={selectedCity.stateName}
-          countryName={selectedCity.countryName}
-          artists={cityArtists}
-          shops={cityShops}
-          loading={loadingArtists}
-          onClose={() => setSelectedCity(null)}
-        />
-      ) : (
+      {!selectedCity && (
         <div className={styles.infoCard}>
           <h1 className={styles.infoTitle}>
             {selectedCountry || "Artist Map"}
@@ -183,6 +177,34 @@ export default function MapPage() {
             &middot; {totalArtists}{" "}
             {totalArtists === 1 ? "artist" : "artists"}
           </p>
+        </div>
+      )}
+
+      {selectedCity && !isMobile && (
+        <div className={styles.sidePanel}>
+          <CityDetailCard
+            cityName={selectedCity.cityName}
+            stateName={selectedCity.stateName}
+            countryName={selectedCity.countryName}
+            artists={cityArtists}
+            shops={cityShops}
+            loading={loadingArtists}
+            onClose={() => setSelectedCity(null)}
+          />
+        </div>
+      )}
+
+      {selectedCity && isMobile && (
+        <div className={styles.mobileSheet}>
+          <CityDetailCard
+            cityName={selectedCity.cityName}
+            stateName={selectedCity.stateName}
+            countryName={selectedCity.countryName}
+            artists={cityArtists}
+            shops={cityShops}
+            loading={loadingArtists}
+            onClose={() => setSelectedCity(null)}
+          />
         </div>
       )}
     </div>

@@ -1,16 +1,8 @@
+/* Desktop: fills its parent container (side panel) */
 .card {
-  position: absolute;
-  bottom: 1.5rem;
-  left: 1.5rem;
-  z-index: 10;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  box-shadow: var(--shadow-lg);
-  width: 280px;
-  max-height: 400px;
   display: flex;
   flex-direction: column;
+  height: 100%;
   overflow: hidden;
 }
 
@@ -22,13 +14,13 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
+  padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
 
 .cityName {
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--color-text-primary);
   margin: 0;
@@ -36,9 +28,9 @@
 }
 
 .location {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
-  margin: 0.125rem 0 0;
+  margin: 0.25rem 0 0;
 }
 
 .closeButton {
@@ -47,20 +39,23 @@
   font-size: var(--font-size-xl);
   color: var(--color-text-tertiary);
   cursor: pointer;
-  padding: 0;
+  padding: 0.25rem;
   line-height: 1;
   flex-shrink: 0;
   margin-left: 0.5rem;
+  border-radius: var(--border-radius);
+  transition: color 0.15s, background 0.15s;
 }
 
 .closeButton:hover {
   color: var(--color-text-primary);
+  background: var(--gray-100);
 }
 
 .stats {
   display: flex;
   align-items: center;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
@@ -89,6 +84,12 @@
   margin: 0 0.75rem;
 }
 
+/* Override shared Tabs margin inside the card */
+.tabs {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
 .list {
   overflow-y: auto;
   flex: 1;
@@ -100,7 +101,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.625rem 1.5rem;
   text-decoration: none;
   color: var(--color-text-secondary);
   border-bottom: 1px solid var(--gray-100);
@@ -138,7 +139,7 @@
   color: var(--color-text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 0.5rem 1rem 0.25rem;
+  padding: 0.5rem 1.5rem 0.25rem;
   border-top: 1px solid var(--color-border);
 }
 
@@ -153,23 +154,29 @@
 }
 
 .loading {
-  padding: 1rem;
+  padding: 1.5rem;
   text-align: center;
   font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
 }
 
+/* ── Mobile: bottom sheet ── */
 @media (max-width: 767px) {
   .card {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    max-height: 65vh;
-    border-radius: 12px 12px 0 0;
-    border-bottom: none;
-    animation: slideUp 0.3s ease-out;
+    height: auto;
+  }
+
+  .header {
+    padding: 0.75rem 1rem;
+  }
+
+  .cityName {
+    font-size: var(--font-size-base);
+  }
+
+  .location {
+    font-size: var(--font-size-xs);
+    margin: 0.125rem 0 0;
   }
 
   .dragHandle {
@@ -180,6 +187,10 @@
     border-radius: 2px;
     margin: 0.5rem auto 0;
     flex-shrink: 0;
+  }
+
+  .stats {
+    padding: 0.5rem 1rem;
   }
 
   .listItem {
@@ -195,13 +206,8 @@
     justify-content: center;
     font-size: 1.5rem;
   }
-}
 
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
+  .loading {
+    padding: 1rem;
   }
 }

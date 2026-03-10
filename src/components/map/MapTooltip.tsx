@@ -5,6 +5,7 @@ interface MapTooltipProps {
   stateName?: string | null;
   countryName?: string | null;
   artistCount: number;
+  shopCount?: number;
   x: number;
   y: number;
 }
@@ -14,6 +15,7 @@ export default function MapTooltip({
   stateName,
   countryName,
   artistCount,
+  shopCount,
   x,
   y,
 }: MapTooltipProps) {
@@ -30,6 +32,12 @@ export default function MapTooltip({
       <div className={styles.tooltipCity}>{locationParts.join(", ")}</div>
       <div className={styles.tooltipCount}>
         {artistCount} {artistCount === 1 ? "artist" : "artists"}
+        {shopCount ? (
+          <>
+            {" "}
+            &middot; {shopCount} {shopCount === 1 ? "shop" : "shops"}
+          </>
+        ) : null}
       </div>
     </div>
   );

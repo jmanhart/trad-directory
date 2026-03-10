@@ -4,10 +4,11 @@
   overflow: hidden;
 }
 
+/* ── Info card (no city selected) ── */
 .infoCard {
   position: absolute;
   bottom: 1.5rem;
-  left: 1.5rem;
+  right: 1.5rem;
   z-index: 10;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -30,6 +31,62 @@
   margin: 0.125rem 0 0;
 }
 
+/* ── Desktop side panel (floats over map) ── */
+.sidePanel {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 10;
+  width: 340px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideInRight 0.25s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ── Mobile bottom sheet ── */
+.mobileSheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--color-surface);
+  border-radius: 12px 12px 0 0;
+  box-shadow: var(--shadow-lg);
+  max-height: 65vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* ── Mobile overrides ── */
 @media (max-width: 767px) {
   .infoCard {
     bottom: auto;

@@ -75,22 +75,22 @@
 
 .zoomControls {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  bottom: 1.5rem;
+  left: 1.5rem;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 0.25rem;
   z-index: 10;
 }
 
 .zoomButton {
-  width: 2rem;
-  height: 2rem;
+  width: 1.5rem;
+  height: 1.5rem;
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
   background: var(--color-surface);
   color: var(--color-text-primary);
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-sm);
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -101,6 +101,20 @@
 
 .zoomButton:hover {
   background: var(--gray-100);
+}
+
+.pulseRing {
+  animation: pulse 2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.15;
+  }
 }
 
 @media (max-width: 767px) {
