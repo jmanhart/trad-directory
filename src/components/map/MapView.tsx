@@ -61,13 +61,19 @@ function getDotRadius(
   return minR + scale * (maxR - minR);
 }
 
-function filterZoomEvent(event: { type: string; ctrlKey?: boolean }) {
+function filterZoomEvent(event: {
+  type: string;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  altKey?: boolean;
+}) {
   // Allow all touch events (pinch-to-zoom)
   if ("touches" in event) return true;
   // Allow mouse drag for panning
   if (event.type === "mousemove" || event.type === "mousedown") return true;
-  // Block wheel zoom unless Ctrl is held
-  if (event.type === "wheel") return !!event.ctrlKey;
+  // Block wheel zoom unless Ctrl, Cmd, or Option is held
+  if (event.type === "wheel")
+    return !!(event.ctrlKey || event.metaKey || event.altKey);
   return true;
 }
 
@@ -116,7 +122,7 @@ export default function MapView({
     }
   };
 
-  const maxZoom = 20;
+  const maxZoom = 50;
   const handleZoomIn = () =>
     setPosition(p => ({ ...p, zoom: Math.min(p.zoom * 1.5, maxZoom) }));
   const handleZoomOut = () =>
@@ -304,9 +310,10 @@ export default function MapView({
           </Geographies>
           {cityData.map((city, i) => {
             const baseR = getDotRadius(city.artistCount, maxCount, isMobile);
+            const zoomScale = Math.pow(position.zoom, 0.75);
             const r = isMobile
-              ? Math.max(2, baseR / position.zoom)
-              : Math.max(1.5, baseR / position.zoom);
+              ? Math.max(2, baseR / zoomScale)
+              : Math.max(1.5, baseR / zoomScale);
             const tapR = isMobile ? Math.max(10, r) : 0;
             const selected = isSelected(city);
             return (
@@ -327,14 +334,15 @@ export default function MapView({
                 )}
                 {selected && (
                   <circle
-                    r={r + 3 / position.zoom}
+                    r={r + 3 / zoomScale}
                     fill="none"
                     stroke="var(--color-primary)"
-                    strokeWidth={2 / position.zoom}
+                    strokeWidth={2 / zoomScale}
                     className={styles.pulseRing}
                   />
                 )}
                 <circle
+                  className={styles.cityDot}
                   r={r}
                   fill={
                     selected
@@ -343,7 +351,7 @@ export default function MapView({
                   }
                   fillOpacity={selected ? 1 : 0.8}
                   stroke="var(--color-surface)"
-                  strokeWidth={1 / position.zoom}
+                  strokeWidth={1 / zoomScale}
                   onMouseEnter={
                     isMobile
                       ? undefined
