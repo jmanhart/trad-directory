@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   ComposableMap,
   Geographies,
@@ -44,6 +44,9 @@ interface MapViewProps {
   onCountrySelect?: (countryName: string | null) => void;
   onCityClick?: (city: CityDot) => void;
   selectedCity?: CityDot | null;
+  flyTo?: { coordinates: [number, number]; zoom: number } | null;
+  flyToKey?: number;
+  onBackgroundClick?: () => void;
 }
 
 function getDotRadius(
@@ -73,6 +76,9 @@ export default function MapView({
   onCountrySelect,
   onCityClick,
   selectedCity,
+  flyTo,
+  flyToKey = 0,
+  onBackgroundClick,
 }: MapViewProps) {
   const isMobile = useIsMobile();
   const [hovered, setHovered] = useState<
@@ -84,6 +90,18 @@ export default function MapView({
   }>({ coordinates: [0, 30], zoom: 1 });
   // Counter to force ZoomableGroup remount on programmatic jumps
   const [jumpKey, setJumpKey] = useState(0);
+
+  // Fly to a location when parent triggers it
+  useEffect(() => {
+    if (flyToKey > 0 && flyTo) {
+      setPosition({
+        coordinates: flyTo.coordinates,
+        zoom: flyTo.zoom,
+      });
+      setJumpKey(k => k + 1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flyToKey]);
 
   const maxCount = useMemo(
     () => Math.max(1, ...cityData.map(d => d.artistCount)),
@@ -174,8 +192,15 @@ export default function MapView({
     selectedCity?.lng === city.lng;
 
   return (
-    <div className={styles.mapWrapper} onMouseMove={handleMouseMove}>
-      <div className={styles.zoomControls}>
+    <div
+      className={styles.mapWrapper}
+      onMouseMove={handleMouseMove}
+      onClick={onBackgroundClick}
+    >
+      <div
+        className={styles.zoomControls}
+        onClick={e => e.stopPropagation()}
+      >
         <button
           className={styles.zoomButton}
           onClick={handleZoomIn}
@@ -235,7 +260,10 @@ export default function MapView({
                     fill="var(--gray-200)"
                     stroke="var(--color-surface)"
                     strokeWidth={0.5}
-                    onClick={() => handleCountryClick(geoName)}
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleCountryClick(geoName);
+                    }}
                     style={{
                       default: {
                         fill: "var(--gray-200)",
@@ -290,7 +318,10 @@ export default function MapView({
                   <circle
                     r={tapR}
                     fill="transparent"
-                    onClick={() => handleDotClick(city)}
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleDotClick(city);
+                    }}
                     style={{ cursor: "pointer" }}
                   />
                 )}
@@ -324,7 +355,10 @@ export default function MapView({
                           });
                         }
                   }
-                  onClick={() => handleDotClick(city)}
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleDotClick(city);
+                  }}
                   onMouseLeave={
                     isMobile ? undefined : () => setHovered(null)
                   }

@@ -1,7 +1,45 @@
 .container {
-  position: relative;
-  height: calc(100vh - 52px); /* viewport minus header */
+  position: fixed;
+  inset: 0;
   overflow: hidden;
+  z-index: 1;
+}
+
+/* ── Floating overlay bar (logo + search) ── */
+.mapOverlay {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  right: 1rem;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+.overlayLogo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  flex-shrink: 0;
+}
+
+.overlayLogo img {
+  height: 20px;
+  display: block;
+}
+
+.overlaySearch {
+  flex: 1;
+  max-width: 400px;
+  pointer-events: auto;
 }
 
 /* ── Info card (no city selected) ── */
@@ -60,6 +98,14 @@
   }
 }
 
+/* ── Mobile backdrop ── */
+.mobileBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+  background: rgba(0, 0, 0, 0.3);
+}
+
 /* ── Mobile bottom sheet ── */
 .mobileSheet {
   position: fixed;
@@ -88,9 +134,17 @@
 
 /* ── Mobile overrides ── */
 @media (max-width: 767px) {
+  .mapOverlay {
+    gap: 0.5rem;
+  }
+
+  .overlaySearch {
+    max-width: none;
+  }
+
   .infoCard {
     bottom: auto;
-    top: 1rem;
+    top: 4.5rem;
     left: 50%;
     transform: translateX(-50%);
     border-radius: 999px;

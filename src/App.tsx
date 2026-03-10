@@ -65,6 +65,7 @@ const PAGES_WITHOUT_FOOTER = ["/artists", "/shops", "/countries", "/map"];
 function AppContent() {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
+  const isMapPage = location.pathname === "/map";
   const isAdminRoute = location.pathname.startsWith("/admin");
   const showFooter = !PAGES_WITHOUT_FOOTER.includes(location.pathname);
   const [isAddArtistModalOpen, setIsAddArtistModalOpen] = useState(false);
@@ -79,7 +80,7 @@ function AppContent() {
         <AdminTopAppBar />
       ) : (
         <>
-          {!isHomePage && <TopAppBar />}
+          {!isHomePage && !isMapPage && <TopAppBar />}
           <SuggestArtistModal
             isOpen={isAddArtistModalOpen}
             onClose={() => setIsAddArtistModalOpen(false)}
