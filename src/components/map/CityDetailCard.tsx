@@ -31,6 +31,7 @@ export default function CityDetailCard({
 
   return (
     <div className={styles.card}>
+      <div className={styles.dragHandle} />
       <div className={styles.header}>
         <div>
           <h2 className={styles.cityName}>{cityName}</h2>

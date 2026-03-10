@@ -7,6 +7,7 @@ import {
   ZoomableGroup,
 } from "react-simple-maps";
 import MapTooltip from "./MapTooltip";
+import useIsMobile from "../../hooks/useIsMobile";
 import styles from "./MapView.module.css";
 
 const WORLD_GEO_URL =
@@ -41,12 +42,26 @@ interface MapViewProps {
   onCityClick?: (city: CityDot) => void;
 }
 
-function getDotRadius(count: number, maxCount: number): number {
-  const minR = 3;
-  const maxR = 12;
+function getDotRadius(
+  count: number,
+  maxCount: number,
+  isMobile: boolean
+): number {
+  const minR = isMobile ? 5 : 3;
+  const maxR = isMobile ? 16 : 12;
   if (maxCount <= 1) return minR;
   const scale = Math.sqrt(count) / Math.sqrt(maxCount);
   return minR + scale * (maxR - minR);
+}
+
+function filterZoomEvent(event: { type: string; ctrlKey?: boolean }) {
+  // Allow all touch events (pinch-to-zoom)
+  if ("touches" in event) return true;
+  // Allow mouse drag for panning
+  if (event.type === "mousemove" || event.type === "mousedown") return true;
+  // Block wheel zoom unless Ctrl is held
+  if (event.type === "wheel") return !!event.ctrlKey;
+  return true;
 }
 
 export default function MapView({
@@ -54,6 +69,7 @@ export default function MapView({
   onCountrySelect,
   onCityClick,
 }: MapViewProps) {
+  const isMobile = useIsMobile();
   const [hovered, setHovered] = useState<
     (CityDot & { x: number; y: number }) | null
   >(null);
@@ -181,6 +197,7 @@ export default function MapView({
           }
           minZoom={1}
           maxZoom={8}
+          filterZoomEvent={filterZoomEvent}
         >
           <Geographies geography={WORLD_GEO_URL}>
             {({ geographies }) =>
@@ -215,28 +232,47 @@ export default function MapView({
             }
           </Geographies>
           {cityData.map((city, i) => {
-            const r =
-              getDotRadius(city.artistCount, maxCount) / position.zoom;
+            const baseR = getDotRadius(city.artistCount, maxCount, isMobile);
+            const r = isMobile
+              ? Math.max(4, baseR / Math.sqrt(position.zoom))
+              : baseR / position.zoom;
+            const tapR = isMobile
+              ? Math.max(10, r)
+              : 0;
             return (
               <Marker
                 key={`${city.cityName}-${city.lat}-${city.lng}-${i}`}
                 coordinates={[city.lng, city.lat]}
               >
+                {isMobile && tapR > r && (
+                  <circle
+                    r={tapR}
+                    fill="transparent"
+                    onClick={() => onCityClick?.(city)}
+                    style={{ cursor: "pointer" }}
+                  />
+                )}
                 <circle
                   r={r}
                   fill="var(--color-primary)"
                   fillOpacity={0.8}
                   stroke="var(--color-surface)"
                   strokeWidth={1 / position.zoom}
-                  onMouseEnter={e => {
-                    setHovered({
-                      ...city,
-                      x: e.clientX,
-                      y: e.clientY,
-                    });
-                  }}
+                  onMouseEnter={
+                    isMobile
+                      ? undefined
+                      : e => {
+                          setHovered({
+                            ...city,
+                            x: e.clientX,
+                            y: e.clientY,
+                          });
+                        }
+                  }
                   onClick={() => onCityClick?.(city)}
-                  onMouseLeave={() => setHovered(null)}
+                  onMouseLeave={
+                    isMobile ? undefined : () => setHovered(null)
+                  }
                   style={{ cursor: "pointer" }}
                 />
               </Marker>
@@ -244,7 +280,7 @@ export default function MapView({
           })}
         </ZoomableGroup>
       </ComposableMap>
-      {hovered && (
+      {!isMobile && hovered && (
         <MapTooltip
           cityName={hovered.cityName}
           stateName={hovered.stateName}

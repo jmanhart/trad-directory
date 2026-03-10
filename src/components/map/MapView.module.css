@@ -102,3 +102,15 @@
 .zoomButton:hover {
   background: var(--gray-100);
 }
+
+@media (max-width: 767px) {
+  .zoomButton {
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: var(--font-size-xl);
+  }
+
+  .zoomControls {
+    gap: 0.5rem;
+  }
+}

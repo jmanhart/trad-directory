@@ -29,3 +29,16 @@
   font-size: var(--font-size-xs);
   margin: 0.125rem 0 0;
 }
+
+@media (max-width: 767px) {
+  .infoCard {
+    bottom: auto;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    white-space: nowrap;
+    text-align: center;
+  }
+}
