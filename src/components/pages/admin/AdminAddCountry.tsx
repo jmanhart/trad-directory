@@ -1,4 +1,5 @@
 import { addCountry } from "../../../services/adminApi";
+import { CONTINENT_OPTIONS } from "../../../types/entities";
 import AdminFormLayout from "./AdminFormLayout";
 import {
   FormGroup,
@@ -11,15 +12,6 @@ import {
 import { useAdminForm } from "./useAdminForm";
 import styles from "./AdminForm.module.css";
 
-const CONTINENT_OPTIONS = [
-  "North America",
-  "Central America",
-  "South America",
-  "Europe",
-  "Asia",
-  "Oceania",
-  "Africa",
-];
 
 interface CountryFormData {
   country_name: string;

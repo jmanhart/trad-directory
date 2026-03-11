@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { CONTINENT_OPTIONS } from "../../../types/entities";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import {
@@ -79,15 +80,6 @@ interface CityFormData {
   state_id: string;
 }
 
-const CONTINENT_OPTIONS = [
-  "North America",
-  "Central America",
-  "South America",
-  "Europe",
-  "Asia",
-  "Oceania",
-  "Africa",
-];
 
 interface CountryFormData {
   country_name: string;

@@ -52,6 +52,16 @@ export interface City {
   created_at?: string | null;
 }
 
+export const CONTINENT_OPTIONS = [
+  "North America",
+  "Central America",
+  "South America",
+  "Europe",
+  "Asia",
+  "Oceania",
+  "Africa",
+] as const;
+
 export interface Country {
   id: number;
   country_name: string;
