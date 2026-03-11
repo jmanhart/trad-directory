@@ -91,7 +91,8 @@ async function getOrCreateState(
 async function getOrCreateCity(
   supabase: any,
   cityName: string,
-  stateId: number
+  stateId: number,
+  countryId: number
 ): Promise<number> {
   // First, try to find existing city
   const { data: existing } = await supabase
@@ -105,10 +106,14 @@ async function getOrCreateCity(
     return existing.id;
   }
 
-  // If not found, create it
+  // If not found, create it (with country_id for direct lookup)
   const { data: newCity, error: createError } = await supabase
     .from("cities")
-    .insert({ city_name: cityName, state_id: stateId })
+    .insert({
+      city_name: cityName,
+      state_id: stateId,
+      country_id: countryId,
+    })
     .select("id")
     .single();
 
@@ -190,7 +195,7 @@ export default async function handler(req: any, res: any) {
       );
 
       // Step 3: Get or create city
-      cityId = await getOrCreateCity(supabase, data.city_name, stateId);
+      cityId = await getOrCreateCity(supabase, data.city_name, stateId, countryId);
     }
 
     // Step 4: Generate slug for the artist

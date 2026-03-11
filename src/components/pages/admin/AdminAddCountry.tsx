@@ -1,12 +1,30 @@
 import { addCountry } from "../../../services/adminApi";
 import AdminFormLayout from "./AdminFormLayout";
-import { FormGroup, Label, Input, SubmitButton, Message } from "./AdminFormComponents";
+import {
+  FormGroup,
+  Label,
+  Input,
+  Select,
+  SubmitButton,
+  Message,
+} from "./AdminFormComponents";
 import { useAdminForm } from "./useAdminForm";
 import styles from "./AdminForm.module.css";
+
+const CONTINENT_OPTIONS = [
+  "North America",
+  "Central America",
+  "South America",
+  "Europe",
+  "Asia",
+  "Oceania",
+  "Africa",
+];
 
 interface CountryFormData {
   country_name: string;
   country_code: string;
+  continent: string;
 }
 
 export default function AdminAddCountry() {
@@ -20,15 +38,17 @@ export default function AdminAddCountry() {
     initialData: {
       country_name: "",
       country_code: "",
+      continent: "",
     },
-    onSubmit: async (data) => {
+    onSubmit: async data => {
       return await addCountry(data);
     },
-    transformData: (formData) => ({
+    transformData: formData => ({
       country_name: formData.country_name,
       country_code: formData.country_code || undefined,
+      continent: formData.continent || undefined,
     }),
-    validateData: (formData) => {
+    validateData: formData => {
       if (!formData.country_name) {
         return "Please enter a country name";
       }
@@ -69,6 +89,23 @@ export default function AdminAddCountry() {
             placeholder="e.g., US, CA, GB"
             maxLength={3}
           />
+        </FormGroup>
+
+        <FormGroup>
+          <Label htmlFor="continent">Continent</Label>
+          <Select
+            id="continent"
+            name="continent"
+            value={formData.continent}
+            onChange={handleChange}
+          >
+            <option value="">Select continent</option>
+            {CONTINENT_OPTIONS.map(c => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </Select>
         </FormGroup>
 
         <SubmitButton loading={loading} loadingText="Adding...">

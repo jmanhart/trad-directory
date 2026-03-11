@@ -62,11 +62,12 @@ export default function AdminAddCity() {
     onSubmit: async (data) => {
       return await addCity(data);
     },
-    transformData: (formData) => ({
+    transformData: formData => ({
       city_name: formData.city_name,
       state_id: formData.state_id ? parseInt(formData.state_id) : null,
-      // Note: country_id is not stored directly on cities, only through states
-      // We keep it for filtering states, but don't send it to the API
+      country_id: formData.country_id
+        ? parseInt(formData.country_id)
+        : null,
     }),
     validateData: (formData) => {
       if (!formData.city_name) {

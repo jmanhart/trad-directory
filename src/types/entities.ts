@@ -55,5 +55,6 @@ export interface City {
 export interface Country {
   id: number;
   country_name: string;
+  continent?: string | null;
   created_at?: string | null;
 }

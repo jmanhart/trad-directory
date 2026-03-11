@@ -29,7 +29,7 @@ export default async function handler(req: any, res: any) {
     // 1. Fetch cities with coordinates
     const { data: cities, error: citiesError } = await supabase
       .from("cities")
-      .select("id, city_name, state_id, latitude, longitude")
+      .select("id, city_name, state_id, country_id, latitude, longitude")
       .not("latitude", "is", null)
       .order("city_name");
 
@@ -46,7 +46,7 @@ export default async function handler(req: any, res: any) {
     if (stateIds.length > 0) {
       const { data: states } = await supabase
         .from("states")
-        .select("id, state_name, country_id, country:countries(id, country_name)")
+        .select("id, state_name, country_id, country:countries(id, country_name, continent)")
         .in("id", stateIds);
 
       (states || []).forEach((s: any) => {
@@ -55,6 +55,30 @@ export default async function handler(req: any, res: any) {
           state_name: s.state_name,
           country_id: country?.id || null,
           country_name: country?.country_name || null,
+          continent: country?.continent || null,
+        });
+      });
+    }
+
+    // 2b. Fetch countries for cities that have country_id but no state
+    const countryIds = [
+      ...new Set(
+        (cities || [])
+          .filter((c: any) => !c.state_id && c.country_id)
+          .map((c: any) => c.country_id)
+      ),
+    ];
+    const countriesMap = new Map();
+    if (countryIds.length > 0) {
+      const { data: countries } = await supabase
+        .from("countries")
+        .select("id, country_name, continent")
+        .in("id", countryIds);
+
+      (countries || []).forEach((c: any) => {
+        countriesMap.set(c.id, {
+          country_name: c.country_name,
+          continent: c.continent,
         });
       });
     }
@@ -86,6 +110,11 @@ export default async function handler(req: any, res: any) {
     const results = (cities || [])
       .map((city: any) => {
         const state = city.state_id ? statesMap.get(city.state_id) : null;
+        // Fallback: if no state, look up country directly from city.country_id
+        const directCountry =
+          !state && city.country_id
+            ? countriesMap.get(city.country_id)
+            : null;
         const artistCount = artistCountMap.get(city.id)?.size || 0;
         const shopCount = shopCountMap.get(city.id) || 0;
 
@@ -95,7 +124,10 @@ export default async function handler(req: any, res: any) {
           id: city.id,
           city_name: city.city_name,
           state_name: state?.state_name || null,
-          country_name: state?.country_name || null,
+          country_name:
+            state?.country_name || directCountry?.country_name || null,
+          continent:
+            state?.continent || directCountry?.continent || null,
           latitude: city.latitude,
           longitude: city.longitude,
           artist_count: artistCount,

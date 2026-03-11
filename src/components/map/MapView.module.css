@@ -117,6 +117,20 @@
   }
 }
 
+.loadingDot {
+  animation: loadingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loadingPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
 .pulseRing {
   animation: pulse 2s ease-in-out infinite;
   transform-origin: center;

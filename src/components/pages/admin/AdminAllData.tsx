@@ -79,8 +79,19 @@ interface CityFormData {
   state_id: string;
 }
 
+const CONTINENT_OPTIONS = [
+  "North America",
+  "Central America",
+  "South America",
+  "Europe",
+  "Asia",
+  "Oceania",
+  "Africa",
+];
+
 interface CountryFormData {
   country_name: string;
+  continent: string;
 }
 
 type TabType =
@@ -165,7 +176,7 @@ export default function AdminAllData() {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [allShops, setAllShops] = useState<Shop[]>([]);
   const [countries, setCountries] = useState<
-    { id: number; country_name: string }[]
+    { id: number; country_name: string; continent: string | null }[]
   >([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [newSubmissionsCount, setNewSubmissionsCount] = useState(0);
@@ -654,10 +665,12 @@ export default function AdminAllData() {
   const handleEditCountryClick = (country: {
     id: number;
     country_name: string;
+    continent: string | null;
   }) => {
     setSaveError(null);
     const formData: CountryFormData = {
       country_name: country.country_name,
+      continent: country.continent || "",
     };
     setCountryFormData(formData);
     setOriginalCountryFormData(JSON.parse(JSON.stringify(formData)));
@@ -946,6 +959,7 @@ export default function AdminAllData() {
         await updateCountry({
           id: editingCountryId,
           country_name: countryFormData.country_name.trim(),
+          continent: countryFormData.continent || undefined,
         });
         await loadStats();
         handleCloseModal();
@@ -1328,13 +1342,14 @@ export default function AdminAllData() {
                   <tr>
                     <th className={styles.sortableHeader}>ID</th>
                     <th className={styles.sortableHeader}>Country</th>
+                    <th className={styles.sortableHeader}>Continent</th>
                     <th className={styles.actionHeader}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredAndSortedCountries.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className={styles.emptyCell}>
+                      <td colSpan={4} className={styles.emptyCell}>
                         {searchQuery
                           ? "No countries match your search"
                           : "No countries found"}
@@ -1346,6 +1361,9 @@ export default function AdminAllData() {
                         <td className={styles.idCell}>{country.id}</td>
                         <td className={styles.nameCell}>
                           {country.country_name}
+                        </td>
+                        <td className={styles.locationCell}>
+                          {country.continent || "—"}
                         </td>
                         <td className={styles.actionCell}>
                           <button
@@ -1663,6 +1681,26 @@ export default function AdminAllData() {
                           }
                           required
                         />
+                      </FormGroup>
+                      <FormGroup>
+                        <Label htmlFor="continent">Continent</Label>
+                        <Select
+                          id="continent"
+                          value={countryFormData.continent}
+                          onChange={e =>
+                            handleCountryFormChange(
+                              "continent",
+                              e.target.value
+                            )
+                          }
+                        >
+                          <option value="">Select continent</option>
+                          {CONTINENT_OPTIONS.map(c => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                        </Select>
                       </FormGroup>
                     </form>
                   </>

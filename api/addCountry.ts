@@ -4,6 +4,7 @@ import { requireAdminAuth } from "./_middleware/auth";
 interface AddCountryData {
   country_name: string;
   country_code?: string;
+  continent?: string;
 }
 
 export default async function handler(req: any, res: any) {
@@ -53,10 +54,11 @@ export default async function handler(req: any, res: any) {
     const countryData: any = {
       country_name: data.country_name,
       // Set country_code to empty string if not provided (since column has NOT NULL constraint)
-      country_code: data.country_code && data.country_code.trim() !== "" 
-        ? data.country_code.trim() 
+      country_code: data.country_code && data.country_code.trim() !== ""
+        ? data.country_code.trim()
         : "",
     };
+    if (data.continent) countryData.continent = data.continent;
 
     const { data: newCountry, error: countryError } = await supabase
       .from("countries")

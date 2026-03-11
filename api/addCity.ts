@@ -5,6 +5,7 @@ import { geocodeCity } from "./_utils/geocode";
 interface AddCityData {
   city_name: string;
   state_id?: number | null;
+  country_id?: number | null;
 }
 
 export default async function handler(req: any, res: any) {
@@ -62,10 +63,11 @@ export default async function handler(req: any, res: any) {
     // Look up state/country names for geocoding
     let stateName: string | null = null;
     let countryName: string | null = null;
+    let resolvedCountryId: number | null = data.country_id || null;
     if (data.state_id) {
       const { data: stateRow } = await supabase
         .from("states")
-        .select("state_name, country:countries(country_name)")
+        .select("state_name, country_id, country:countries(country_name)")
         .eq("id", data.state_id)
         .single();
       if (stateRow) {
@@ -74,7 +76,25 @@ export default async function handler(req: any, res: any) {
           ? stateRow.country[0]
           : stateRow.country;
         countryName = (country as any)?.country_name || null;
+        // Auto-set country_id from the state's country
+        if (!resolvedCountryId && stateRow.country_id) {
+          resolvedCountryId = stateRow.country_id;
+        }
       }
+    } else if (resolvedCountryId) {
+      // No state but has country_id — look up country name for geocoding
+      const { data: countryRow } = await supabase
+        .from("countries")
+        .select("country_name")
+        .eq("id", resolvedCountryId)
+        .single();
+      if (countryRow) {
+        countryName = countryRow.country_name;
+      }
+    }
+
+    if (resolvedCountryId) {
+      cityData.country_id = resolvedCountryId;
     }
 
     // Geocode the city

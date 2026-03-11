@@ -56,7 +56,7 @@ export async function addArtist(data: AddArtistData): Promise<number> {
  * Fetch all countries for dropdown
  */
 export async function fetchCountries(): Promise<
-  { id: number; country_name: string }[]
+  { id: number; country_name: string; continent: string | null }[]
 > {
   try {
     const apiUrl = import.meta.env.VITE_API_URL || "/api/listCountries";
@@ -195,6 +195,7 @@ export async function fetchStates(): Promise<
 interface AddCityData {
   city_name: string;
   state_id?: number | null;
+  country_id?: number | null;
 }
 
 /**
@@ -230,6 +231,7 @@ export async function addCity(data: AddCityData): Promise<number> {
 interface AddCountryData {
   country_name: string;
   country_code?: string;
+  continent?: string;
 }
 
 /**
@@ -437,6 +439,7 @@ export interface UpdateCountryData {
   id: number;
   country_name?: string;
   country_code?: string;
+  continent?: string;
 }
 
 export async function updateCountry(data: UpdateCountryData): Promise<void> {

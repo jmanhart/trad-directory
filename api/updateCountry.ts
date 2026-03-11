@@ -45,6 +45,7 @@ export default async function handler(req: any, res: any) {
         data.country_code && String(data.country_code).trim() !== ""
           ? String(data.country_code).trim()
           : "";
+    if (data.continent !== undefined) updateData.continent = data.continent;
 
     const { data: updated, error } = await supabase
       .from("countries")

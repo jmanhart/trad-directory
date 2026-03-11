@@ -35,7 +35,7 @@ export default async function handler(req: any, res: any) {
     // Fetch all countries
     const { data: countries, error } = await supabase
       .from("countries")
-      .select("id, country_name")
+      .select("id, country_name, continent")
       .order("country_name");
 
     if (error) {

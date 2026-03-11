@@ -16,6 +16,7 @@ interface MapCity {
   city_name: string;
   state_name: string | null;
   country_name: string | null;
+  continent: string | null;
   latitude: number;
   longitude: number;
   artist_count: number;
@@ -33,6 +34,7 @@ export default function MapPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { suggestions } = useSearchSuggestions();
   const [cityDots, setCityDots] = useState<CityDot[]>([]);
+  const [loadingMap, setLoadingMap] = useState(true);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(
     null
   );
@@ -68,6 +70,7 @@ export default function MapPage() {
           cityName: c.city_name,
           stateName: c.state_name,
           countryName: c.country_name,
+          continent: c.continent,
           lat: c.latitude,
           lng: c.longitude,
           artistCount: c.artist_count,
@@ -76,6 +79,8 @@ export default function MapPage() {
         setCityDots(dots);
       } catch (err) {
         console.error("Error loading map data:", err);
+      } finally {
+        setLoadingMap(false);
       }
     }
     load();
@@ -409,6 +414,9 @@ export default function MapPage() {
       else if (spread > 3) zoom = 5;
       else zoom = 6;
 
+      // Ensure we zoom past state cluster threshold to show city dots
+      zoom = Math.max(zoom, 6);
+
       setSelectedCity(null);
       setSelectedRegion({ name: stateName, type: "state" });
       setFlyTo({ coordinates: [centerLng, centerLat], zoom });
@@ -583,6 +591,7 @@ export default function MapPage() {
       </div>
       <MapView
         cityData={cityDots}
+        loading={loadingMap}
         onCountrySelect={setSelectedCountry}
         onCityClick={handleCityClick}
         onStateClick={handleStateClick}
