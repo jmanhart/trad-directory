@@ -6,8 +6,9 @@ import useIsMobile from "../../hooks/useIsMobile";
 import { useSearchSuggestions } from "../../hooks/useSearchSuggestions";
 import type { Suggestion } from "../../utils/suggestions";
 import MapView, { CityDot } from "../../components/map/MapView";
-import CityDetailCard from "../../components/map/CityDetailCard";
+import MapDetailPanel from "../../components/map/MapDetailPanel";
 import SearchBar from "../../components/common/SearchBar";
+import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import styles from "./MapPage.module.css";
 
 interface MapCity {
@@ -21,6 +22,11 @@ interface MapCity {
   shop_count: number;
 }
 
+interface SelectedRegion {
+  name: string;
+  type: "state" | "country";
+}
+
 export default function MapPage() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -31,6 +37,8 @@ export default function MapPage() {
     null
   );
   const [selectedCity, setSelectedCity] = useState<CityDot | null>(null);
+  const [selectedRegion, setSelectedRegion] =
+    useState<SelectedRegion | null>(null);
 
   // flyTo state for programmatic map navigation
   const [flyTo, setFlyTo] = useState<{
@@ -43,6 +51,9 @@ export default function MapPage() {
   const [allArtists, setAllArtists] = useState<Artist[] | null>(null);
   const [loadingArtists, setLoadingArtists] = useState(false);
   const artistsFetchedRef = useRef(false);
+
+  // Pending artist/shop suggestion to process once allArtists loads
+  const pendingSuggestionRef = useRef<Suggestion | null>(null);
 
   // Track which query we last processed to avoid re-processing
   const lastProcessedQuery = useRef<string | null>(null);
@@ -94,6 +105,7 @@ export default function MapPage() {
       );
       if (match) {
         setSelectedCity(match);
+        setSelectedRegion(null);
         setFlyTo({ coordinates: [match.lng, match.lat], zoom: 6 });
         setFlyToKey(k => k + 1);
         ensureArtistsLoaded();
@@ -141,11 +153,16 @@ export default function MapPage() {
         else zoom = 6;
 
         setSelectedCity(null);
-        setSelectedCountry(
-          countryDots.length > 0
-            ? regionDots[0].countryName
-            : regionDots[0].stateName
-        );
+        if (countryDots.length > 0) {
+          setSelectedCountry(regionDots[0].countryName);
+          setSelectedRegion(null);
+        } else {
+          setSelectedRegion({
+            name: regionDots[0].stateName!,
+            type: "state",
+          });
+          ensureArtistsLoaded();
+        }
         setFlyTo({ coordinates: [centerLng, centerLat], zoom });
         setFlyToKey(k => k + 1);
         return;
@@ -161,6 +178,7 @@ export default function MapPage() {
 
       if (partial) {
         setSelectedCity(partial);
+        setSelectedRegion(null);
         setFlyTo({
           coordinates: [partial.lng, partial.lat],
           zoom: 6,
@@ -190,7 +208,7 @@ export default function MapPage() {
       if (selectedCity.stateName) params.state = selectedCity.stateName;
       lastProcessedQuery.current = `city:${params.city}|${params.state || ""}`;
       setSearchParams(params, { replace: true });
-    } else {
+    } else if (!selectedRegion) {
       lastProcessedQuery.current = null;
       setSearchParams({}, { replace: true });
     }
@@ -200,7 +218,10 @@ export default function MapPage() {
   // Escape key to dismiss
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSelectedCity(null);
+      if (e.key === "Escape") {
+        setSelectedCity(null);
+        setSelectedRegion(null);
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
@@ -277,6 +298,66 @@ export default function MapPage() {
     return Array.from(shopMap.values());
   }, [selectedCity, allArtists]);
 
+  // Region-level data (artists, shops, dots in the region)
+  const regionCityDots = useMemo(() => {
+    if (!selectedRegion) return [];
+    return cityDots.filter(d => {
+      if (selectedRegion.type === "state") {
+        return norm(d.stateName) === norm(selectedRegion.name);
+      }
+      return norm(d.countryName) === norm(selectedRegion.name);
+    });
+  }, [selectedRegion, cityDots]);
+
+  const regionArtists = useMemo(() => {
+    if (!selectedRegion || !allArtists) return [];
+    const regionName = norm(selectedRegion.name);
+    return allArtists.filter(artist => {
+      const locations = artist.locations?.length
+        ? artist.locations
+        : [
+            {
+              city_name: artist.city_name,
+              state_name: artist.state_name,
+              country_name: artist.country_name,
+            },
+          ];
+      return locations.some(loc => {
+        if (selectedRegion.type === "state") {
+          return norm(loc.state_name) === regionName;
+        }
+        return norm(loc.country_name) === regionName;
+      });
+    });
+  }, [selectedRegion, allArtists]);
+
+  const regionShops = useMemo(() => {
+    if (!selectedRegion || !allArtists) return [];
+    const regionName = norm(selectedRegion.name);
+    const shopMap = new Map<
+      number,
+      { id: number; shop_name: string; slug?: string | null }
+    >();
+    allArtists.forEach(artist => {
+      const locations = artist.locations?.length ? artist.locations : [];
+      locations.forEach(loc => {
+        if (!loc.shop_id || !loc.shop_name) return;
+        const matches =
+          selectedRegion.type === "state"
+            ? norm(loc.state_name) === regionName
+            : norm(loc.country_name) === regionName;
+        if (matches) {
+          shopMap.set(loc.shop_id, {
+            id: loc.shop_id,
+            shop_name: loc.shop_name,
+            slug: loc.shop_slug,
+          });
+        }
+      });
+    });
+    return Array.from(shopMap.values());
+  }, [selectedRegion, allArtists]);
+
   // Stats for the info card
   const displayDots = selectedCountry
     ? cityDots.filter(d => d.countryName === selectedCountry)
@@ -297,20 +378,99 @@ export default function MapPage() {
         setSelectedCity(null);
       } else {
         setSelectedCity(city);
+        setSelectedRegion(null);
         ensureArtistsLoaded();
       }
     },
     [selectedCity, ensureArtistsLoaded]
   );
 
-  const handleBackgroundClick = useCallback(() => {
-    setSelectedCity(null);
+  const handleStateClick = useCallback(
+    (stateName: string) => {
+      // Find dots in this state
+      const stateDots = cityDots.filter(
+        d => norm(d.stateName) === norm(stateName)
+      );
+      if (stateDots.length === 0) return;
+
+      // Calculate bounding box center and zoom
+      const lats = stateDots.map(d => d.lat);
+      const lngs = stateDots.map(d => d.lng);
+      const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+      const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+      const latSpread = Math.max(...lats) - Math.min(...lats);
+      const lngSpread = Math.max(...lngs) - Math.min(...lngs);
+      const spread = Math.max(latSpread, lngSpread, 1);
+
+      let zoom: number;
+      if (spread > 30) zoom = 2;
+      else if (spread > 15) zoom = 3;
+      else if (spread > 8) zoom = 4;
+      else if (spread > 3) zoom = 5;
+      else zoom = 6;
+
+      setSelectedCity(null);
+      setSelectedRegion({ name: stateName, type: "state" });
+      setFlyTo({ coordinates: [centerLng, centerLat], zoom });
+      setFlyToKey(k => k + 1);
+      ensureArtistsLoaded();
+    },
+    [cityDots, ensureArtistsLoaded]
+  );
+
+  // Zoom to a city from the region panel (stays on region view)
+  const handleRegionCityClick = useCallback((city: CityDot) => {
+    setFlyTo({
+      coordinates: [city.lng, city.lat],
+      zoom: Math.max(6, 8),
+    });
+    setFlyToKey(k => k + 1);
   }, []);
 
-  // Location-only suggestions for the map search
-  const mapSuggestions = useMemo(
-    () => suggestions.filter(s => s.type === "location"),
-    [suggestions]
+  const handleBackgroundClick = useCallback(() => {
+    setSelectedCity(null);
+    setSelectedRegion(null);
+  }, []);
+
+  const handleClosePanel = useCallback(() => {
+    setSelectedCity(null);
+    setSelectedRegion(null);
+  }, []);
+
+  // Helper: find a city dot for an artist by matching their city/state
+  const findDotForArtist = useCallback(
+    (artist: Artist): CityDot | undefined => {
+      const locations = artist.locations?.length
+        ? artist.locations
+        : [
+            {
+              city_name: artist.city_name,
+              state_name: artist.state_name,
+            },
+          ];
+      for (const loc of locations) {
+        const match = cityDots.find(
+          d =>
+            norm(d.cityName) === norm(loc.city_name) &&
+            norm(d.stateName) === norm(loc.state_name)
+        );
+        if (match) return match;
+      }
+      return undefined;
+    },
+    [cityDots]
+  );
+
+  // Fly to a dot and open its panel
+  const flyToDot = useCallback(
+    (dot: CityDot) => {
+      setSelectedCity(dot);
+      setSelectedRegion(null);
+      setFlyTo({ coordinates: [dot.lng, dot.lat], zoom: 6 });
+      setFlyToKey(k => k + 1);
+      ensureArtistsLoaded();
+    },
+    [ensureArtistsLoaded]
   );
 
   const handleMapSearch = useCallback(
@@ -324,14 +484,86 @@ export default function MapPage() {
     [navigate]
   );
 
+  // Process an artist/shop suggestion against loaded artist data
+  const processSuggestion = useCallback(
+    (suggestion: Suggestion, artists: Artist[]) => {
+      if (suggestion.type === "artist" && suggestion.id) {
+        const artist = artists.find(a => a.id === suggestion.id);
+        if (artist) {
+          const dot = findDotForArtist(artist);
+          if (dot) {
+            flyToDot(dot);
+            return true;
+          }
+        }
+      }
+
+      if (suggestion.type === "shop") {
+        const artist = artists.find(a => {
+          if (a.shop_name === suggestion.label) return true;
+          return a.locations?.some(
+            l => l.shop_name === suggestion.label
+          );
+        });
+        if (artist) {
+          const dot = findDotForArtist(artist);
+          if (dot) {
+            flyToDot(dot);
+            return true;
+          }
+        }
+      }
+      return false;
+    },
+    [findDotForArtist, flyToDot]
+  );
+
+  // When allArtists finishes loading, process any pending suggestion
+  useEffect(() => {
+    if (allArtists && pendingSuggestionRef.current) {
+      const pending = pendingSuggestionRef.current;
+      pendingSuggestionRef.current = null;
+      processSuggestion(pending, allArtists);
+    }
+  }, [allArtists, processSuggestion]);
+
   const handleMapSelectSuggestion = useCallback(
     (suggestion: Suggestion) => {
+      if (suggestion.type === "artist" || suggestion.type === "shop") {
+        if (allArtists) {
+          if (processSuggestion(suggestion, allArtists)) return;
+        } else {
+          // Data not loaded yet — store and trigger load
+          pendingSuggestionRef.current = suggestion;
+          ensureArtistsLoaded();
+          return;
+        }
+      }
+
+      // Location suggestions — use URL param flow
       navigate(`/map?q=${encodeURIComponent(suggestion.label)}`, {
         replace: true,
       });
     },
-    [navigate]
+    [navigate, allArtists, processSuggestion, ensureArtistsLoaded]
   );
+
+  // Build subtitle for the panel
+  const citySubtitle = selectedCity
+    ? formatArtistLocation({
+        state_name: selectedCity.stateName,
+        country_name: selectedCity.countryName,
+      })
+    : "";
+
+  const regionSubtitle = selectedRegion
+    ? selectedRegion.type === "state"
+      ? "United States"
+      : ""
+    : "";
+
+  // Whether any panel is showing
+  const hasPanel = !!(selectedCity || selectedRegion);
 
   return (
     <div className={styles.container}>
@@ -343,9 +575,9 @@ export default function MapPage() {
           <SearchBar
             size="compact"
             onSearch={handleMapSearch}
-            suggestions={mapSuggestions}
+            suggestions={suggestions}
             onSelectSuggestion={handleMapSelectSuggestion}
-            placeholder="Search cities on map..."
+            placeholder="Search artist, shop, or city..."
           />
         </div>
       </div>
@@ -353,13 +585,14 @@ export default function MapPage() {
         cityData={cityDots}
         onCountrySelect={setSelectedCountry}
         onCityClick={handleCityClick}
+        onStateClick={handleStateClick}
         selectedCity={selectedCity}
         flyTo={flyTo}
         flyToKey={flyToKey}
         onBackgroundClick={handleBackgroundClick}
       />
 
-      {!selectedCity && (
+      {!hasPanel && (
         <div className={styles.infoCard}>
           <h1 className={styles.infoTitle}>
             {selectedCountry || "Artist Map"}
@@ -372,38 +605,62 @@ export default function MapPage() {
         </div>
       )}
 
-      {selectedCity && !isMobile && (
+      {/* Desktop side panel */}
+      {hasPanel && !isMobile && (
         <div className={styles.sidePanel}>
-          <CityDetailCard
-            cityName={selectedCity.cityName}
-            stateName={selectedCity.stateName}
-            countryName={selectedCity.countryName}
-            artists={cityArtists}
-            shops={cityShops}
-            loading={loadingArtists}
-            onClose={() => setSelectedCity(null)}
-          />
-        </div>
-      )}
-
-      {selectedCity && isMobile && (
-        <>
-          <div
-            className={styles.mobileBackdrop}
-            onClick={() => setSelectedCity(null)}
-          />
-          <div className={styles.mobileSheet}>
-            <CityDetailCard
-              cityName={selectedCity.cityName}
-              stateName={selectedCity.stateName}
-              countryName={selectedCity.countryName}
+          {selectedCity ? (
+            <MapDetailPanel
+              title={selectedCity.cityName}
+              subtitle={citySubtitle}
+              variant="city"
               artists={cityArtists}
               shops={cityShops}
               loading={loadingArtists}
-              onClose={() => setSelectedCity(null)}
+              onClose={handleClosePanel}
             />
-          </div>
-        </>
+          ) : selectedRegion ? (
+            <MapDetailPanel
+              title={selectedRegion.name}
+              subtitle={regionSubtitle}
+              variant="region"
+              artists={regionArtists}
+              shops={regionShops}
+              cityDots={regionCityDots}
+              loading={loadingArtists}
+              onClose={handleClosePanel}
+              onCityClick={handleRegionCityClick}
+            />
+          ) : null}
+        </div>
+      )}
+
+      {/* Mobile bottom sheet */}
+      {hasPanel && isMobile && (
+        <div className={styles.mobileSheet}>
+          {selectedCity ? (
+            <MapDetailPanel
+              title={selectedCity.cityName}
+              subtitle={citySubtitle}
+              variant="city"
+              artists={cityArtists}
+              shops={cityShops}
+              loading={loadingArtists}
+              onClose={handleClosePanel}
+            />
+          ) : selectedRegion ? (
+            <MapDetailPanel
+              title={selectedRegion.name}
+              subtitle={regionSubtitle}
+              variant="region"
+              artists={regionArtists}
+              shops={regionShops}
+              cityDots={regionCityDots}
+              loading={loadingArtists}
+              onClose={handleClosePanel}
+              onCityClick={handleRegionCityClick}
+            />
+          ) : null}
+        </div>
       )}
     </div>
   );

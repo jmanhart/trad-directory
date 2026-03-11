@@ -98,14 +98,6 @@
   }
 }
 
-/* ── Mobile backdrop ── */
-.mobileBackdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 19;
-  background: rgba(0, 0, 0, 0.3);
-}
-
 /* ── Mobile bottom sheet ── */
 .mobileSheet {
   position: fixed;

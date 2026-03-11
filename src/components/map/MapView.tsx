@@ -1,4 +1,11 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+  memo,
+} from "react";
 import {
   ComposableMap,
   Geographies,
@@ -6,7 +13,6 @@ import {
   Marker,
   ZoomableGroup,
 } from "react-simple-maps";
-import MapTooltip from "./MapTooltip";
 import useIsMobile from "../../hooks/useIsMobile";
 import styles from "./MapView.module.css";
 
@@ -39,26 +45,70 @@ Object.entries(COUNTRY_NAME_MAP).forEach(([db, geo]) => {
   REVERSE_COUNTRY_MAP[geo] = db;
 });
 
+// Stable style objects — never recreated
+const COUNTRY_STYLE = {
+  default: {
+    fill: "var(--gray-200)",
+    outline: "none",
+  },
+  hover: {
+    fill: "var(--gray-300)",
+    outline: "none",
+    cursor: "pointer" as const,
+  },
+  pressed: {
+    fill: "var(--gray-300)",
+    outline: "none",
+  },
+};
+
+const STATE_STYLE = {
+  default: {
+    fill: "transparent",
+    outline: "none",
+    cursor: "pointer" as const,
+  },
+  hover: {
+    fill: "rgba(0,0,0,0.06)",
+    outline: "none",
+    cursor: "pointer" as const,
+  },
+  pressed: {
+    fill: "rgba(0,0,0,0.08)",
+    outline: "none",
+  },
+};
+
 interface MapViewProps {
   cityData: CityDot[];
   onCountrySelect?: (countryName: string | null) => void;
   onCityClick?: (city: CityDot) => void;
+  onStateClick?: (stateName: string) => void;
   selectedCity?: CityDot | null;
   flyTo?: { coordinates: [number, number]; zoom: number } | null;
   flyToKey?: number;
   onBackgroundClick?: () => void;
 }
 
+// Desired screen-space radius in pixels based on artist count.
+// ZoomableGroup scales SVG by `zoom`, so to get X screen pixels
+// we need to set the SVG circle r = X / zoom.
 function getDotRadius(
   count: number,
   maxCount: number,
+  zoom: number,
   isMobile: boolean
 ): number {
-  const minR = isMobile ? 5 : 3;
-  const maxR = isMobile ? 16 : 12;
-  if (maxCount <= 1) return minR;
-  const scale = Math.sqrt(count) / Math.sqrt(maxCount);
-  return minR + scale * (maxR - minR);
+  // Screen-pixel sizes we want to see
+  const minPx = isMobile ? 6 : 4;
+  const maxPx = isMobile ? 18 : 14;
+
+  // Proportional size based on artist count
+  const t = maxCount <= 1 ? 0 : Math.sqrt(count) / Math.sqrt(maxCount);
+  const screenPx = minPx + t * (maxPx - minPx);
+
+  // Convert to SVG units (ZoomableGroup multiplies by zoom)
+  return screenPx / zoom;
 }
 
 function filterZoomEvent(event: {
@@ -77,19 +127,94 @@ function filterZoomEvent(event: {
   return true;
 }
 
+// Memoized marker to avoid re-rendering all dots when one changes
+const CityMarker = memo(function CityMarker({
+  city,
+  r,
+  tapR,
+  selected,
+  zoomScale,
+  isMobile,
+  onDotClick,
+  onMouseEnter,
+  onMouseLeave,
+}: {
+  city: CityDot;
+  r: number;
+  tapR: number;
+  selected: boolean;
+  zoomScale: number;
+  isMobile: boolean;
+  onDotClick: (city: CityDot, e: React.MouseEvent) => void;
+  onMouseEnter?: (city: CityDot, e: React.MouseEvent) => void;
+  onMouseLeave?: () => void;
+}) {
+  return (
+    <Marker coordinates={[city.lng, city.lat]}>
+      {isMobile && tapR > r && (
+        <circle
+          r={tapR}
+          fill="transparent"
+          onClick={e => {
+            e.stopPropagation();
+            onDotClick(city, e);
+          }}
+          style={{ cursor: "pointer" }}
+        />
+      )}
+      {selected && (
+        <circle
+          r={r + 3 / zoomScale}
+          fill="none"
+          stroke="var(--color-primary)"
+          strokeWidth={2 / zoomScale}
+          className={styles.pulseRing}
+        />
+      )}
+      <circle
+        className={styles.cityDot}
+        r={r}
+        fill={
+          selected
+            ? "var(--color-primary-hover)"
+            : "var(--color-primary)"
+        }
+        fillOpacity={selected ? 1 : 0.8}
+        stroke="var(--color-surface)"
+        strokeWidth={1 / zoomScale}
+        onMouseEnter={
+          isMobile
+            ? undefined
+            : e => onMouseEnter?.(city, e)
+        }
+        onClick={e => {
+          e.stopPropagation();
+          onDotClick(city, e);
+        }}
+        onMouseLeave={isMobile ? undefined : onMouseLeave}
+        style={{ cursor: "pointer" }}
+      />
+    </Marker>
+  );
+});
+
 export default function MapView({
   cityData,
   onCountrySelect,
   onCityClick,
+  onStateClick,
   selectedCity,
   flyTo,
   flyToKey = 0,
   onBackgroundClick,
 }: MapViewProps) {
   const isMobile = useIsMobile();
-  const [hovered, setHovered] = useState<
-    (CityDot & { x: number; y: number }) | null
-  >(null);
+
+  // Tooltip data stored in ref — position updated via DOM, not React state
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const tooltipDataRef = useRef<CityDot | null>(null);
+  const [tooltipCity, setTooltipCity] = useState<CityDot | null>(null);
+
   const [position, setPosition] = useState<{
     coordinates: [number, number];
     zoom: number;
@@ -114,13 +239,13 @@ export default function MapView({
     [cityData]
   );
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (hovered) {
-      setHovered(prev =>
-        prev ? { ...prev, x: e.clientX, y: e.clientY } : null
-      );
+  // Move tooltip via DOM — no React re-renders
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (tooltipRef.current && tooltipDataRef.current) {
+      tooltipRef.current.style.left = `${e.clientX + 12}px`;
+      tooltipRef.current.style.top = `${e.clientY - 12}px`;
     }
-  };
+  }, []);
 
   const maxZoom = 50;
   const handleZoomIn = () =>
@@ -186,16 +311,48 @@ export default function MapView({
         zoom: Math.max(prev.zoom, 6),
       }));
       setJumpKey(k => k + 1);
-      setHovered(null);
+      tooltipDataRef.current = null;
+      setTooltipCity(null);
       onCityClick?.(city);
     },
     [onCityClick]
   );
 
-  const isSelected = (city: CityDot) =>
-    selectedCity?.cityName === city.cityName &&
-    selectedCity?.lat === city.lat &&
-    selectedCity?.lng === city.lng;
+  const handleMarkerClick = useCallback(
+    (city: CityDot, _e: React.MouseEvent) => {
+      handleDotClick(city);
+    },
+    [handleDotClick]
+  );
+
+  const handleMarkerEnter = useCallback(
+    (city: CityDot, e: React.MouseEvent) => {
+      tooltipDataRef.current = city;
+      setTooltipCity(city);
+      if (tooltipRef.current) {
+        tooltipRef.current.style.left = `${e.clientX + 12}px`;
+        tooltipRef.current.style.top = `${e.clientY - 12}px`;
+      }
+    },
+    []
+  );
+
+  const handleMarkerLeave = useCallback(() => {
+    tooltipDataRef.current = null;
+    setTooltipCity(null);
+  }, []);
+
+  const isSelected = useCallback(
+    (city: CityDot) =>
+      selectedCity?.cityName === city.cityName &&
+      selectedCity?.lat === city.lat &&
+      selectedCity?.lng === city.lng,
+    [selectedCity]
+  );
+
+  const zoom = position.zoom;
+  // For stroke widths — just scale inversely with zoom
+  const strokeScale = zoom;
 
   return (
     <div
@@ -270,21 +427,7 @@ export default function MapView({
                       e.stopPropagation();
                       handleCountryClick(geoName);
                     }}
-                    style={{
-                      default: {
-                        fill: "var(--gray-200)",
-                        outline: "none",
-                      },
-                      hover: {
-                        fill: "var(--gray-300)",
-                        outline: "none",
-                        cursor: "pointer",
-                      },
-                      pressed: {
-                        fill: "var(--gray-300)",
-                        outline: "none",
-                      },
-                    }}
+                    style={COUNTRY_STYLE}
                   />
                 );
               })
@@ -292,101 +435,84 @@ export default function MapView({
           </Geographies>
           <Geographies geography={US_STATES_GEO_URL}>
             {({ geographies }) =>
-              geographies.map(geo => (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  fill="none"
-                  stroke="var(--color-surface)"
-                  strokeWidth={0.3}
-                  style={{
-                    default: { outline: "none" },
-                    hover: { outline: "none" },
-                    pressed: { outline: "none" },
-                  }}
-                />
-              ))
+              geographies.map(geo => {
+                const stateName = geo.properties.name || "";
+                return (
+                  <Geography
+                    key={geo.rsmKey}
+                    geography={geo}
+                    fill="transparent"
+                    stroke="var(--color-surface)"
+                    strokeWidth={0.3}
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (stateName) onStateClick?.(stateName);
+                    }}
+                    style={STATE_STYLE}
+                  />
+                );
+              })
             }
           </Geographies>
           {cityData.map((city, i) => {
-            const baseR = getDotRadius(city.artistCount, maxCount, isMobile);
-            const zoomScale = Math.pow(position.zoom, 0.75);
-            const r = isMobile
-              ? Math.max(2, baseR / zoomScale)
-              : Math.max(1.5, baseR / zoomScale);
-            const tapR = isMobile ? Math.max(10, r) : 0;
+            const r = getDotRadius(
+              city.artistCount,
+              maxCount,
+              zoom,
+              isMobile
+            );
+            const tapR = isMobile
+              ? Math.max(12 / zoom, r)
+              : 0;
             const selected = isSelected(city);
             return (
-              <Marker
+              <CityMarker
                 key={`${city.cityName}-${city.lat}-${city.lng}-${i}`}
-                coordinates={[city.lng, city.lat]}
-              >
-                {isMobile && tapR > r && (
-                  <circle
-                    r={tapR}
-                    fill="transparent"
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleDotClick(city);
-                    }}
-                    style={{ cursor: "pointer" }}
-                  />
-                )}
-                {selected && (
-                  <circle
-                    r={r + 3 / zoomScale}
-                    fill="none"
-                    stroke="var(--color-primary)"
-                    strokeWidth={2 / zoomScale}
-                    className={styles.pulseRing}
-                  />
-                )}
-                <circle
-                  className={styles.cityDot}
-                  r={r}
-                  fill={
-                    selected
-                      ? "var(--color-primary-hover)"
-                      : "var(--color-primary)"
-                  }
-                  fillOpacity={selected ? 1 : 0.8}
-                  stroke="var(--color-surface)"
-                  strokeWidth={1 / zoomScale}
-                  onMouseEnter={
-                    isMobile
-                      ? undefined
-                      : e => {
-                          setHovered({
-                            ...city,
-                            x: e.clientX,
-                            y: e.clientY,
-                          });
-                        }
-                  }
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleDotClick(city);
-                  }}
-                  onMouseLeave={
-                    isMobile ? undefined : () => setHovered(null)
-                  }
-                  style={{ cursor: "pointer" }}
-                />
-              </Marker>
+                city={city}
+                r={r}
+                tapR={tapR}
+                selected={selected}
+                zoomScale={strokeScale}
+                isMobile={isMobile}
+                onDotClick={handleMarkerClick}
+                onMouseEnter={
+                  isMobile ? undefined : handleMarkerEnter
+                }
+                onMouseLeave={
+                  isMobile ? undefined : handleMarkerLeave
+                }
+              />
             );
           })}
         </ZoomableGroup>
       </ComposableMap>
-      {!isMobile && hovered && (
-        <MapTooltip
-          cityName={hovered.cityName}
-          stateName={hovered.stateName}
-          countryName={hovered.countryName}
-          artistCount={hovered.artistCount}
-          shopCount={hovered.shopCount}
-          x={hovered.x}
-          y={hovered.y}
-        />
+      {!isMobile && tooltipCity && (
+        <div
+          ref={tooltipRef}
+          className={styles.tooltip}
+          style={{ position: "fixed", pointerEvents: "none" }}
+        >
+          <div className={styles.tooltipCity}>
+            {[
+              tooltipCity.cityName,
+              tooltipCity.stateName,
+              tooltipCity.countryName,
+            ]
+              .filter(Boolean)
+              .join(", ")}
+          </div>
+          <div className={styles.tooltipCount}>
+            {tooltipCity.artistCount}{" "}
+            {tooltipCity.artistCount === 1 ? "artist" : "artists"}
+            {tooltipCity.shopCount ? (
+              <>
+                {" "}
+                &middot; {tooltipCity.shopCount}{" "}
+                {tooltipCity.shopCount === 1 ? "shop" : "shops"}
+              </>
+            ) : null}
+          </div>
+        </div>
       )}
     </div>
   );
