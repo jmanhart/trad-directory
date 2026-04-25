@@ -23,7 +23,11 @@
     "release": "node scripts/release.js",
     "deploy": "vercel --prod",
     "deploy:preview": "vercel",
-    "check-links": "node scripts/checkInstagramLinks.js"
+    "check-links": "node scripts/checkInstagramLinks.js",
+    "backup": "node scripts/backup.cjs",
+    "backup:push": "node scripts/backup.cjs --push",
+    "restore": "node scripts/restore.cjs",
+    "restore:execute": "node scripts/restore.cjs --execute"
   },
   "dependencies": {
     "@sentry/browser": "^10.0.0",

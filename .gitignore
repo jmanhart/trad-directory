@@ -32,3 +32,4 @@ articles/
 BLOG-DRAFTS/
 .vercel
 .env*.local
+backups/
