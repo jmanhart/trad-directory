@@ -25,7 +25,10 @@ storybook-static
 *.sw?
 
 .env
+.mcp.json
 
 battle-plan.md
+articles/
+BLOG-DRAFTS/
 .vercel
 .env*.local
