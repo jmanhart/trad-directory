@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/node";
 import { requireAdminAuth } from "./_middleware/auth";
 
 interface AddArtistData {
@@ -296,7 +297,11 @@ export default async function handler(req: any, res: any) {
         .insert(locationData);
 
       if (locError) {
-        console.warn(`Failed to insert artist_location: ${locError.message}`);
+        Sentry.captureMessage(
+          `Failed to insert artist_location for artist ${newArtist.id} (${data.name}): ${locError.message}`,
+          { level: "error" }
+        );
+        console.error(`Failed to insert artist_location: ${locError.message}`);
       }
     }
 

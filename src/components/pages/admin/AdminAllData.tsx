@@ -2039,8 +2039,7 @@ export default function AdminAllData() {
                     onClick={handleSave}
                     disabled={
                       saving ||
-                      (editingArtistId &&
-                        (!formData?.name || !formData?.city_id)) ||
+                      (editingArtistId && !formData?.name) ||
                       (editingShopId &&
                         (!shopFormData?.shop_name || !shopFormData?.city_id)) ||
                       (editingCityId && !cityFormData?.city_name?.trim()) ||

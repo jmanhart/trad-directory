@@ -20,3 +20,10 @@
   display: block;
 }
 
+.comma {
+  font-size: var(--type-number-height, 0.9em);
+  line-height: 1;
+  color: currentColor;
+  margin-inline: -0.05em;
+}
+

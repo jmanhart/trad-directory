@@ -32,19 +32,30 @@ export default function TypeNumber({
     return <span className={className}>{placeholder}</span>;
   }
 
+  // Format with commas (e.g. "1003" → "1,003")
+  const formatted = Number(digits).toLocaleString("en-US");
+
   return (
     <span className={`${styles.root} ${className}`}>
-      {digits.split("").map((digit, index) => {
+      {formatted.split("").map((char, index) => {
+        if (char === ",") {
+          return (
+            <span key={`comma-${index}`} className={styles.comma}>
+              ,
+            </span>
+          );
+        }
+
         const src =
-          variant === "red" ? `/TYPE/${digit}-red.svg` : `/TYPE/${digit}.svg`;
+          variant === "red" ? `/TYPE/${char}-red.svg` : `/TYPE/${char}.svg`;
 
         return (
-          <span key={`${digit}-${index}`} className={styles.digitWrapper}>
+          <span key={`${char}-${index}`} className={styles.digitWrapper}>
             <img
               src={src}
-              alt={digit}
+              alt={char}
               className={`${styles.digitImage} ${digitClassName}`}
-              onError={(e) => {
+              onError={e => {
                 // Fail silently if an asset is missing
                 (e.target as HTMLImageElement).style.display = "none";
               }}
