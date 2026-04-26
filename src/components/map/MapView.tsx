@@ -6,25 +6,29 @@ import {
   useRef,
   memo,
 } from "react";
-import {
-  ComposableMap,
-  Geographies,
-  Geography,
+import MapGL, {
   Marker,
-  ZoomableGroup,
-} from "react-simple-maps";
+  Source,
+  Layer,
+  MapRef,
+} from "react-map-gl/maplibre";
+import "maplibre-gl/dist/maplibre-gl.css";
+import { feature } from "topojson-client";
+import type { Topology } from "topojson-specification";
+import type { FeatureCollection, Geometry } from "geojson";
+import type { MapLayerMouseEvent, ViewStateChangeEvent } from "react-map-gl";
 import useIsMobile from "../../hooks/useIsMobile";
 import styles from "./MapView.module.css";
 
 const WORLD_GEO_URL =
-  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json";
+  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 const US_STATES_GEO_URL =
   "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
-// 4-tier zoom thresholds: Continent → Country → State → City
-const ZOOM_CONTINENT = 1.8;
-const ZOOM_COUNTRY = 3.5;
-const ZOOM_CITY = 6;
+// 4-tier zoom thresholds (MapLibre zoom levels 0-22)
+const ZOOM_CONTINENT = 2.5;
+const ZOOM_COUNTRY = 4.5;
+const ZOOM_CITY = 6.5;
 
 // Minimum cities for a non-US country to get state-level clustering
 const STATE_CLUSTER_MIN_CITIES = 5;
@@ -126,38 +130,17 @@ Object.entries(COUNTRY_NAME_MAP).forEach(([db, geo]) => {
   REVERSE_COUNTRY_MAP[geo] = db;
 });
 
-// Stable style objects — never recreated
-const COUNTRY_STYLE = {
-  default: {
-    fill: "var(--gray-200)",
-    outline: "none",
-  },
-  hover: {
-    fill: "var(--gray-300)",
-    outline: "none",
-    cursor: "pointer" as const,
-  },
-  pressed: {
-    fill: "var(--gray-300)",
-    outline: "none",
-  },
-};
-
-const STATE_STYLE = {
-  default: {
-    fill: "transparent",
-    outline: "none",
-    cursor: "pointer" as const,
-  },
-  hover: {
-    fill: "rgba(0,0,0,0.06)",
-    outline: "none",
-    cursor: "pointer" as const,
-  },
-  pressed: {
-    fill: "rgba(0,0,0,0.08)",
-    outline: "none",
-  },
+// Minimal map style with just a background color — we add our own GeoJSON layers
+const MAP_STYLE = {
+  version: 8 as const,
+  sources: {},
+  layers: [
+    {
+      id: "background",
+      type: "background" as const,
+      paint: { "background-color": "#ffffff" },
+    },
+  ],
 };
 
 interface MapViewProps {
@@ -181,81 +164,92 @@ const LOADING_CONTINENTS = Object.entries(CONTINENT_CENTERS).map(
   })
 );
 
-// Memoized loading placeholder marker
-const LoadingMarker = memo(function LoadingMarker({
-  continent,
-  zoom,
-  isMobile,
-}: {
-  continent: { name: string; lat: number; lng: number };
-  zoom: number;
-  isMobile: boolean;
-}) {
-  const screenPx = isMobile ? 26 : 22;
-  const r = screenPx / zoom;
-  const fontSize = Math.max(8, (isMobile ? 9 : 8)) / zoom;
-  const strokeW = 1.5 / zoom;
+function getTier(
+  z: number
+): "continent" | "country" | "state" | "city" {
+  if (z < ZOOM_CONTINENT) return "continent";
+  if (z < ZOOM_COUNTRY) return "country";
+  if (z < ZOOM_CITY) return "state";
+  return "city";
+}
 
-  return (
-    <Marker coordinates={[continent.lng, continent.lat]}>
-      <circle
-        className={styles.loadingDot}
-        r={r}
-        fill="var(--color-primary)"
-        fillOpacity={0.5}
-        stroke="var(--color-surface)"
-        strokeWidth={strokeW}
-      />
-      <text
-        textAnchor="middle"
-        dominantBaseline="central"
-        fill="var(--color-surface)"
-        fontSize={fontSize}
-        fontWeight={600}
-        style={{ pointerEvents: "none", userSelect: "none" }}
-      >
-        ...
-      </text>
-    </Marker>
-  );
-});
-
-// Desired screen-space radius in pixels based on artist count.
-// ZoomableGroup scales SVG by `zoom`, so to get X screen pixels
-// we need to set the SVG circle r = X / zoom.
+// Screen-space dot radius in pixels based on artist count
 function getDotRadius(
   count: number,
   maxCount: number,
-  zoom: number,
   isMobile: boolean
 ): number {
   const minPx = isMobile ? 6 : 4;
   const maxPx = isMobile ? 18 : 14;
   const t = maxCount <= 1 ? 0 : Math.sqrt(count) / Math.sqrt(maxCount);
-  const screenPx = minPx + t * (maxPx - minPx);
-  return screenPx / zoom;
+  return minPx + t * (maxPx - minPx);
 }
 
-function filterZoomEvent(event: {
-  type: string;
-  ctrlKey?: boolean;
-  metaKey?: boolean;
-  altKey?: boolean;
-}) {
-  if ("touches" in event) return true;
-  if (event.type === "mousemove" || event.type === "mousedown") return true;
-  if (event.type === "wheel")
-    return !!(event.ctrlKey || event.metaKey || event.altKey);
-  return true;
+// Cluster marker sizing (screen pixels)
+function getClusterSize(
+  totalArtists: number,
+  isMobile: boolean
+): number {
+  const minPx = isMobile ? 18 : 16;
+  const maxPx = isMobile ? 40 : 36;
+  const t = Math.min(1, Math.log10(totalArtists + 1) / 3);
+  return minPx + t * (maxPx - minPx);
 }
+
+// Memoized loading placeholder marker
+const LoadingMarker = memo(function LoadingMarker({
+  continent,
+  isMobile,
+}: {
+  continent: { name: string; lat: number; lng: number };
+  isMobile: boolean;
+}) {
+  const size = isMobile ? 52 : 44;
+
+  return (
+    <Marker
+      longitude={continent.lng}
+      latitude={continent.lat}
+      anchor="center"
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        style={{ overflow: "visible" }}
+      >
+        <circle
+          className={styles.loadingDot}
+          cx={size / 2}
+          cy={size / 2}
+          r={size / 2 - 2}
+          fill="var(--color-primary)"
+          fillOpacity={0.5}
+          stroke="var(--color-surface)"
+          strokeWidth={1.5}
+        />
+        <text
+          x={size / 2}
+          y={size / 2}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill="var(--color-surface)"
+          fontSize={isMobile ? 9 : 8}
+          fontWeight={600}
+          style={{ pointerEvents: "none", userSelect: "none" }}
+        >
+          ...
+        </text>
+      </svg>
+    </Marker>
+  );
+});
 
 // Memoized city marker
 const CityMarker = memo(function CityMarker({
   city,
   r,
-  tapR,
   selected,
-  zoomScale,
   isMobile,
   onDotClick,
   onMouseEnter,
@@ -263,57 +257,69 @@ const CityMarker = memo(function CityMarker({
 }: {
   city: CityDot;
   r: number;
-  tapR: number;
   selected: boolean;
-  zoomScale: number;
   isMobile: boolean;
   onDotClick: (city: CityDot, e: React.MouseEvent) => void;
   onMouseEnter?: (city: CityDot, e: React.MouseEvent) => void;
   onMouseLeave?: () => void;
 }) {
+  const tapR = isMobile ? Math.max(20, r + 8) : 0;
+  const svgSize = Math.max(r * 2 + 12, tapR * 2 + 4);
+
   return (
-    <Marker coordinates={[city.lng, city.lat]}>
-      {isMobile && tapR > r && (
-        <circle
-          r={tapR}
-          fill="transparent"
-          onClick={e => {
-            e.stopPropagation();
-            onDotClick(city, e);
-          }}
-          style={{ cursor: "pointer" }}
-        />
-      )}
-      {selected && (
-        <circle
-          r={r + 3 / zoomScale}
-          fill="none"
-          stroke="var(--color-primary)"
-          strokeWidth={2 / zoomScale}
-          className={styles.pulseRing}
-        />
-      )}
-      <circle
-        className={styles.cityDot}
-        r={r}
-        fill={
-          selected
-            ? "var(--color-primary-hover)"
-            : "var(--color-primary)"
-        }
-        fillOpacity={selected ? 1 : 0.8}
-        stroke="var(--color-surface)"
-        strokeWidth={1 / zoomScale}
-        onMouseEnter={
-          isMobile ? undefined : e => onMouseEnter?.(city, e)
-        }
+    <Marker
+      longitude={city.lng}
+      latitude={city.lat}
+      anchor="center"
+    >
+      <svg
+        width={svgSize}
+        height={svgSize}
+        viewBox={`0 0 ${svgSize} ${svgSize}`}
+        style={{ overflow: "visible", cursor: "pointer" }}
         onClick={e => {
           e.stopPropagation();
           onDotClick(city, e);
         }}
+        onMouseEnter={
+          isMobile ? undefined : e => onMouseEnter?.(city, e)
+        }
         onMouseLeave={isMobile ? undefined : onMouseLeave}
-        style={{ cursor: "pointer" }}
-      />
+      >
+        {isMobile && tapR > r && (
+          <circle
+            cx={svgSize / 2}
+            cy={svgSize / 2}
+            r={tapR}
+            fill="transparent"
+          />
+        )}
+        {selected && (
+          <circle
+            cx={svgSize / 2}
+            cy={svgSize / 2}
+            r={r + 3}
+            fill="none"
+            stroke="var(--color-primary)"
+            strokeWidth={2}
+            className={styles.pulseRing}
+          />
+        )}
+        <circle
+          className={styles.cityDot}
+          cx={svgSize / 2}
+          cy={svgSize / 2}
+          r={r}
+          fill={
+            selected
+              ? "var(--color-primary-hover)"
+              : "var(--color-primary)"
+          }
+          fillOpacity={selected ? 1 : 0.8}
+          stroke="var(--color-surface)"
+          strokeWidth={1}
+        />
+      </svg>
     </Marker>
   );
 });
@@ -321,49 +327,32 @@ const CityMarker = memo(function CityMarker({
 // Memoized cluster marker (used for continent, country, and state tiers)
 const ClusterMarker = memo(function ClusterMarker({
   cluster,
-  zoom,
   isMobile,
   onClick,
   onMouseEnter,
   onMouseLeave,
 }: {
   cluster: Cluster;
-  zoom: number;
   isMobile: boolean;
   onClick: (cluster: Cluster, e: React.MouseEvent) => void;
   onMouseEnter?: (cluster: Cluster, e: React.MouseEvent) => void;
   onMouseLeave?: () => void;
 }) {
-  // Screen-space sizing: bigger clusters get bigger dots
-  const minPx = isMobile ? 18 : 16;
-  const maxPx = isMobile ? 40 : 36;
-  // Use log scale for clusters since counts vary wildly (1 vs 500)
-  const t = Math.min(1, Math.log10(cluster.totalArtists + 1) / 3);
-  const screenPx = minPx + t * (maxPx - minPx);
-  const r = screenPx / zoom;
-  const fontSize = Math.max(8, (isMobile ? 11 : 10)) / zoom;
-  const strokeW = 1.5 / zoom;
+  const screenPx = getClusterSize(cluster.totalArtists, isMobile);
+  const fontSize = isMobile ? 11 : 10;
+  const svgSize = screenPx + 4;
 
   return (
-    <Marker coordinates={[cluster.lng, cluster.lat]}>
-      {isMobile && (
-        <circle
-          r={Math.max(20 / zoom, r)}
-          fill="transparent"
-          onClick={e => {
-            e.stopPropagation();
-            onClick(cluster, e);
-          }}
-          style={{ cursor: "pointer" }}
-        />
-      )}
-      <circle
-        className={styles.cityDot}
-        r={r}
-        fill="var(--color-primary)"
-        fillOpacity={0.85}
-        stroke="var(--color-surface)"
-        strokeWidth={strokeW}
+    <Marker
+      longitude={cluster.lng}
+      latitude={cluster.lat}
+      anchor="center"
+    >
+      <svg
+        width={svgSize}
+        height={svgSize}
+        viewBox={`0 0 ${svgSize} ${svgSize}`}
+        style={{ overflow: "visible", cursor: "pointer" }}
         onClick={e => {
           e.stopPropagation();
           onClick(cluster, e);
@@ -374,23 +363,117 @@ const ClusterMarker = memo(function ClusterMarker({
             : e => onMouseEnter?.(cluster, e)
         }
         onMouseLeave={isMobile ? undefined : onMouseLeave}
-        style={{ cursor: "pointer" }}
-      />
-      <text
-        textAnchor="middle"
-        dominantBaseline="central"
-        fill="var(--color-surface)"
-        fontSize={fontSize}
-        fontWeight={700}
-        style={{ pointerEvents: "none", userSelect: "none" }}
       >
-        {cluster.totalArtists}
-      </text>
+        {isMobile && (
+          <circle
+            cx={svgSize / 2}
+            cy={svgSize / 2}
+            r={Math.max(20, screenPx / 2)}
+            fill="transparent"
+          />
+        )}
+        <circle
+          className={styles.cityDot}
+          cx={svgSize / 2}
+          cy={svgSize / 2}
+          r={screenPx / 2}
+          fill="var(--color-primary)"
+          fillOpacity={0.85}
+          stroke="var(--color-surface)"
+          strokeWidth={1.5}
+        />
+        <text
+          x={svgSize / 2}
+          y={svgSize / 2}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill="var(--color-surface)"
+          fontSize={fontSize}
+          fontWeight={700}
+          style={{ pointerEvents: "none", userSelect: "none" }}
+        >
+          {cluster.totalArtists}
+        </text>
+      </svg>
     </Marker>
   );
 });
 
-export default function MapView({
+// Fix antimeridian artifacts: normalize each polygon ring so consecutive
+// points never jump more than 180° in longitude. This may produce coords
+// outside [-180,180] (e.g. Russia at ~190°), which MapLibre handles fine.
+function normalizeRing(ring: number[][]): number[][] {
+  if (ring.length === 0) return ring;
+  const result: number[][] = [ring[0]];
+  for (let i = 1; i < ring.length; i++) {
+    let lng = ring[i][0];
+    const prevLng = result[i - 1][0];
+    while (lng - prevLng > 180) lng -= 360;
+    while (prevLng - lng > 180) lng += 360;
+    result.push([lng, ring[i][1]]);
+  }
+  return result;
+}
+
+function fixAntimeridian(
+  fc: FeatureCollection<Geometry>
+): FeatureCollection<Geometry> {
+  return {
+    ...fc,
+    features: fc.features.map(f => {
+      const g = f.geometry;
+      if (g.type === "Polygon") {
+        return {
+          ...f,
+          geometry: {
+            ...g,
+            coordinates: g.coordinates.map(normalizeRing),
+          },
+        };
+      }
+      if (g.type === "MultiPolygon") {
+        return {
+          ...f,
+          geometry: {
+            ...g,
+            coordinates: g.coordinates.map(poly =>
+              poly.map(normalizeRing)
+            ),
+          },
+        };
+      }
+      return f;
+    }),
+  };
+}
+
+// Custom hook to fetch and convert TopoJSON to GeoJSON
+function useGeoJSON(url: string, objectKey: string) {
+  const [data, setData] = useState<FeatureCollection<Geometry> | null>(
+    null
+  );
+  useEffect(() => {
+    let cancelled = false;
+    fetch(url)
+      .then(res => res.json())
+      .then((topo: Topology) => {
+        if (cancelled) return;
+        const fc = feature(
+          topo,
+          topo.objects[objectKey]
+        ) as FeatureCollection<Geometry>;
+        setData(fixAntimeridian(fc));
+      })
+      .catch(err => console.error("Failed to load GeoJSON:", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [url, objectKey]);
+  return data;
+}
+
+// Inner component with map logic
+function MapInner({
   cityData,
   loading,
   onCountrySelect,
@@ -402,8 +485,9 @@ export default function MapView({
   onBackgroundClick,
 }: MapViewProps) {
   const isMobile = useIsMobile();
+  const mapRef = useRef<MapRef>(null);
 
-  // Tooltip data stored in ref — position updated via DOM, not React state
+  // Tooltip
   const tooltipRef = useRef<HTMLDivElement>(null);
   const tooltipDataRef = useRef<{
     name: string;
@@ -420,19 +504,50 @@ export default function MapView({
     shopCount: number;
   } | null>(null);
 
-  const [position, setPosition] = useState<{
-    coordinates: [number, number];
-    zoom: number;
-  }>({ coordinates: [0, 30], zoom: 1 });
-  const [jumpKey, setJumpKey] = useState(0);
+  const [zoom, setZoom] = useState(1.5);
+  const zoomRef = useRef(1.5);
+  const [tier, setTier] = useState<
+    "continent" | "country" | "state" | "city"
+  >("continent");
+  const tierRef = useRef<"continent" | "country" | "state" | "city">(
+    "continent"
+  );
 
+  // Load GeoJSON data
+  const worldGeoJSON = useGeoJSON(WORLD_GEO_URL, "countries");
+  const usStatesGeoJSON = useGeoJSON(US_STATES_GEO_URL, "states");
+
+  // Sync tier from zoom
+  const syncTier = useCallback((z: number) => {
+    zoomRef.current = z;
+    const newTier = getTier(z);
+    if (newTier !== tierRef.current) {
+      tierRef.current = newTier;
+      setTier(newTier);
+    }
+    setZoom(z);
+  }, []);
+
+  // Handle map zoom changes
+  const handleZoom = useCallback(
+    (e: ViewStateChangeEvent) => {
+      syncTier(e.viewState.zoom);
+    },
+    [syncTier]
+  );
+
+  // Fly-to effect
   useEffect(() => {
-    if (flyToKey > 0 && flyTo) {
-      setPosition({
-        coordinates: flyTo.coordinates,
-        zoom: flyTo.zoom,
+    if (flyToKey > 0 && flyTo && mapRef.current) {
+      // Convert old d3-zoom levels to MapLibre zoom levels
+      // Old zoom 6 ≈ MapLibre zoom 6.5, old zoom 1 ≈ MapLibre 1.5
+      const mlZoom = flyTo.zoom * 1.1;
+      mapRef.flyTo({
+        center: flyTo.coordinates,
+        zoom: mlZoom,
+        duration: 1200,
       });
-      setJumpKey(k => k + 1);
+      syncTier(mlZoom);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flyToKey]);
@@ -478,7 +593,6 @@ export default function MapView({
 
     const clusters: Cluster[] = [];
     map.forEach((v, continent) => {
-      // Use fixed continent centers for better positioning
       const center =
         CONTINENT_CENTERS[continent] || weightedCentroid(v.dots);
       clusters.push({
@@ -525,9 +639,8 @@ export default function MapView({
     return clusters;
   }, [cityData, weightedCentroid]);
 
-  // Tier 3: State clusters (US grouped by state; non-US small countries show as-is)
+  // Tier 3: State clusters
   const stateClusters = useMemo(() => {
-    // Count cities per country to decide which skip to city-level
     const countryCityCounts = new Map<string, number>();
     cityData.forEach(d => {
       const c = d.countryName || "Unknown";
@@ -544,13 +657,12 @@ export default function MapView({
       if (country === "United States" && d.stateName) {
         key = d.stateName;
       } else if (
-        (countryCityCounts.get(country) || 0) >= STATE_CLUSTER_MIN_CITIES &&
+        (countryCityCounts.get(country) || 0) >=
+          STATE_CLUSTER_MIN_CITIES &&
         d.stateName
       ) {
-        // Large non-US countries: group by state/province
         key = `${d.stateName}, ${country}`;
       } else {
-        // Small countries: keep as country cluster at this tier
         key = country;
       }
       if (!map.has(key)) {
@@ -577,7 +689,7 @@ export default function MapView({
     return clusters;
   }, [cityData, weightedCentroid]);
 
-  // Move tooltip via DOM — no React re-renders
+  // Move tooltip via DOM
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (tooltipRef.current && tooltipDataRef.current) {
       tooltipRef.current.style.left = `${e.clientX + 12}px`;
@@ -585,17 +697,26 @@ export default function MapView({
     }
   }, []);
 
-  const maxZoom = 50;
-  const handleZoomIn = () =>
-    setPosition(p => ({ ...p, zoom: Math.min(p.zoom * 1.5, maxZoom) }));
-  const handleZoomOut = () =>
-    setPosition(p => ({ ...p, zoom: Math.max(p.zoom / 1.5, 1) }));
-  const handleReset = useCallback(() => {
-    setPosition({ coordinates: [0, 30], zoom: 1 });
-    setJumpKey(k => k + 1);
-    onCountrySelect?.(null);
-  }, [onCountrySelect]);
+  // Zoom controls
+  const handleZoomIn = useCallback(() => {
+    mapRef.current?.zoomIn({ duration: 300 });
+  }, []);
 
+  const handleZoomOut = useCallback(() => {
+    mapRef.current?.zoomOut({ duration: 300 });
+  }, []);
+
+  const handleReset = useCallback(() => {
+    mapRef.current?.flyTo({
+      center: [0, 30],
+      zoom: 1.5,
+      duration: 800,
+    });
+    syncTier(1.5);
+    onCountrySelect?.(null);
+  }, [onCountrySelect, syncTier]);
+
+  // Country click handler (from GeoJSON layer)
   const handleCountryClick = useCallback(
     (geoName: string) => {
       const dbName = REVERSE_COUNTRY_MAP[geoName] || geoName;
@@ -618,47 +739,109 @@ export default function MapView({
       const lngSpread = Math.max(...lngs) - Math.min(...lngs);
       const spread = Math.max(latSpread, lngSpread, 1);
 
-      let zoom: number;
-      if (spread > 30) zoom = 2;
-      else if (spread > 15) zoom = 3;
-      else if (spread > 8) zoom = 4;
-      else if (spread > 3) zoom = 5;
-      else zoom = 6;
+      let targetZoom: number;
+      if (spread > 30) targetZoom = 3;
+      else if (spread > 15) targetZoom = 3.8;
+      else if (spread > 8) targetZoom = 4.8;
+      else if (spread > 3) targetZoom = 5.5;
+      else targetZoom = 6.5;
 
-      // Ensure we zoom past country cluster threshold into state tier
-      zoom = Math.max(zoom, ZOOM_COUNTRY);
+      targetZoom = Math.max(targetZoom, ZOOM_COUNTRY);
 
-      setPosition({ coordinates: [centerLng, centerLat], zoom });
-      setJumpKey(k => k + 1);
+      mapRef.current?.flyTo({
+        center: [centerLng, centerLat],
+        zoom: targetZoom,
+        duration: 1000,
+      });
+      syncTier(targetZoom);
       onCountrySelect?.(dbName);
     },
-    [cityData, onCountrySelect]
+    [cityData, onCountrySelect, syncTier]
   );
+
+  // Handle clicks on the map layers (countries, states)
+  const handleMapClick = useCallback(
+    (e: MapLayerMouseEvent) => {
+      if (!e.features || e.features.length === 0) {
+        onBackgroundClick?.();
+        return;
+      }
+
+      const feat = e.features[0];
+      if (feat.layer?.id === "countries-fill") {
+        const geoName = feat.properties?.name || "";
+        handleCountryClick(geoName);
+      } else if (feat.layer?.id === "states-fill") {
+        const stateName = feat.properties?.name || "";
+        if (stateName) onStateClick?.(stateName);
+      }
+    },
+    [handleCountryClick, onStateClick, onBackgroundClick]
+  );
+
+  // Hover state for countries
+  const [hoveredCountryId, setHoveredCountryId] = useState<
+    number | null
+  >(null);
+
+  const handleMapMouseMove = useCallback(
+    (e: MapLayerMouseEvent) => {
+      if (e.features && e.features.length > 0) {
+        const feat = e.features[0];
+        if (
+          feat.layer?.id === "countries-fill" ||
+          feat.layer?.id === "states-fill"
+        ) {
+          if (mapRef.current) {
+            mapRef.current.getCanvas().style.cursor = "pointer";
+          }
+          if (feat.id != null) {
+            setHoveredCountryId(feat.id as number);
+          }
+        }
+      } else {
+        if (mapRef.current) {
+          mapRef.current.getCanvas().style.cursor = "";
+        }
+        setHoveredCountryId(null);
+      }
+    },
+    []
+  );
+
+  const handleMapMouseLeave = useCallback(() => {
+    if (mapRef.current) {
+      mapRef.current.getCanvas().style.cursor = "";
+    }
+    setHoveredCountryId(null);
+  }, []);
 
   const handleDotClick = useCallback(
     (city: CityDot) => {
-      setPosition(prev => ({
-        coordinates: [city.lng, city.lat],
-        zoom: Math.max(prev.zoom, 6),
-      }));
-      setJumpKey(k => k + 1);
+      const newZoom = Math.max(zoomRef.current, ZOOM_CITY);
+      mapRef.current?.flyTo({
+        center: [city.lng, city.lat],
+        zoom: newZoom,
+        duration: 800,
+      });
+      syncTier(newZoom);
       tooltipDataRef.current = null;
       setTooltipData(null);
       onCityClick?.(city);
     },
-    [onCityClick]
+    [onCityClick, syncTier]
   );
 
   const handleMarkerClick = useCallback(
-    (city: CityDot, _e: React.MouseEvent) => {
+    (city: CityDot) => {
       handleDotClick(city);
     },
     [handleDotClick]
   );
 
-  // Click handler for continent clusters — zoom to country tier
+  // Continent cluster click — zoom to country tier
   const handleContinentClusterClick = useCallback(
-    (cluster: Cluster, _e: React.MouseEvent) => {
+    (cluster: Cluster) => {
       const dots = cityData.filter(
         d => getContinentForDot(d) === cluster.name
       );
@@ -672,24 +855,27 @@ export default function MapView({
       const lngSpread = Math.max(...lngs) - Math.min(...lngs);
       const spread = Math.max(latSpread, lngSpread, 1);
 
-      let zoom: number;
-      if (spread > 60) zoom = 1.8;
-      else if (spread > 30) zoom = 2.5;
-      else if (spread > 15) zoom = 3;
-      else zoom = 3.5;
+      let targetZoom: number;
+      if (spread > 60) targetZoom = 2.5;
+      else if (spread > 30) targetZoom = 3;
+      else if (spread > 15) targetZoom = 3.8;
+      else targetZoom = 4.5;
 
-      // Ensure we land in country tier
-      zoom = Math.max(zoom, ZOOM_CONTINENT);
+      targetZoom = Math.max(targetZoom, ZOOM_CONTINENT);
 
-      setPosition({ coordinates: [centerLng, centerLat], zoom });
-      setJumpKey(k => k + 1);
+      mapRef.current?.flyTo({
+        center: [centerLng, centerLat],
+        zoom: targetZoom,
+        duration: 1000,
+      });
+      syncTier(targetZoom);
     },
-    [cityData]
+    [cityData, syncTier]
   );
 
-  // Click handler for country clusters — zoom to state tier
+  // Country cluster click — zoom to state tier
   const handleCountryClusterClick = useCallback(
-    (cluster: Cluster, _e: React.MouseEvent) => {
+    (cluster: Cluster) => {
       const geoName =
         COUNTRY_NAME_MAP[cluster.name] || cluster.name;
       handleCountryClick(geoName);
@@ -697,21 +883,21 @@ export default function MapView({
     [handleCountryClick]
   );
 
-  // Click handler for state clusters — zoom to city tier
+  // State cluster click — zoom to city tier
   const handleStateClusterClick = useCallback(
-    (cluster: Cluster, _e: React.MouseEvent) => {
-      // Find the city dots in this state cluster
+    (cluster: Cluster) => {
       const clusterName = cluster.name;
       const dots = cityData.filter(d => {
         const country = d.countryName || "Unknown";
         if (country === "United States" && d.stateName) {
           return d.stateName === clusterName;
         }
-        // For non-US state clusters like "Ontario, Canada"
-        if (d.stateName && `${d.stateName}, ${country}` === clusterName) {
+        if (
+          d.stateName &&
+          `${d.stateName}, ${country}` === clusterName
+        ) {
           return true;
         }
-        // For small countries kept as country clusters
         return country === clusterName;
       });
 
@@ -725,18 +911,20 @@ export default function MapView({
       const lngSpread = Math.max(...lngs) - Math.min(...lngs);
       const spread = Math.max(latSpread, lngSpread, 1);
 
-      let zoom: number;
-      if (spread > 8) zoom = 4;
-      else if (spread > 3) zoom = 5;
-      else zoom = 6;
+      let targetZoom: number;
+      if (spread > 8) targetZoom = 5;
+      else if (spread > 3) targetZoom = 6;
+      else targetZoom = 7;
 
-      // Ensure we land in city tier
-      zoom = Math.max(zoom, ZOOM_CITY);
+      targetZoom = Math.max(targetZoom, ZOOM_CITY);
 
-      setPosition({ coordinates: [centerLng, centerLat], zoom });
-      setJumpKey(k => k + 1);
+      mapRef.current?.flyTo({
+        center: [centerLng, centerLat],
+        zoom: targetZoom,
+        duration: 800,
+      });
+      syncTier(targetZoom);
 
-      // Open state panel for US states
       if (
         cityData.some(
           d =>
@@ -747,7 +935,7 @@ export default function MapView({
         onStateClick?.(clusterName);
       }
     },
-    [cityData, onStateClick]
+    [cityData, onStateClick, syncTier]
   );
 
   const handleMarkerEnter = useCallback(
@@ -799,22 +987,24 @@ export default function MapView({
     [selectedCity]
   );
 
-  const zoom = position.zoom;
-  const strokeScale = zoom;
-  const tier =
-    zoom < ZOOM_CONTINENT
-      ? "continent"
-      : zoom < ZOOM_COUNTRY
-        ? "country"
-        : zoom < ZOOM_CITY
-          ? "state"
-          : "city";
+  // Country fill paint with hover
+  const countryFillPaint = useMemo(
+    () => ({
+      "fill-color": [
+        "case",
+        ["==", ["id"], hoveredCountryId ?? -1],
+        "hsl(0, 0%, 78%)",
+        "hsl(0, 0%, 87%)",
+      ] as unknown as string,
+      "fill-opacity": 1,
+    }),
+    [hoveredCountryId]
+  );
 
   return (
     <div
       className={styles.mapWrapper}
       onMouseMove={handleMouseMove}
-      onClick={onBackgroundClick}
     >
       <div
         className={styles.zoomControls}
@@ -834,7 +1024,7 @@ export default function MapView({
         >
           −
         </button>
-        {position.zoom > 1 && (
+        {zoom > 1.8 && (
           <button
             className={styles.zoomButton}
             onClick={handleReset}
@@ -844,171 +1034,169 @@ export default function MapView({
           </button>
         )}
       </div>
-      <ComposableMap
-        projection="geoMercator"
-        projectionConfig={{
-          scale: 130,
-          center: [0, 30],
+
+      <MapGL
+        ref={mapRef}
+        initialViewState={{
+          longitude: 0,
+          latitude: 30,
+          zoom: 1.5,
         }}
-        width={800}
-        height={450}
         style={{ width: "100%", height: "100%" }}
+        mapStyle={MAP_STYLE}
+        onZoom={handleZoom}
+        onClick={handleMapClick}
+        onMouseMove={handleMapMouseMove}
+        onMouseLeave={handleMapMouseLeave}
+        interactiveLayerIds={["countries-fill", "states-fill"]}
+        scrollZoom={{
+          around: "center",
+        }}
+        maxZoom={18}
+        minZoom={1}
+        attributionControl={false}
       >
-        <ZoomableGroup
-          key={jumpKey}
-          center={position.coordinates}
-          zoom={position.zoom}
-          onMoveEnd={({ coordinates, zoom: newZoom }) =>
-            setPosition({
-              coordinates: coordinates as [number, number],
-              zoom: newZoom,
-            })
-          }
-          minZoom={1}
-          maxZoom={maxZoom}
-          filterZoomEvent={filterZoomEvent}
-        >
-          <Geographies geography={WORLD_GEO_URL}>
-            {({ geographies }) =>
-              geographies.map(geo => {
-                const geoName = geo.properties.name || "";
-                return (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill="var(--gray-200)"
-                    stroke="var(--color-surface)"
-                    strokeWidth={0.5}
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleCountryClick(geoName);
-                    }}
-                    style={COUNTRY_STYLE}
-                  />
-                );
-              })
-            }
-          </Geographies>
-          <Geographies geography={US_STATES_GEO_URL}>
-            {({ geographies }) =>
-              geographies.map(geo => {
-                const stateName = geo.properties.name || "";
-                return (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill="transparent"
-                    stroke="var(--color-surface)"
-                    strokeWidth={0.3}
-                    onClick={e => {
-                      e.stopPropagation();
-                      if (stateName) onStateClick?.(stateName);
-                    }}
-                    style={STATE_STYLE}
-                  />
-                );
-              })
-            }
-          </Geographies>
+        {/* Country borders */}
+        {worldGeoJSON && (
+          <Source
+            id="countries"
+            type="geojson"
+            data={worldGeoJSON}
+            promoteId="name"
+          >
+            <Layer
+              id="countries-fill"
+              type="fill"
+              paint={countryFillPaint}
+            />
+            <Layer
+              id="countries-line"
+              type="line"
+              paint={{
+                "line-color": "#ffffff",
+                "line-width": 0.5,
+              }}
+            />
+          </Source>
+        )}
 
-          {/* Tier 1: Continent clusters (or loading placeholders) */}
-          {tier === "continent" &&
-            (loading || cityData.length === 0) &&
-            LOADING_CONTINENTS.map(c => (
-              <LoadingMarker
-                key={c.name}
-                continent={c}
-                zoom={zoom}
+        {/* US state borders */}
+        {usStatesGeoJSON && (
+          <Source
+            id="us-states"
+            type="geojson"
+            data={usStatesGeoJSON}
+            promoteId="name"
+          >
+            <Layer
+              id="states-fill"
+              type="fill"
+              paint={{
+                "fill-color": "transparent",
+                "fill-opacity": 1,
+              }}
+            />
+            <Layer
+              id="states-line"
+              type="line"
+              paint={{
+                "line-color": "#ffffff",
+                "line-width": 0.3,
+              }}
+            />
+          </Source>
+        )}
+
+        {/* Tier 1: Continent clusters (or loading placeholders) */}
+        {tier === "continent" &&
+          (loading || cityData.length === 0) &&
+          LOADING_CONTINENTS.map(c => (
+            <LoadingMarker
+              key={c.name}
+              continent={c}
+              isMobile={isMobile}
+            />
+          ))}
+        {tier === "continent" &&
+          !loading &&
+          cityData.length > 0 &&
+          continentClusters.map(cluster => (
+            <ClusterMarker
+              key={cluster.name}
+              cluster={cluster}
+              isMobile={isMobile}
+              onClick={handleContinentClusterClick}
+              onMouseEnter={
+                isMobile ? undefined : handleClusterEnter
+              }
+              onMouseLeave={
+                isMobile ? undefined : handleMarkerLeave
+              }
+            />
+          ))}
+
+        {/* Tier 2: Country clusters */}
+        {tier === "country" &&
+          countryClusters.map(cluster => (
+            <ClusterMarker
+              key={cluster.name}
+              cluster={cluster}
+              isMobile={isMobile}
+              onClick={handleCountryClusterClick}
+              onMouseEnter={
+                isMobile ? undefined : handleClusterEnter
+              }
+              onMouseLeave={
+                isMobile ? undefined : handleMarkerLeave
+              }
+            />
+          ))}
+
+        {/* Tier 3: State clusters */}
+        {tier === "state" &&
+          stateClusters.map(cluster => (
+            <ClusterMarker
+              key={cluster.name}
+              cluster={cluster}
+              isMobile={isMobile}
+              onClick={handleStateClusterClick}
+              onMouseEnter={
+                isMobile ? undefined : handleClusterEnter
+              }
+              onMouseLeave={
+                isMobile ? undefined : handleMarkerLeave
+              }
+            />
+          ))}
+
+        {/* Tier 4: Individual city dots */}
+        {tier === "city" &&
+          cityData.map((city, i) => {
+            const r = getDotRadius(
+              city.artistCount,
+              maxCount,
+              isMobile
+            );
+            const selected = isSelected(city);
+            return (
+              <CityMarker
+                key={`${city.cityName}-${city.lat}-${city.lng}-${i}`}
+                city={city}
+                r={r}
+                selected={selected}
                 isMobile={isMobile}
-              />
-            ))}
-          {tier === "continent" &&
-            !loading &&
-            cityData.length > 0 &&
-            continentClusters.map(cluster => (
-              <ClusterMarker
-                key={cluster.name}
-                cluster={cluster}
-                zoom={zoom}
-                isMobile={isMobile}
-                onClick={handleContinentClusterClick}
+                onDotClick={handleMarkerClick}
                 onMouseEnter={
-                  isMobile ? undefined : handleClusterEnter
+                  isMobile ? undefined : handleMarkerEnter
                 }
                 onMouseLeave={
                   isMobile ? undefined : handleMarkerLeave
                 }
               />
-            ))}
+            );
+          })}
+      </MapGL>
 
-          {/* Tier 2: Country clusters */}
-          {tier === "country" &&
-            countryClusters.map(cluster => (
-              <ClusterMarker
-                key={cluster.name}
-                cluster={cluster}
-                zoom={zoom}
-                isMobile={isMobile}
-                onClick={handleCountryClusterClick}
-                onMouseEnter={
-                  isMobile ? undefined : handleClusterEnter
-                }
-                onMouseLeave={
-                  isMobile ? undefined : handleMarkerLeave
-                }
-              />
-            ))}
-
-          {/* Tier 3: State clusters */}
-          {tier === "state" &&
-            stateClusters.map(cluster => (
-              <ClusterMarker
-                key={cluster.name}
-                cluster={cluster}
-                zoom={zoom}
-                isMobile={isMobile}
-                onClick={handleStateClusterClick}
-                onMouseEnter={
-                  isMobile ? undefined : handleClusterEnter
-                }
-                onMouseLeave={
-                  isMobile ? undefined : handleMarkerLeave
-                }
-              />
-            ))}
-
-          {/* Tier 4: Individual city dots */}
-          {tier === "city" &&
-            cityData.map((city, i) => {
-              const r = getDotRadius(
-                city.artistCount,
-                maxCount,
-                zoom,
-                isMobile
-              );
-              const tapR = isMobile ? Math.max(12 / zoom, r) : 0;
-              const selected = isSelected(city);
-              return (
-                <CityMarker
-                  key={`${city.cityName}-${city.lat}-${city.lng}-${i}`}
-                  city={city}
-                  r={r}
-                  tapR={tapR}
-                  selected={selected}
-                  zoomScale={strokeScale}
-                  isMobile={isMobile}
-                  onDotClick={handleMarkerClick}
-                  onMouseEnter={
-                    isMobile ? undefined : handleMarkerEnter
-                  }
-                  onMouseLeave={
-                    isMobile ? undefined : handleMarkerLeave
-                  }
-                />
-              );
-            })}
-        </ZoomableGroup>
-      </ComposableMap>
       {!isMobile && tooltipData && (
         <div
           ref={tooltipRef}
@@ -1039,4 +1227,8 @@ export default function MapView({
       )}
     </div>
   );
+}
+
+export default function MapView(props: MapViewProps) {
+  return <MapInner {...props} />;
 }
