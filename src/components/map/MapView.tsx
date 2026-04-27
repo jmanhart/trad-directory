@@ -542,7 +542,7 @@ function MapInner({
       // Convert old d3-zoom levels to MapLibre zoom levels
       // Old zoom 6 ≈ MapLibre zoom 6.5, old zoom 1 ≈ MapLibre 1.5
       const mlZoom = flyTo.zoom * 1.1;
-      mapRef.flyTo({
+      mapRef.current.flyTo({
         center: flyTo.coordinates,
         zoom: mlZoom,
         duration: 1200,
