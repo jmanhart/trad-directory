@@ -97,8 +97,46 @@
   background: var(--gray-100);
 }
 
+.cityMarker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.cityDotWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tapTarget {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 .cityDot {
+  border-radius: 50%;
+  border: 1px solid var(--color-surface);
   transition: opacity 0.3s ease-out;
+}
+
+.cityLabel {
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  text-shadow:
+    -1px -1px 0 var(--color-surface),
+    1px -1px 0 var(--color-surface),
+    -1px 1px 0 var(--color-surface),
+    1px 1px 0 var(--color-surface);
 }
 
 .loadingDot {
@@ -116,8 +154,13 @@
 }
 
 .pulseRing {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid var(--color-primary);
   animation: pulse 2s ease-in-out infinite;
-  transform-origin: center;
 }
 
 @keyframes pulse {

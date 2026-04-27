@@ -58,7 +58,8 @@ const CONTINENT_FALLBACK: Record<string, string> = {
   "United States": "North America",
   Canada: "North America",
   Mexico: "North America",
-  "Costa Rica": "Central America",
+  "Costa Rica": "North America",
+  Guatemala: "North America",
   Colombia: "South America",
   Brazil: "South America",
   Argentina: "South America",
@@ -100,7 +101,6 @@ const CONTINENT_FALLBACK: Record<string, string> = {
 // Fixed center coordinates for continent clusters (lng, lat)
 const CONTINENT_CENTERS: Record<string, { lat: number; lng: number }> = {
   "North America": { lat: 40, lng: -100 },
-  "Central America": { lat: 15, lng: -85 },
   "South America": { lat: -15, lng: -55 },
   Europe: { lat: 50, lng: 15 },
   Asia: { lat: 35, lng: 100 },
@@ -108,12 +108,56 @@ const CONTINENT_CENTERS: Record<string, { lat: number; lng: number }> = {
   Africa: { lat: 5, lng: 20 },
 };
 
+// Fixed center overrides for countries where artist data skews the centroid
+const COUNTRY_CENTERS: Record<string, { lat: number; lng: number }> = {
+  // Americas
+  Canada: { lat: 56, lng: -96 },
+  "United States": { lat: 39, lng: -98 },
+  Mexico: { lat: 23, lng: -102 },
+  Brazil: { lat: -14, lng: -51 },
+  Colombia: { lat: 4, lng: -72 },
+  Argentina: { lat: -34, lng: -64 },
+  // Europe
+  "United Kingdom": { lat: 54, lng: -2 },
+  Ireland: { lat: 53.5, lng: -8 },
+  France: { lat: 46.5, lng: 2.5 },
+  Spain: { lat: 40, lng: -3.5 },
+  Portugal: { lat: 39.5, lng: -8 },
+  Germany: { lat: 51, lng: 10 },
+  Italy: { lat: 42.5, lng: 12.5 },
+  Netherlands: { lat: 52.2, lng: 5.3 },
+  Belgium: { lat: 50.5, lng: 4.5 },
+  Austria: { lat: 47.5, lng: 14 },
+  Switzerland: { lat: 47, lng: 8 },
+  Poland: { lat: 52, lng: 19.5 },
+  "Czech Republic": { lat: 49.8, lng: 15.5 },
+  Sweden: { lat: 62, lng: 15 },
+  Norway: { lat: 64, lng: 12 },
+  Denmark: { lat: 56, lng: 10 },
+  Finland: { lat: 64, lng: 26 },
+  Greece: { lat: 39, lng: 22 },
+  Croatia: { lat: 45, lng: 16 },
+  "Bosnia and Herzegovina": { lat: 44, lng: 17.8 },
+  Estonia: { lat: 59, lng: 25 },
+  Ukraine: { lat: 49, lng: 31 },
+  Iceland: { lat: 65, lng: -19 },
+  // Asia & Oceania
+  Russia: { lat: 62, lng: 95 },
+  China: { lat: 35, lng: 105 },
+  Japan: { lat: 36, lng: 138 },
+  "South Korea": { lat: 36, lng: 128 },
+  Thailand: { lat: 15, lng: 101 },
+  Australia: { lat: -25, lng: 134 },
+  "New Zealand": { lat: -41, lng: 174 },
+};
+
+// Merge "Central America" into "North America" to avoid a lonely cluster
 function getContinentForDot(d: CityDot): string {
-  return (
+  const raw =
     d.continent ||
     CONTINENT_FALLBACK[d.countryName || ""] ||
-    "Other"
-  );
+    "Other";
+  return raw === "Central America" ? "North America" : raw;
 }
 
 // Map country names from our DB to Natural Earth GeoJSON names
@@ -263,20 +307,18 @@ const CityMarker = memo(function CityMarker({
   onMouseEnter?: (city: CityDot, e: React.MouseEvent) => void;
   onMouseLeave?: () => void;
 }) {
-  const tapR = isMobile ? Math.max(20, r + 8) : 0;
-  const svgSize = Math.max(r * 2 + 12, tapR * 2 + 4);
+  const dotSize = r * 2;
+  const tapSize = isMobile ? Math.max(40, dotSize + 16) : 0;
 
   return (
     <Marker
       longitude={city.lng}
       latitude={city.lat}
-      anchor="center"
+      anchor="top"
+      offset={[0, -r]}
     >
-      <svg
-        width={svgSize}
-        height={svgSize}
-        viewBox={`0 0 ${svgSize} ${svgSize}`}
-        style={{ overflow: "visible", cursor: "pointer" }}
+      <div
+        className={styles.cityMarker}
         onClick={e => {
           e.stopPropagation();
           onDotClick(city, e);
@@ -286,40 +328,39 @@ const CityMarker = memo(function CityMarker({
         }
         onMouseLeave={isMobile ? undefined : onMouseLeave}
       >
-        {isMobile && tapR > r && (
-          <circle
-            cx={svgSize / 2}
-            cy={svgSize / 2}
-            r={tapR}
-            fill="transparent"
+        <div
+          className={styles.cityDotWrapper}
+          style={{ width: dotSize, height: dotSize }}
+        >
+          {isMobile && tapSize > dotSize && (
+            <div
+              className={styles.tapTarget}
+              style={{ width: tapSize, height: tapSize }}
+            />
+          )}
+          {selected && (
+            <div
+              className={styles.pulseRing}
+              style={{
+                width: dotSize + 6,
+                height: dotSize + 6,
+              }}
+            />
+          )}
+          <div
+            className={styles.cityDot}
+            style={{
+              width: dotSize,
+              height: dotSize,
+              backgroundColor: selected
+                ? "var(--color-primary-hover)"
+                : "var(--color-primary)",
+              opacity: selected ? 1 : 0.8,
+            }}
           />
-        )}
-        {selected && (
-          <circle
-            cx={svgSize / 2}
-            cy={svgSize / 2}
-            r={r + 3}
-            fill="none"
-            stroke="var(--color-primary)"
-            strokeWidth={2}
-            className={styles.pulseRing}
-          />
-        )}
-        <circle
-          className={styles.cityDot}
-          cx={svgSize / 2}
-          cy={svgSize / 2}
-          r={r}
-          fill={
-            selected
-              ? "var(--color-primary-hover)"
-              : "var(--color-primary)"
-          }
-          fillOpacity={selected ? 1 : 0.8}
-          stroke="var(--color-surface)"
-          strokeWidth={1}
-        />
-      </svg>
+        </div>
+        <span className={styles.cityLabel}>{city.cityName}</span>
+      </div>
     </Marker>
   );
 });
@@ -327,12 +368,14 @@ const CityMarker = memo(function CityMarker({
 // Memoized cluster marker (used for continent, country, and state tiers)
 const ClusterMarker = memo(function ClusterMarker({
   cluster,
+  label,
   isMobile,
   onClick,
   onMouseEnter,
   onMouseLeave,
 }: {
   cluster: Cluster;
+  label?: string;
   isMobile: boolean;
   onClick: (cluster: Cluster, e: React.MouseEvent) => void;
   onMouseEnter?: (cluster: Cluster, e: React.MouseEvent) => void;
@@ -340,19 +383,17 @@ const ClusterMarker = memo(function ClusterMarker({
 }) {
   const screenPx = getClusterSize(cluster.totalArtists, isMobile);
   const fontSize = isMobile ? 11 : 10;
-  const svgSize = screenPx + 4;
+  const r = screenPx / 2;
 
   return (
     <Marker
       longitude={cluster.lng}
       latitude={cluster.lat}
-      anchor="center"
+      anchor="top"
+      offset={[0, -r]}
     >
-      <svg
-        width={svgSize}
-        height={svgSize}
-        viewBox={`0 0 ${svgSize} ${svgSize}`}
-        style={{ overflow: "visible", cursor: "pointer" }}
+      <div
+        className={styles.cityMarker}
         onClick={e => {
           e.stopPropagation();
           onClick(cluster, e);
@@ -364,37 +405,52 @@ const ClusterMarker = memo(function ClusterMarker({
         }
         onMouseLeave={isMobile ? undefined : onMouseLeave}
       >
-        {isMobile && (
-          <circle
-            cx={svgSize / 2}
-            cy={svgSize / 2}
-            r={Math.max(20, screenPx / 2)}
-            fill="transparent"
-          />
-        )}
-        <circle
-          className={styles.cityDot}
-          cx={svgSize / 2}
-          cy={svgSize / 2}
-          r={screenPx / 2}
-          fill="var(--color-primary)"
-          fillOpacity={0.85}
-          stroke="var(--color-surface)"
-          strokeWidth={1.5}
-        />
-        <text
-          x={svgSize / 2}
-          y={svgSize / 2}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fill="var(--color-surface)"
-          fontSize={fontSize}
-          fontWeight={700}
-          style={{ pointerEvents: "none", userSelect: "none" }}
+        <div
+          className={styles.cityDotWrapper}
+          style={{ width: screenPx, height: screenPx }}
         >
-          {cluster.totalArtists}
-        </text>
-      </svg>
+          {isMobile && (
+            <div
+              className={styles.tapTarget}
+              style={{
+                width: Math.max(40, screenPx),
+                height: Math.max(40, screenPx),
+              }}
+            />
+          )}
+          <svg
+            width={screenPx}
+            height={screenPx}
+            viewBox={`0 0 ${screenPx} ${screenPx}`}
+            style={{ overflow: "visible" }}
+          >
+            <circle
+              cx={r}
+              cy={r}
+              r={r}
+              fill="var(--color-primary)"
+              fillOpacity={0.85}
+              stroke="var(--color-surface)"
+              strokeWidth={1.5}
+            />
+            <text
+              x={r}
+              y={r}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="var(--color-surface)"
+              fontSize={fontSize}
+              fontWeight={700}
+              style={{ pointerEvents: "none", userSelect: "none" }}
+            >
+              {cluster.totalArtists}
+            </text>
+          </svg>
+        </div>
+        {label && (
+          <span className={styles.cityLabel}>{label}</span>
+        )}
+      </div>
     </Marker>
   );
 });
@@ -626,7 +682,8 @@ function MapInner({
 
     const clusters: Cluster[] = [];
     map.forEach((v, country) => {
-      const center = weightedCentroid(v.dots);
+      const center =
+        COUNTRY_CENTERS[country] || weightedCentroid(v.dots);
       clusters.push({
         name: country,
         lat: center.lat,
@@ -839,87 +896,46 @@ function MapInner({
     [handleDotClick]
   );
 
-  // Continent cluster click — zoom to country tier
+  // Continent cluster click — zoom in on the dot's position
   const handleContinentClusterClick = useCallback(
     (cluster: Cluster) => {
-      const dots = cityData.filter(
-        d => getContinentForDot(d) === cluster.name
-      );
-      if (dots.length === 0) return;
-
-      const lats = dots.map(d => d.lat);
-      const lngs = dots.map(d => d.lng);
-      const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
-      const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
-      const latSpread = Math.max(...lats) - Math.min(...lats);
-      const lngSpread = Math.max(...lngs) - Math.min(...lngs);
-      const spread = Math.max(latSpread, lngSpread, 1);
-
-      let targetZoom: number;
-      if (spread > 60) targetZoom = 2.5;
-      else if (spread > 30) targetZoom = 3;
-      else if (spread > 15) targetZoom = 3.8;
-      else targetZoom = 4.5;
-
-      targetZoom = Math.max(targetZoom, ZOOM_CONTINENT);
+      const targetZoom = ZOOM_CONTINENT + 0.5;
 
       mapRef.current?.flyTo({
-        center: [centerLng, centerLat],
+        center: [cluster.lng, cluster.lat],
         zoom: targetZoom,
-        duration: 1000,
+        duration: 800,
       });
       syncTier(targetZoom);
     },
-    [cityData, syncTier]
+    [syncTier]
   );
 
-  // Country cluster click — zoom to state tier
+  // Country cluster click — zoom in on the dot's position
   const handleCountryClusterClick = useCallback(
     (cluster: Cluster) => {
-      const geoName =
-        COUNTRY_NAME_MAP[cluster.name] || cluster.name;
-      handleCountryClick(geoName);
+      const dbName = cluster.name;
+      const targetZoom = ZOOM_COUNTRY + 0.5;
+
+      mapRef.current?.flyTo({
+        center: [cluster.lng, cluster.lat],
+        zoom: targetZoom,
+        duration: 800,
+      });
+      syncTier(targetZoom);
+      onCountrySelect?.(dbName);
     },
-    [handleCountryClick]
+    [onCountrySelect, syncTier]
   );
 
-  // State cluster click — zoom to city tier
+  // State cluster click — zoom in on the dot's position
   const handleStateClusterClick = useCallback(
     (cluster: Cluster) => {
       const clusterName = cluster.name;
-      const dots = cityData.filter(d => {
-        const country = d.countryName || "Unknown";
-        if (country === "United States" && d.stateName) {
-          return d.stateName === clusterName;
-        }
-        if (
-          d.stateName &&
-          `${d.stateName}, ${country}` === clusterName
-        ) {
-          return true;
-        }
-        return country === clusterName;
-      });
-
-      if (dots.length === 0) return;
-
-      const lats = dots.map(d => d.lat);
-      const lngs = dots.map(d => d.lng);
-      const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
-      const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
-      const latSpread = Math.max(...lats) - Math.min(...lats);
-      const lngSpread = Math.max(...lngs) - Math.min(...lngs);
-      const spread = Math.max(latSpread, lngSpread, 1);
-
-      let targetZoom: number;
-      if (spread > 8) targetZoom = 5;
-      else if (spread > 3) targetZoom = 6;
-      else targetZoom = 7;
-
-      targetZoom = Math.max(targetZoom, ZOOM_CITY);
+      const targetZoom = ZOOM_CITY + 0.5;
 
       mapRef.current?.flyTo({
-        center: [centerLng, centerLat],
+        center: [cluster.lng, cluster.lat],
         zoom: targetZoom,
         duration: 800,
       });
@@ -1124,6 +1140,7 @@ function MapInner({
             <ClusterMarker
               key={cluster.name}
               cluster={cluster}
+              label={cluster.name}
               isMobile={isMobile}
               onClick={handleContinentClusterClick}
               onMouseEnter={
@@ -1141,6 +1158,7 @@ function MapInner({
             <ClusterMarker
               key={cluster.name}
               cluster={cluster}
+              label={cluster.name}
               isMobile={isMobile}
               onClick={handleCountryClusterClick}
               onMouseEnter={
@@ -1158,6 +1176,7 @@ function MapInner({
             <ClusterMarker
               key={cluster.name}
               cluster={cluster}
+              label={cluster.name.split(",")[0]}
               isMobile={isMobile}
               onClick={handleStateClusterClick}
               onMouseEnter={

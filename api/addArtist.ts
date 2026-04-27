@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import * as Sentry from "@sentry/node";
 import { requireAdminAuth } from "./_middleware/auth";
+import { geocodeCity } from "./_utils/geocode";
 
 interface AddArtistData {
   name: string;
@@ -122,6 +123,36 @@ async function getOrCreateCity(
     throw new Error(
       `Failed to create city: ${createError?.message || "Unknown error"}`
     );
+  }
+
+  // Geocode the new city (non-blocking — city is created regardless)
+  try {
+    // Look up state and country names for the geocode query
+    const { data: stateRow } = await supabase
+      .from("states")
+      .select("state_name")
+      .eq("id", stateId)
+      .single();
+    const { data: countryRow } = await supabase
+      .from("countries")
+      .select("country_name")
+      .eq("id", countryId)
+      .single();
+
+    const coords = await geocodeCity(
+      cityName,
+      stateRow?.state_name ?? null,
+      countryRow?.country_name ?? null
+    );
+
+    if (coords) {
+      await supabase
+        .from("cities")
+        .update({ latitude: coords.lat, longitude: coords.lng })
+        .eq("id", newCity.id);
+    }
+  } catch (geoErr) {
+    console.warn(`Geocoding failed for city "${cityName}":`, geoErr);
   }
 
   return newCity.id;

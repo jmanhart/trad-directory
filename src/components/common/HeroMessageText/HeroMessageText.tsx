@@ -57,7 +57,7 @@ export default function HeroMessageText() {
         }
       >
         <span className={styles.metricNumberText}>
-          {artistCount !== null ? artistCount : "--"}
+          {artistCount !== null ? artistCount.toLocaleString() : "--"}
         </span>
       </Link>{" "}
       artists working at over{" "}
@@ -72,7 +72,7 @@ export default function HeroMessageText() {
         }
       >
         <span className={styles.metricNumberText}>
-          {shopCount !== null ? shopCount : "--"}
+          {shopCount !== null ? shopCount.toLocaleString() : "--"}
         </span>
       </Link>{" "}
       tattoo shops in{" "}
