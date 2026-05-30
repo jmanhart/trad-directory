@@ -684,23 +684,31 @@ export async function fetchAllShops(): Promise<Shop[]> {
       throw new Error(error.message);
     }
 
-    return (data || []).map((shop: any) => ({
-      id: shop.id,
-      shop_name: shop.shop_name,
-      slug: shop.slug || null,
-      instagram_handle: shop.instagram_handle || null,
-      address: shop.address || null,
-      created_at: shop.created_at || null,
-      city_name: Array.isArray(shop.city)
-        ? shop.city[0]?.city_name
-        : shop.city?.city_name || "N/A",
-      state_name: Array.isArray(shop.city?.state)
-        ? shop.city.state[0]?.state_name
-        : shop.city.state?.state_name || "N/A",
-      country_name: Array.isArray(shop.city?.country)
-        ? shop.city.country[0]?.country_name
-        : shop.city.country?.country_name || "N/A",
-    }));
+    return (data || []).map((shop: any) => {
+      const city = Array.isArray(shop.city) ? shop.city[0] : shop.city;
+      const state = city
+        ? Array.isArray(city.state)
+          ? city.state[0]
+          : city.state
+        : null;
+      const country = city
+        ? Array.isArray(city.country)
+          ? city.country[0]
+          : city.country
+        : null;
+
+      return {
+        id: shop.id,
+        shop_name: shop.shop_name,
+        slug: shop.slug || null,
+        instagram_handle: shop.instagram_handle || null,
+        address: shop.address || null,
+        created_at: shop.created_at || null,
+        city_name: city?.city_name || "N/A",
+        state_name: state?.state_name || "N/A",
+        country_name: country?.country_name || "N/A",
+      };
+    });
   } catch (err) {
     console.error("Unhandled error in fetchAllShops:", err);
     throw err;
