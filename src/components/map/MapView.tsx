@@ -663,29 +663,38 @@ function MapInner({
     return clusters;
   }, [cityData, weightedCentroid]);
 
-  // Tier 2: Country clusters
+  // Tier 2: Country clusters (US splits into state-level clusters)
   const countryClusters = useMemo(() => {
     const map = new Map<
       string,
-      { dots: CityDot[]; artists: number; shops: number }
+      { dots: CityDot[]; artists: number; shops: number; isUSState: boolean }
     >();
     cityData.forEach(d => {
       const country = d.countryName || "Unknown";
-      if (!map.has(country)) {
-        map.set(country, { dots: [], artists: 0, shops: 0 });
+      let key: string;
+      let isUSState = false;
+      if (country === "United States" && d.stateName) {
+        key = d.stateName;
+        isUSState = true;
+      } else {
+        key = country;
       }
-      const entry = map.get(country)!;
+      if (!map.has(key)) {
+        map.set(key, { dots: [], artists: 0, shops: 0, isUSState });
+      }
+      const entry = map.get(key)!;
       entry.dots.push(d);
       entry.artists += d.artistCount;
       entry.shops += d.shopCount;
     });
 
     const clusters: Cluster[] = [];
-    map.forEach((v, country) => {
-      const center =
-        COUNTRY_CENTERS[country] || weightedCentroid(v.dots);
+    map.forEach((v, name) => {
+      const center = v.isUSState
+        ? weightedCentroid(v.dots)
+        : COUNTRY_CENTERS[name] || weightedCentroid(v.dots);
       clusters.push({
-        name: country,
+        name,
         lat: center.lat,
         lng: center.lng,
         totalArtists: v.artists,
@@ -912,20 +921,36 @@ function MapInner({
   );
 
   // Country cluster click — zoom in on the dot's position
+  // US state clusters at this tier zoom directly to city level
   const handleCountryClusterClick = useCallback(
     (cluster: Cluster) => {
-      const dbName = cluster.name;
-      const targetZoom = ZOOM_COUNTRY + 0.5;
+      const isUSState = cityData.some(
+        d =>
+          d.countryName === "United States" &&
+          d.stateName === cluster.name
+      );
 
-      mapRef.current?.flyTo({
-        center: [cluster.lng, cluster.lat],
-        zoom: targetZoom,
-        duration: 800,
-      });
-      syncTier(targetZoom);
-      onCountrySelect?.(dbName);
+      if (isUSState) {
+        const targetZoom = ZOOM_CITY + 0.5;
+        mapRef.current?.flyTo({
+          center: [cluster.lng, cluster.lat],
+          zoom: targetZoom,
+          duration: 1000,
+        });
+        syncTier(targetZoom);
+        onStateClick?.(cluster.name);
+      } else {
+        const targetZoom = ZOOM_COUNTRY + 0.5;
+        mapRef.current?.flyTo({
+          center: [cluster.lng, cluster.lat],
+          zoom: targetZoom,
+          duration: 800,
+        });
+        syncTier(targetZoom);
+        onCountrySelect?.(cluster.name);
+      }
     },
-    [onCountrySelect, syncTier]
+    [cityData, onCountrySelect, onStateClick, syncTier]
   );
 
   // State cluster click — zoom in on the dot's position
