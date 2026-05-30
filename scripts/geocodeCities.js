@@ -57,7 +57,7 @@ async function main() {
   // Fetch cities that don't have coordinates yet
   const { data: cities, error: citiesError } = await supabase
     .from("cities")
-    .select("id, city_name, state_id")
+    .select("id, city_name, state_id, country_id")
     .is("latitude", null)
     .order("id");
 
@@ -99,13 +99,42 @@ async function main() {
     });
   }
 
+  // Fetch countries for cities that have country_id but no state
+  const countryIds = [
+    ...new Set(
+      cities
+        .filter(c => !c.state_id && c.country_id)
+        .map(c => c.country_id)
+    ),
+  ];
+  const countriesMap = new Map();
+
+  if (countryIds.length > 0) {
+    const { data: countries, error: countriesError } = await supabase
+      .from("countries")
+      .select("id, country_name")
+      .in("id", countryIds);
+
+    if (countriesError) {
+      console.error("Error fetching countries:", countriesError);
+      process.exit(1);
+    }
+
+    (countries || []).forEach(c => {
+      countriesMap.set(c.id, c.country_name);
+    });
+  }
+
   let success = 0;
   let failed = 0;
 
   for (const city of cities) {
     const stateInfo = city.state_id ? statesMap.get(city.state_id) : null;
     const stateName = stateInfo?.state_name || null;
-    const countryName = stateInfo?.country_name || null;
+    const countryName =
+      stateInfo?.country_name ||
+      (city.country_id ? countriesMap.get(city.country_id) : null) ||
+      null;
 
     process.stdout.write(
       `Geocoding: ${city.city_name}${stateName ? `, ${stateName}` : ""}${countryName ? `, ${countryName}` : ""} ... `
