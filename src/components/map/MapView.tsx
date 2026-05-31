@@ -217,18 +217,6 @@ function getTier(
   return "city";
 }
 
-// Screen-space dot radius in pixels based on artist count
-function getDotRadius(
-  count: number,
-  maxCount: number,
-  isMobile: boolean
-): number {
-  const minPx = isMobile ? 6 : 4;
-  const maxPx = isMobile ? 18 : 14;
-  const t = maxCount <= 1 ? 0 : Math.sqrt(count) / Math.sqrt(maxCount);
-  return minPx + t * (maxPx - minPx);
-}
-
 // Cluster marker sizing (screen pixels)
 function getClusterSize(
   totalArtists: number,
@@ -292,7 +280,6 @@ const LoadingMarker = memo(function LoadingMarker({
 // Memoized city marker
 const CityMarker = memo(function CityMarker({
   city,
-  r,
   selected,
   isMobile,
   onDotClick,
@@ -300,22 +287,22 @@ const CityMarker = memo(function CityMarker({
   onMouseLeave,
 }: {
   city: CityDot;
-  r: number;
   selected: boolean;
   isMobile: boolean;
   onDotClick: (city: CityDot, e: React.MouseEvent) => void;
   onMouseEnter?: (city: CityDot, e: React.MouseEvent) => void;
   onMouseLeave?: () => void;
 }) {
-  const dotSize = r * 2;
-  const tapSize = isMobile ? Math.max(40, dotSize + 16) : 0;
+  const screenPx = getClusterSize(city.artistCount, isMobile);
+  const halfPx = screenPx / 2;
+  const fontSize = isMobile ? 11 : 10;
 
   return (
     <Marker
       longitude={city.lng}
       latitude={city.lat}
       anchor="top"
-      offset={[0, -r]}
+      offset={[0, -halfPx]}
     >
       <div
         className={styles.cityMarker}
@@ -330,34 +317,58 @@ const CityMarker = memo(function CityMarker({
       >
         <div
           className={styles.cityDotWrapper}
-          style={{ width: dotSize, height: dotSize }}
+          style={{ width: screenPx, height: screenPx }}
         >
-          {isMobile && tapSize > dotSize && (
+          {isMobile && (
             <div
               className={styles.tapTarget}
-              style={{ width: tapSize, height: tapSize }}
+              style={{
+                width: Math.max(40, screenPx),
+                height: Math.max(40, screenPx),
+              }}
             />
           )}
           {selected && (
             <div
               className={styles.pulseRing}
               style={{
-                width: dotSize + 6,
-                height: dotSize + 6,
+                width: screenPx + 6,
+                height: screenPx + 6,
               }}
             />
           )}
-          <div
-            className={styles.cityDot}
-            style={{
-              width: dotSize,
-              height: dotSize,
-              backgroundColor: selected
-                ? "var(--color-primary-hover)"
-                : "var(--color-primary)",
-              opacity: selected ? 1 : 0.8,
-            }}
-          />
+          <svg
+            width={screenPx}
+            height={screenPx}
+            viewBox={`0 0 ${screenPx} ${screenPx}`}
+            style={{ overflow: "visible" }}
+          >
+            <circle
+              cx={halfPx}
+              cy={halfPx}
+              r={halfPx}
+              fill={
+                selected
+                  ? "var(--color-primary-hover)"
+                  : "var(--color-primary)"
+              }
+              fillOpacity={selected ? 1 : 0.85}
+              stroke="var(--color-surface)"
+              strokeWidth={1.5}
+            />
+            <text
+              x={halfPx}
+              y={halfPx}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="var(--color-surface)"
+              fontSize={fontSize}
+              fontWeight={700}
+              style={{ pointerEvents: "none", userSelect: "none" }}
+            >
+              {city.artistCount}
+            </text>
+          </svg>
         </div>
         <span className={styles.cityLabel}>{city.cityName}</span>
       </div>
@@ -608,11 +619,6 @@ function MapInner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flyToKey]);
 
-  const maxCount = useMemo(
-    () => Math.max(1, ...cityData.map(d => d.artistCount)),
-    [cityData]
-  );
-
   // Helper: compute weighted centroid for a set of city dots
   const weightedCentroid = useCallback(
     (dots: CityDot[]): { lat: number; lng: number } => {
@@ -628,6 +634,60 @@ function MapInner({
       return { lat: wLat / wTotal, lng: wLng / wTotal };
     },
     []
+  );
+
+  // Zoom to fit a US state using its GeoJSON bounding box
+  const flyToStateBounds = useCallback(
+    (stateName: string) => {
+      if (!usStatesGeoJSON || !mapRef.current) return;
+
+      const feat = usStatesGeoJSON.features.find(
+        f => f.properties?.name === stateName
+      );
+      if (!feat) return;
+
+      // Walk all coordinates to find bounding box
+      let minLng = Infinity,
+        maxLng = -Infinity,
+        minLat = Infinity,
+        maxLat = -Infinity;
+
+      const walkCoords = (coords: unknown) => {
+        if (
+          Array.isArray(coords) &&
+          coords.length >= 2 &&
+          typeof coords[0] === "number"
+        ) {
+          const [lng, lat] = coords as [number, number];
+          if (lng < minLng) minLng = lng;
+          if (lng > maxLng) maxLng = lng;
+          if (lat < minLat) minLat = lat;
+          if (lat > maxLat) maxLat = lat;
+        } else if (Array.isArray(coords)) {
+          for (const c of coords) walkCoords(c);
+        }
+      };
+
+      walkCoords((feat.geometry as { coordinates: unknown }).coordinates);
+
+      if (!isFinite(minLng)) return;
+
+      mapRef.current.fitBounds(
+        [
+          [minLng, minLat],
+          [maxLng, maxLat],
+        ],
+        { padding: 50, duration: 1000 }
+      );
+
+      // Estimate resulting zoom to sync tier
+      const lngSpan = maxLng - minLng;
+      const latSpan = maxLat - minLat;
+      const span = Math.max(lngSpan, latSpan, 0.5);
+      const estimatedZoom = Math.log2(360 / span) + 0.5;
+      syncTier(Math.max(estimatedZoom, ZOOM_CITY));
+    },
+    [usStatesGeoJSON, syncTier]
   );
 
   // Tier 1: Continent clusters
@@ -779,6 +839,7 @@ function MapInner({
       duration: 800,
     });
     syncTier(1.5);
+    setSelectedStateName(null);
     onCountrySelect?.(null);
   }, [onCountrySelect, syncTier]);
 
@@ -829,25 +890,39 @@ function MapInner({
   const handleMapClick = useCallback(
     (e: MapLayerMouseEvent) => {
       if (!e.features || e.features.length === 0) {
+        setSelectedStateName(null);
         onBackgroundClick?.();
         return;
       }
 
       const feat = e.features[0];
       if (feat.layer?.id === "countries-fill") {
+        setSelectedStateName(null);
         const geoName = feat.properties?.name || "";
         handleCountryClick(geoName);
       } else if (feat.layer?.id === "states-fill") {
         const stateName = feat.properties?.name || "";
-        if (stateName) onStateClick?.(stateName);
+        if (stateName) {
+          setSelectedStateName(stateName);
+          flyToStateBounds(stateName);
+          onStateClick?.(stateName);
+        }
       }
     },
-    [handleCountryClick, onStateClick, onBackgroundClick]
+    [handleCountryClick, onStateClick, onBackgroundClick, flyToStateBounds]
   );
 
-  // Hover state for countries
+  // Hover state for countries and states
   const [hoveredCountryId, setHoveredCountryId] = useState<
     number | null
+  >(null);
+  const [hoveredStateName, setHoveredStateName] = useState<
+    string | null
+  >(null);
+
+  // Selected US state (highlighted on the map)
+  const [selectedStateName, setSelectedStateName] = useState<
+    string | null
   >(null);
 
   const handleMapMouseMove = useCallback(
@@ -861,8 +936,16 @@ function MapInner({
           if (mapRef.current) {
             mapRef.current.getCanvas().style.cursor = "pointer";
           }
-          if (feat.id != null) {
-            setHoveredCountryId(feat.id as number);
+          if (feat.layer?.id === "states-fill") {
+            setHoveredStateName(
+              (feat.properties?.name as string) || null
+            );
+            setHoveredCountryId(null);
+          } else {
+            setHoveredCountryId(
+              feat.id != null ? (feat.id as number) : null
+            );
+            setHoveredStateName(null);
           }
         }
       } else {
@@ -870,6 +953,7 @@ function MapInner({
           mapRef.current.getCanvas().style.cursor = "";
         }
         setHoveredCountryId(null);
+        setHoveredStateName(null);
       }
     },
     []
@@ -880,6 +964,7 @@ function MapInner({
       mapRef.current.getCanvas().style.cursor = "";
     }
     setHoveredCountryId(null);
+    setHoveredStateName(null);
   }, []);
 
   const handleDotClick = useCallback(
@@ -931,15 +1016,11 @@ function MapInner({
       );
 
       if (isUSState) {
-        const targetZoom = ZOOM_CITY + 0.5;
-        mapRef.current?.flyTo({
-          center: [cluster.lng, cluster.lat],
-          zoom: targetZoom,
-          duration: 1000,
-        });
-        syncTier(targetZoom);
+        setSelectedStateName(cluster.name);
+        flyToStateBounds(cluster.name);
         onStateClick?.(cluster.name);
       } else {
+        setSelectedStateName(null);
         const targetZoom = ZOOM_COUNTRY + 0.5;
         mapRef.current?.flyTo({
           center: [cluster.lng, cluster.lat],
@@ -950,33 +1031,36 @@ function MapInner({
         onCountrySelect?.(cluster.name);
       }
     },
-    [cityData, onCountrySelect, onStateClick, syncTier]
+    [cityData, onCountrySelect, onStateClick, syncTier, flyToStateBounds]
   );
 
-  // State cluster click — zoom in on the dot's position
+  // State cluster click — zoom to fit state bounds (US) or fly to centroid
   const handleStateClusterClick = useCallback(
     (cluster: Cluster) => {
       const clusterName = cluster.name;
-      const targetZoom = ZOOM_CITY + 0.5;
 
-      mapRef.current?.flyTo({
-        center: [cluster.lng, cluster.lat],
-        zoom: targetZoom,
-        duration: 800,
-      });
-      syncTier(targetZoom);
+      const isUSState = cityData.some(
+        d =>
+          d.countryName === "United States" &&
+          d.stateName === clusterName
+      );
 
-      if (
-        cityData.some(
-          d =>
-            d.countryName === "United States" &&
-            d.stateName === clusterName
-        )
-      ) {
+      if (isUSState) {
+        setSelectedStateName(clusterName);
+        flyToStateBounds(clusterName);
         onStateClick?.(clusterName);
+      } else {
+        setSelectedStateName(null);
+        const targetZoom = ZOOM_CITY + 0.5;
+        mapRef.current?.flyTo({
+          center: [cluster.lng, cluster.lat],
+          zoom: targetZoom,
+          duration: 800,
+        });
+        syncTier(targetZoom);
       }
     },
-    [cityData, onStateClick, syncTier]
+    [cityData, onStateClick, syncTier, flyToStateBounds]
   );
 
   const handleMarkerEnter = useCallback(
@@ -1040,6 +1124,22 @@ function MapInner({
       "fill-opacity": 1,
     }),
     [hoveredCountryId]
+  );
+
+  // State fill paint with hover + selected highlight
+  const statesFillPaint = useMemo(
+    () => ({
+      "fill-color": [
+        "case",
+        ["==", ["get", "name"], selectedStateName ?? ""],
+        "hsl(0, 0%, 78%)",
+        ["==", ["get", "name"], hoveredStateName ?? ""],
+        "hsl(0, 0%, 78%)",
+        "transparent",
+      ] as unknown as string,
+      "fill-opacity": 1,
+    }),
+    [selectedStateName, hoveredStateName]
   );
 
   return (
@@ -1132,10 +1232,7 @@ function MapInner({
             <Layer
               id="states-fill"
               type="fill"
-              paint={{
-                "fill-color": "transparent",
-                "fill-opacity": 1,
-              }}
+              paint={statesFillPaint}
             />
             <Layer
               id="states-line"
@@ -1216,17 +1313,11 @@ function MapInner({
         {/* Tier 4: Individual city dots */}
         {tier === "city" &&
           cityData.map((city, i) => {
-            const r = getDotRadius(
-              city.artistCount,
-              maxCount,
-              isMobile
-            );
             const selected = isSelected(city);
             return (
               <CityMarker
                 key={`${city.cityName}-${city.lat}-${city.lng}-${i}`}
                 city={city}
-                r={r}
                 selected={selected}
                 isMobile={isMobile}
                 onDotClick={handleMarkerClick}

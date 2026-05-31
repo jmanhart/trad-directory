@@ -126,9 +126,29 @@
   min-width: 0;
 }
 
+.handleLink {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  text-decoration: none;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.handleLink:hover {
+  color: var(--color-primary);
+}
+
+.handleIcon {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+}
+
 .handle {
   font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
+  color: inherit;
   white-space: nowrap;
   flex-shrink: 0;
 }

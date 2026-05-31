@@ -18,6 +18,31 @@ interface MapDetailPanelProps {
   onCityClick?: (city: CityDot) => void;
 }
 
+function InstagramIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect
+        x="2"
+        y="2"
+        width="20"
+        height="20"
+        rx="5"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2" />
+      <circle cx="18" cy="6" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
 function ChevronIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -257,9 +282,18 @@ export default function MapDetailPanel({
                 >
                   <span className={styles.artistName}>{artist.name}</span>
                   {artist.instagram_handle && (
-                    <span className={styles.handle}>
-                      @{artist.instagram_handle}
-                    </span>
+                    <a
+                      href={`https://instagram.com/${artist.instagram_handle}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.handleLink}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <span className={styles.handle}>
+                        @{artist.instagram_handle}
+                      </span>
+                      <InstagramIcon className={styles.handleIcon} />
+                    </a>
                   )}
                 </Link>
               ))}
@@ -325,9 +359,18 @@ export default function MapDetailPanel({
                             {artist.name}
                           </span>
                           {artist.instagram_handle && (
-                            <span className={styles.handle}>
-                              @{artist.instagram_handle}
-                            </span>
+                            <a
+                              href={`https://instagram.com/${artist.instagram_handle}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={styles.handleLink}
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <InstagramIcon className={styles.handleIcon} />
+                              <span className={styles.handle}>
+                                @{artist.instagram_handle}
+                              </span>
+                            </a>
                           )}
                         </Link>
                       ))}
