@@ -123,6 +123,15 @@ scripts/                 # Maintenance scripts (link checker, release)
 - Checks batches of 50 profiles, stores results in `link_check_results`
 - Admin view at `/admin/broken-links`
 
+## Known Tech Debt / Future Improvements
+
+- **Move search server-side:** `searchArtists` and `searchShops` in `src/services/api.ts` fetch ALL rows client-side and filter in JS. Should move to server-side `/api` endpoints with Supabase `ilike` or Postgres full-text search. Will matter at 5,000+ artists.
+- **Cache "all artists" fetch:** `fetchTattooShopsWithArtists()` is called by multiple functions per page load. Add in-memory cache with short TTL.
+- **`fetchTopCitiesByArtistCount` is inefficient:** Fetches all artists with full joins just to count by city. Should use a Supabase RPC or grouped query.
+- **`created_at` retry pattern is dead code:** `fetchRecentShops`, `fetchRecentArtists`, `fetchRecentCities` all retry without `created_at` on error. If the column exists now, the retry paths are unreachable.
+- **`unlinkArtistFromShop` doesn't clean up `artist_location`:** Direct Supabase DELETE on `artist_shop` — no corresponding `artist_location` row removal. Needs a server-side endpoint.
+- **Supabase 1000-row default limit:** Always paginate or set explicit `.limit()` on any query that could grow. `fetchTattooShopsWithArtists` now paginates; check other unbounded queries as the dataset grows.
+
 ## Important Notes
 
 - No unit test suite yet - Storybook is used for component documentation/visual testing

@@ -1,4 +1,29 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+
+async function fetchAll(
+  buildQuery: (
+    sb: SupabaseClient
+  ) => ReturnType<ReturnType<SupabaseClient["from"]>["select"]>,
+  supabase: SupabaseClient
+): Promise<any[]> {
+  const pageSize = 1000;
+  let allData: any[] = [];
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await buildQuery(supabase).range(
+      offset,
+      offset + pageSize - 1
+    );
+    if (error) throw error;
+    allData = allData.concat(data || []);
+    hasMore = (data?.length || 0) === pageSize;
+    offset += pageSize;
+  }
+
+  return allData;
+}
 
 export default async function handler(req: any, res: any) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -26,21 +51,26 @@ export default async function handler(req: any, res: any) {
       process.env.SUPABASE_SERVICE_KEY
     );
 
-    // 1. Fetch cities with coordinates
-    const { data: cities, error: citiesError } = await supabase
-      .from("cities")
-      .select("id, city_name, state_id, country_id, latitude, longitude")
-      .not("latitude", "is", null)
-      .order("city_name");
-
-    if (citiesError) {
+    // 1. Fetch cities with coordinates (paginated)
+    let cities: any[];
+    try {
+      cities = await fetchAll(
+        sb =>
+          sb
+            .from("cities")
+            .select("id, city_name, state_id, country_id, latitude, longitude")
+            .not("latitude", "is", null)
+            .order("city_name"),
+        supabase
+      );
+    } catch {
       res.status(500).json({ error: "Database query failed" });
       return;
     }
 
     // 2. Fetch states with countries
     const stateIds = [
-      ...new Set((cities || []).map((c: any) => c.state_id).filter(Boolean)),
+      ...new Set(cities.map((c: any) => c.state_id).filter(Boolean)),
     ];
     const statesMap = new Map();
     if (stateIds.length > 0) {
@@ -63,7 +93,7 @@ export default async function handler(req: any, res: any) {
     // 2b. Fetch countries for cities that have country_id but no state
     const countryIds = [
       ...new Set(
-        (cities || [])
+        cities
           .filter((c: any) => !c.state_id && c.country_id)
           .map((c: any) => c.country_id)
       ),
@@ -83,31 +113,33 @@ export default async function handler(req: any, res: any) {
       });
     }
 
-    // 3. Count artists per city via artist_location
-    const { data: artistLocs } = await supabase
-      .from("artist_location")
-      .select("artist_id, city_id");
+    // 3. Count artists per city via artist_location (paginated)
+    const artistLocs = await fetchAll(
+      sb => sb.from("artist_location").select("artist_id, city_id"),
+      supabase
+    );
 
     const artistCountMap = new Map<number, Set<number>>();
-    (artistLocs || []).forEach((al: any) => {
+    artistLocs.forEach((al: any) => {
       if (!artistCountMap.has(al.city_id)) {
         artistCountMap.set(al.city_id, new Set());
       }
       artistCountMap.get(al.city_id)!.add(al.artist_id);
     });
 
-    // 4. Count shops per city
-    const { data: shops } = await supabase
-      .from("tattoo_shops")
-      .select("id, city_id");
+    // 4. Count shops per city (paginated)
+    const shops = await fetchAll(
+      sb => sb.from("tattoo_shops").select("id, city_id"),
+      supabase
+    );
 
     const shopCountMap = new Map<number, number>();
-    (shops || []).forEach((s: any) => {
+    shops.forEach((s: any) => {
       shopCountMap.set(s.city_id, (shopCountMap.get(s.city_id) || 0) + 1);
     });
 
     // 5. Build response - only cities that have artists
-    const results = (cities || [])
+    const results = cities
       .map((city: any) => {
         const state = city.state_id ? statesMap.get(city.state_id) : null;
         // Fallback: if no state, look up country directly from city.country_id

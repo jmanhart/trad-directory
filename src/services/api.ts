@@ -138,33 +138,50 @@ function mapArtistWithLocations(artist: any): any {
 // Fetch all tattoo shops with their associated artists
 export async function fetchTattooShopsWithArtists(): Promise<Artist[]> {
   try {
-    const { data, error } = await supabase.from("artists").select(`
-        id,
-        name,
-        slug,
-        instagram_handle,
-        created_at,
-        is_traveling,
-        secondary_city: cities!secondary_city_id (
-          city_name,
-          state: states (state_name),
-          country: countries (country_name)
-        ),
-        artist_location (
-          is_primary,
-          city: cities (
+    // Supabase defaults to 1000 rows max — fetch all pages
+    let allData: any[] = [];
+    const pageSize = 1000;
+    let offset = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data: page, error } = await supabase
+        .from("artists")
+        .select(`
+          id,
+          name,
+          slug,
+          instagram_handle,
+          created_at,
+          is_traveling,
+          secondary_city: cities!secondary_city_id (
             city_name,
             state: states (state_name),
             country: countries (country_name)
           ),
-          shop: tattoo_shops (id, shop_name, slug, instagram_handle)
-        )
-      `);
+          artist_location (
+            is_primary,
+            city: cities (
+              city_name,
+              state: states (state_name),
+              country: countries (country_name)
+            ),
+            shop: tattoo_shops (id, shop_name, slug, instagram_handle)
+          )
+        `)
+        .range(offset, offset + pageSize - 1);
 
-    if (error) {
-      console.error("Error fetching artists with shops:", error.message);
-      throw new Error(error.message);
+      if (error) {
+        console.error("Error fetching artists with shops:", error.message);
+        throw new Error(error.message);
+      }
+
+      allData = allData.concat(page || []);
+      hasMore = (page?.length || 0) === pageSize;
+      offset += pageSize;
     }
+
+    const data = allData;
 
     if (!data) {
       console.warn("No data returned from fetchTattooShopsWithArtists");
