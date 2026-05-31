@@ -33,6 +33,16 @@ const ZOOM_CITY = 6.5;
 // Minimum cities for a non-US country to get state-level clustering
 const STATE_CLUSTER_MIN_CITIES = 5;
 
+// Panel-aware padding for map zoom/fit operations
+const PANEL_WIDTH = 400; // 340px panel + gap + breathing room
+
+function getMapPadding() {
+  const isDesktop = window.innerWidth > 767;
+  return isDesktop
+    ? { top: 80, bottom: 50, left: PANEL_WIDTH, right: 50 }
+    : { top: 50, bottom: 50, left: 50, right: 50 };
+}
+
 export interface CityDot {
   cityName: string;
   stateName: string | null;
@@ -613,6 +623,7 @@ function MapInner({
         center: flyTo.coordinates,
         zoom: mlZoom,
         duration: 1200,
+        padding: getMapPadding(),
       });
       syncTier(mlZoom);
     }
@@ -677,7 +688,7 @@ function MapInner({
           [minLng, minLat],
           [maxLng, maxLat],
         ],
-        { padding: 50, duration: 1000 }
+        { padding: getMapPadding(), duration: 1000 }
       );
 
       // Estimate resulting zoom to sync tier
@@ -879,6 +890,7 @@ function MapInner({
         center: [centerLng, centerLat],
         zoom: targetZoom,
         duration: 1000,
+        padding: getMapPadding(),
       });
       syncTier(targetZoom);
       onCountrySelect?.(dbName);
@@ -974,6 +986,7 @@ function MapInner({
         center: [city.lng, city.lat],
         zoom: newZoom,
         duration: 800,
+        padding: getMapPadding(),
       });
       syncTier(newZoom);
       tooltipDataRef.current = null;
@@ -999,6 +1012,7 @@ function MapInner({
         center: [cluster.lng, cluster.lat],
         zoom: targetZoom,
         duration: 800,
+        padding: getMapPadding(),
       });
       syncTier(targetZoom);
     },
@@ -1026,6 +1040,7 @@ function MapInner({
           center: [cluster.lng, cluster.lat],
           zoom: targetZoom,
           duration: 800,
+          padding: getMapPadding(),
         });
         syncTier(targetZoom);
         onCountrySelect?.(cluster.name);
@@ -1056,6 +1071,7 @@ function MapInner({
           center: [cluster.lng, cluster.lat],
           zoom: targetZoom,
           duration: 800,
+          padding: getMapPadding(),
         });
         syncTier(targetZoom);
       }

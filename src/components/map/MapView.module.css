@@ -70,7 +70,7 @@
 .zoomControls {
   position: absolute;
   bottom: 1.5rem;
-  left: 1.5rem;
+  right: 1.5rem;
   display: flex;
   flex-direction: row;
   gap: 0.25rem;

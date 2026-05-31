@@ -114,8 +114,9 @@
 
 /* SearchBar sizes */
 .compact .inputWrapper {
-  min-width: 450px;
-  max-width: 450px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
 }
 
 .compact .input {

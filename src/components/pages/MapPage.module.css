@@ -10,12 +10,12 @@
   position: absolute;
   top: 1rem;
   left: 1rem;
-  right: 1rem;
   z-index: 15;
   display: flex;
   align-items: center;
   gap: 0.75rem;
   pointer-events: none;
+  width: 340px;
 }
 
 .overlayLogo {
@@ -38,15 +38,15 @@
 
 .overlaySearch {
   flex: 1;
-  max-width: 400px;
+  min-width: 0;
   pointer-events: auto;
 }
 
 /* ── Info card (no city selected) ── */
 .infoCard {
   position: absolute;
-  bottom: 1.5rem;
-  right: 1.5rem;
+  bottom: 1rem;
+  left: 1rem;
   z-index: 10;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -72,9 +72,9 @@
 /* ── Desktop side panel (floats over map) ── */
 .sidePanel {
   position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  bottom: 1.5rem;
+  top: 4rem;
+  left: 1rem;
+  bottom: 1rem;
   z-index: 10;
   width: 340px;
   background: var(--color-surface);
@@ -84,13 +84,13 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: slideInRight 0.25s ease-out;
+  animation: slideInLeft 0.25s ease-out;
 }
 
-@keyframes slideInRight {
+@keyframes slideInLeft {
   from {
     opacity: 0;
-    transform: translateX(1rem);
+    transform: translateX(-1rem);
   }
   to {
     opacity: 1;
@@ -128,6 +128,8 @@
 @media (max-width: 767px) {
   .mapOverlay {
     gap: 0.5rem;
+    width: auto;
+    right: 1rem;
   }
 
   .overlaySearch {

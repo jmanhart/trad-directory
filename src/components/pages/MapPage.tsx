@@ -601,19 +601,6 @@ export default function MapPage() {
         onBackgroundClick={handleBackgroundClick}
       />
 
-      {!hasPanel && (
-        <div className={styles.infoCard}>
-          <h1 className={styles.infoTitle}>
-            {selectedCountry || "Artist Map"}
-          </h1>
-          <p className={styles.infoSubtitle}>
-            {totalCities} {totalCities === 1 ? "city" : "cities"}{" "}
-            &middot; {totalArtists}{" "}
-            {totalArtists === 1 ? "artist" : "artists"}
-          </p>
-        </div>
-      )}
-
       {/* Desktop side panel */}
       {hasPanel && !isMobile && (
         <div className={styles.sidePanel}>
