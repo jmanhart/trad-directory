@@ -7,6 +7,7 @@ import { useSearchSuggestions } from "../../hooks/useSearchSuggestions";
 import type { Suggestion } from "../../utils/suggestions";
 import MapView, { CityDot } from "../../components/map/MapView";
 import MapDetailPanel from "../../components/map/MapDetailPanel";
+import MapArtistPanel from "../../components/map/MapArtistPanel";
 import SearchBar from "../../components/common/SearchBar";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import styles from "./MapPage.module.css";
@@ -41,6 +42,7 @@ export default function MapPage() {
   const [selectedCity, setSelectedCity] = useState<CityDot | null>(null);
   const [selectedRegion, setSelectedRegion] =
     useState<SelectedRegion | null>(null);
+  const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
 
   // flyTo state for programmatic map navigation
   const [flyTo, setFlyTo] = useState<{
@@ -224,6 +226,7 @@ export default function MapPage() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        setSelectedArtist(null);
         setSelectedCity(null);
         setSelectedRegion(null);
       }
@@ -384,6 +387,7 @@ export default function MapPage() {
       } else {
         setSelectedCity(city);
         setSelectedRegion(null);
+        setSelectedArtist(null);
         ensureArtistsLoaded();
       }
     },
@@ -419,6 +423,7 @@ export default function MapPage() {
 
       setSelectedCity(null);
       setSelectedRegion({ name: stateName, type: "state" });
+      setSelectedArtist(null);
       setFlyTo({ coordinates: [centerLng, centerLat], zoom });
       setFlyToKey(k => k + 1);
       ensureArtistsLoaded();
@@ -441,8 +446,13 @@ export default function MapPage() {
   }, []);
 
   const handleClosePanel = useCallback(() => {
+    setSelectedArtist(null);
     setSelectedCity(null);
     setSelectedRegion(null);
+  }, []);
+
+  const handleArtistClick = useCallback((artist: Artist) => {
+    setSelectedArtist(artist);
   }, []);
 
   // Helper: find a city dot for an artist by matching their city/state
@@ -613,6 +623,7 @@ export default function MapPage() {
               shops={cityShops}
               loading={loadingArtists}
               onClose={handleClosePanel}
+              onArtistClick={handleArtistClick}
             />
           ) : selectedRegion ? (
             <MapDetailPanel
@@ -625,15 +636,32 @@ export default function MapPage() {
               loading={loadingArtists}
               onClose={handleClosePanel}
               onCityClick={handleRegionCityClick}
+              onArtistClick={handleArtistClick}
             />
           ) : null}
+        </div>
+      )}
+
+      {/* Desktop artist detail panel */}
+      {selectedArtist && !isMobile && (
+        <div className={styles.artistPanel}>
+          <MapArtistPanel
+            artist={selectedArtist}
+            onClose={() => setSelectedArtist(null)}
+          />
         </div>
       )}
 
       {/* Mobile bottom sheet */}
       {hasPanel && isMobile && (
         <div className={styles.mobileSheet}>
-          {selectedCity ? (
+          {selectedArtist ? (
+            <MapArtistPanel
+              artist={selectedArtist}
+              onClose={() => setSelectedArtist(null)}
+              showBackButton
+            />
+          ) : selectedCity ? (
             <MapDetailPanel
               title={selectedCity.cityName}
               subtitle={citySubtitle}
@@ -642,6 +670,7 @@ export default function MapPage() {
               shops={cityShops}
               loading={loadingArtists}
               onClose={handleClosePanel}
+              onArtistClick={handleArtistClick}
             />
           ) : selectedRegion ? (
             <MapDetailPanel
@@ -654,6 +683,7 @@ export default function MapPage() {
               loading={loadingArtists}
               onClose={handleClosePanel}
               onCityClick={handleRegionCityClick}
+              onArtistClick={handleArtistClick}
             />
           ) : null}
         </div>

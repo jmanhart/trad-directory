@@ -106,6 +106,14 @@
   color: var(--color-text-secondary);
   border-bottom: 1px solid var(--gray-100);
   transition: background 0.15s;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  width: 100%;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
 }
 
 .listItem:hover {

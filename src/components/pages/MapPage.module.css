@@ -98,6 +98,24 @@
   }
 }
 
+/* ── Desktop artist detail panel (second floating panel) ── */
+.artistPanel {
+  position: absolute;
+  top: 4rem;
+  left: calc(1rem + 340px + 0.75rem);
+  z-index: 10;
+  width: 340px;
+  max-height: calc(100vh - 5rem);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideInLeft 0.25s ease-out;
+}
+
 /* ── Mobile bottom sheet ── */
 .mobileSheet {
   position: fixed;

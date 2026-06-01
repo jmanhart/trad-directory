@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { getArtistUrl, getShopUrl } from "../../services/api";
+import { getShopUrl } from "../../services/api";
 import { Tabs } from "../common/Tabs";
 import type { Artist } from "../../types/entities";
 import type { CityDot } from "./MapView";
@@ -16,6 +16,7 @@ interface MapDetailPanelProps {
   loading?: boolean;
   onClose: () => void;
   onCityClick?: (city: CityDot) => void;
+  onArtistClick?: (artist: Artist) => void;
 }
 
 function InstagramIcon({ className }: { className?: string }) {
@@ -76,6 +77,7 @@ export default function MapDetailPanel({
   loading,
   onClose,
   onCityClick,
+  onArtistClick,
 }: MapDetailPanelProps) {
   const [activeTab, setActiveTab] = useState("artists");
   const [collapsedCities, setCollapsedCities] = useState<Set<string>>(
@@ -275,10 +277,10 @@ export default function MapDetailPanel({
                 </div>
               )}
               {artists.map(artist => (
-                <Link
+                <button
                   key={artist.id}
-                  to={getArtistUrl(artist)}
                   className={styles.listItem}
+                  onClick={() => onArtistClick?.(artist)}
                 >
                   <span className={styles.artistName}>{artist.name}</span>
                   {artist.instagram_handle && (
@@ -295,7 +297,7 @@ export default function MapDetailPanel({
                       <InstagramIcon className={styles.handleIcon} />
                     </a>
                   )}
-                </Link>
+                </button>
               ))}
             </>
           )}
@@ -350,10 +352,10 @@ export default function MapDetailPanel({
                     </button>
                     {!isCollapsed &&
                       group.artists.map(artist => (
-                        <Link
+                        <button
                           key={artist.id}
-                          to={getArtistUrl(artist)}
                           className={styles.listItem}
+                          onClick={() => onArtistClick?.(artist)}
                         >
                           <span className={styles.artistName}>
                             {artist.name}
@@ -372,7 +374,7 @@ export default function MapDetailPanel({
                               </span>
                             </a>
                           )}
-                        </Link>
+                        </button>
                       ))}
                   </div>
                 );
