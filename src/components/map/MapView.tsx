@@ -21,7 +21,7 @@ import useIsMobile from "../../hooks/useIsMobile";
 import styles from "./MapView.module.css";
 
 const WORLD_GEO_URL =
-  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json";
 const US_STATES_GEO_URL =
   "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
@@ -159,6 +159,61 @@ const COUNTRY_CENTERS: Record<string, { lat: number; lng: number }> = {
   Thailand: { lat: 15, lng: 101 },
   Australia: { lat: -25, lng: 134 },
   "New Zealand": { lat: -41, lng: 174 },
+};
+
+// Geographic centers for US states (approximate USGS/Census values)
+const US_STATE_CENTERS: Record<string, { lat: number; lng: number }> = {
+  Alabama: { lat: 32.8, lng: -86.8 },
+  Alaska: { lat: 64, lng: -153 },
+  Arizona: { lat: 34.3, lng: -111.7 },
+  Arkansas: { lat: 34.8, lng: -92.2 },
+  California: { lat: 37.2, lng: -119.5 },
+  Colorado: { lat: 39, lng: -105.5 },
+  Connecticut: { lat: 41.6, lng: -72.7 },
+  Delaware: { lat: 39, lng: -75.5 },
+  Florida: { lat: 28.6, lng: -82.4 },
+  Georgia: { lat: 32.7, lng: -83.5 },
+  Hawaii: { lat: 20.8, lng: -156.3 },
+  Idaho: { lat: 44.4, lng: -114.6 },
+  Illinois: { lat: 40, lng: -89.2 },
+  Indiana: { lat: 39.9, lng: -86.3 },
+  Iowa: { lat: 42, lng: -93.5 },
+  Kansas: { lat: 38.5, lng: -98.4 },
+  Kentucky: { lat: 37.8, lng: -85.7 },
+  Louisiana: { lat: 31, lng: -92 },
+  Maine: { lat: 45.4, lng: -69.2 },
+  Maryland: { lat: 39.0, lng: -76.8 },
+  Massachusetts: { lat: 42.2, lng: -71.8 },
+  Michigan: { lat: 44.3, lng: -84.6 },
+  Minnesota: { lat: 46.3, lng: -94.3 },
+  Mississippi: { lat: 32.7, lng: -89.7 },
+  Missouri: { lat: 38.4, lng: -92.5 },
+  Montana: { lat: 47, lng: -109.6 },
+  Nebraska: { lat: 41.5, lng: -99.8 },
+  Nevada: { lat: 39.5, lng: -116.9 },
+  "New Hampshire": { lat: 43.7, lng: -71.6 },
+  "New Jersey": { lat: 40.1, lng: -74.7 },
+  "New Mexico": { lat: 34.4, lng: -106 },
+  "New York": { lat: 42.9, lng: -75.5 },
+  "North Carolina": { lat: 35.5, lng: -79.8 },
+  "North Dakota": { lat: 47.4, lng: -100.5 },
+  Ohio: { lat: 40.4, lng: -82.8 },
+  Oklahoma: { lat: 35.6, lng: -97.5 },
+  Oregon: { lat: 44, lng: -120.5 },
+  Pennsylvania: { lat: 40.9, lng: -77.8 },
+  "Rhode Island": { lat: 41.7, lng: -71.5 },
+  "South Carolina": { lat: 34, lng: -81 },
+  "South Dakota": { lat: 44.4, lng: -100.2 },
+  Tennessee: { lat: 35.8, lng: -86.4 },
+  Texas: { lat: 31.5, lng: -99.3 },
+  Utah: { lat: 39.3, lng: -111.7 },
+  Vermont: { lat: 44, lng: -72.7 },
+  Virginia: { lat: 37.5, lng: -78.8 },
+  Washington: { lat: 47.4, lng: -120.5 },
+  "West Virginia": { lat: 38.6, lng: -80.6 },
+  Wisconsin: { lat: 44.6, lng: -89.8 },
+  Wyoming: { lat: 43, lng: -107.6 },
+  "District of Columbia": { lat: 38.9, lng: -77 },
 };
 
 // Merge "Central America" into "North America" to avoid a lonely cluster
@@ -762,7 +817,7 @@ function MapInner({
     const clusters: Cluster[] = [];
     map.forEach((v, name) => {
       const center = v.isUSState
-        ? weightedCentroid(v.dots)
+        ? US_STATE_CENTERS[name] || weightedCentroid(v.dots)
         : COUNTRY_CENTERS[name] || weightedCentroid(v.dots);
       clusters.push({
         name,
@@ -813,7 +868,12 @@ function MapInner({
 
     const clusters: Cluster[] = [];
     map.forEach((v, name) => {
-      const center = weightedCentroid(v.dots);
+      const isUSState = v.dots.some(
+        d => d.countryName === "United States" && d.stateName === name
+      );
+      const center = isUSState
+        ? US_STATE_CENTERS[name] || weightedCentroid(v.dots)
+        : weightedCentroid(v.dots);
       clusters.push({
         name,
         lat: center.lat,
@@ -1151,7 +1211,7 @@ function MapInner({
         "hsl(0, 0%, 78%)",
         ["==", ["get", "name"], hoveredStateName ?? ""],
         "hsl(0, 0%, 78%)",
-        "transparent",
+        "hsl(0, 0%, 87%)",
       ] as unknown as string,
       "fill-opacity": 1,
     }),
@@ -1225,6 +1285,7 @@ function MapInner({
               id="countries-fill"
               type="fill"
               paint={countryFillPaint}
+              filter={["!=", ["get", "name"], "United States of America"]}
             />
             <Layer
               id="countries-line"
@@ -1233,6 +1294,7 @@ function MapInner({
                 "line-color": "#ffffff",
                 "line-width": 0.5,
               }}
+              filter={["!=", ["get", "name"], "United States of America"]}
             />
           </Source>
         )}
