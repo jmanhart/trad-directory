@@ -230,7 +230,6 @@ const COUNTRY_NAME_MAP: Record<string, string> = {
   "United States": "United States of America",
   USA: "United States of America",
   UK: "United Kingdom",
-  "South Korea": "Korea",
 };
 
 // Reverse map: GeoJSON name -> DB name
@@ -1188,34 +1187,60 @@ function MapInner({
     [selectedCity]
   );
 
-  // Country fill paint with hover
+  // Derive which states and countries have entries for visual distinction
+  const statesWithEntriesArray = useMemo(() => {
+    const names = new Set<string>();
+    cityData.forEach(dot => {
+      if (dot.stateName) names.add(dot.stateName);
+    });
+    return Array.from(names);
+  }, [cityData]);
+
+  const countriesWithEntriesArray = useMemo(() => {
+    const names = new Set<string>();
+    cityData.forEach(dot => {
+      if (dot.countryName) {
+        // Add both DB name and mapped GeoJSON name to cover all variants
+        names.add(dot.countryName);
+        const geoName = COUNTRY_NAME_MAP[dot.countryName];
+        if (geoName) names.add(geoName);
+      }
+    });
+    return Array.from(names);
+  }, [cityData]);
+
+  // Country fill paint with hover + has-entries distinction
   const countryFillPaint = useMemo(
     () => ({
       "fill-color": [
         "case",
         ["==", ["id"], hoveredCountryId ?? -1],
-        "hsl(0, 0%, 78%)",
-        "hsl(0, 0%, 87%)",
+        "hsl(0, 0%, 72%)",
+        ["in", ["get", "name"], ["literal", countriesWithEntriesArray]],
+        "hsl(0, 0%, 82%)",
+        "hsl(0, 0%, 90%)",
       ] as unknown as string,
       "fill-opacity": 1,
     }),
-    [hoveredCountryId]
+    [hoveredCountryId, countriesWithEntriesArray]
   );
 
-  // State fill paint with hover + selected highlight
+  // State fill paint with hover + selected + has-entries distinction
   const statesFillPaint = useMemo(
     () => ({
       "fill-color": [
         "case",
         ["==", ["get", "name"], selectedStateName ?? ""],
-        "hsl(0, 0%, 78%)",
+        "hsl(0, 0%, 72%)",
         ["==", ["get", "name"], hoveredStateName ?? ""],
-        "hsl(0, 0%, 78%)",
-        "hsl(0, 0%, 87%)",
+        "hsl(0, 0%, 72%)",
+        ["in", ["get", "name"], ["literal", statesWithEntriesArray]],
+        "hsl(0, 0%, 82%)",
+        "hsl(0, 0%, 90%)",
       ] as unknown as string,
       "fill-opacity": 1,
     }),
-    [selectedStateName, hoveredStateName]
+    [selectedStateName, hoveredStateName, statesWithEntriesArray]
   );
 
   return (

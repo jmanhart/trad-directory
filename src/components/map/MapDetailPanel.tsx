@@ -1,22 +1,23 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { getShopUrl } from "../../services/api";
 import { Tabs } from "../common/Tabs";
 import type { Artist } from "../../types/entities";
 import type { CityDot } from "./MapView";
 import styles from "./MapDetailPanel.module.css";
+
+type ShopEntry = { id: number; shop_name: string; slug?: string | null };
 
 interface MapDetailPanelProps {
   title: string;
   subtitle?: string;
   variant: "city" | "region";
   artists: Artist[];
-  shops: { id: number; shop_name: string; slug?: string | null }[];
+  shops: ShopEntry[];
   cityDots?: CityDot[];
   loading?: boolean;
   onClose: () => void;
   onCityClick?: (city: CityDot) => void;
   onArtistClick?: (artist: Artist) => void;
+  onShopClick?: (shop: ShopEntry) => void;
 }
 
 function InstagramIcon({ className }: { className?: string }) {
@@ -65,8 +66,6 @@ function ChevronIcon({ className }: { className?: string }) {
   );
 }
 
-type ShopEntry = { id: number; shop_name: string; slug?: string | null };
-
 export default function MapDetailPanel({
   title,
   subtitle,
@@ -78,6 +77,7 @@ export default function MapDetailPanel({
   onClose,
   onCityClick,
   onArtistClick,
+  onShopClick,
 }: MapDetailPanelProps) {
   const [activeTab, setActiveTab] = useState("artists");
   const [collapsedCities, setCollapsedCities] = useState<Set<string>>(
@@ -387,13 +387,13 @@ export default function MapDetailPanel({
           activeTab === "shops" &&
           variant === "city" &&
           shops.map(shop => (
-            <Link
+            <button
               key={shop.id}
-              to={getShopUrl(shop)}
               className={styles.listItem}
+              onClick={() => onShopClick?.(shop)}
             >
               <span className={styles.shopName}>{shop.shop_name}</span>
-            </Link>
+            </button>
           ))}
 
         {!loading &&
@@ -439,15 +439,15 @@ export default function MapDetailPanel({
                 </button>
                 {!isCollapsed &&
                   group.shops.map(shop => (
-                    <Link
+                    <button
                       key={shop.id}
-                      to={getShopUrl(shop)}
                       className={styles.listItem}
+                      onClick={() => onShopClick?.(shop)}
                     >
                       <span className={styles.shopName}>
                         {shop.shop_name}
                       </span>
-                    </Link>
+                    </button>
                   ))}
               </div>
             );

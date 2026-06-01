@@ -8,6 +8,8 @@ import type { Suggestion } from "../../utils/suggestions";
 import MapView, { CityDot } from "../../components/map/MapView";
 import MapDetailPanel from "../../components/map/MapDetailPanel";
 import MapArtistPanel from "../../components/map/MapArtistPanel";
+import MapShopPanel from "../../components/map/MapShopPanel";
+import type { MapShopData } from "../../components/map/MapShopPanel";
 import SearchBar from "../../components/common/SearchBar";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import styles from "./MapPage.module.css";
@@ -43,6 +45,7 @@ export default function MapPage() {
   const [selectedRegion, setSelectedRegion] =
     useState<SelectedRegion | null>(null);
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
+  const [selectedShop, setSelectedShop] = useState<MapShopData | null>(null);
 
   // flyTo state for programmatic map navigation
   const [flyTo, setFlyTo] = useState<{
@@ -227,6 +230,7 @@ export default function MapPage() {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setSelectedArtist(null);
+        setSelectedShop(null);
         setSelectedCity(null);
         setSelectedRegion(null);
       }
@@ -388,6 +392,7 @@ export default function MapPage() {
         setSelectedCity(city);
         setSelectedRegion(null);
         setSelectedArtist(null);
+        setSelectedShop(null);
         ensureArtistsLoaded();
       }
     },
@@ -424,6 +429,7 @@ export default function MapPage() {
       setSelectedCity(null);
       setSelectedRegion({ name: stateName, type: "state" });
       setSelectedArtist(null);
+      setSelectedShop(null);
       setFlyTo({ coordinates: [centerLng, centerLat], zoom });
       setFlyToKey(k => k + 1);
       ensureArtistsLoaded();
@@ -447,13 +453,58 @@ export default function MapPage() {
 
   const handleClosePanel = useCallback(() => {
     setSelectedArtist(null);
+    setSelectedShop(null);
     setSelectedCity(null);
     setSelectedRegion(null);
   }, []);
 
   const handleArtistClick = useCallback((artist: Artist) => {
     setSelectedArtist(artist);
+    setSelectedShop(null);
   }, []);
+
+  const handleShopClick = useCallback(
+    (shop: { id: number; shop_name: string; slug?: string | null }) => {
+      if (!allArtists) return;
+      // Find artists at this shop and shop metadata from location data
+      let instagram: string | null = null;
+      let cityName: string | null = null;
+      let stateName: string | null = null;
+      let countryName: string | null = null;
+      const shopArtists: Artist[] = [];
+
+      allArtists.forEach(artist => {
+        const locations = artist.locations?.length ? artist.locations : [];
+        for (const loc of locations) {
+          if (loc.shop_id === shop.id) {
+            if (!instagram && loc.shop_instagram_handle) {
+              instagram = loc.shop_instagram_handle;
+            }
+            if (!cityName && loc.city_name) {
+              cityName = loc.city_name;
+              stateName = loc.state_name;
+              countryName = loc.country_name;
+            }
+            shopArtists.push(artist);
+            break;
+          }
+        }
+      });
+
+      setSelectedShop({
+        id: shop.id,
+        shop_name: shop.shop_name,
+        slug: shop.slug,
+        instagram_handle: instagram,
+        city_name: cityName,
+        state_name: stateName,
+        country_name: countryName,
+        artists: shopArtists,
+      });
+      setSelectedArtist(null);
+    },
+    [allArtists]
+  );
 
   // Helper: find a city dot for an artist by matching their city/state
   const findDotForArtist = useCallback(
@@ -624,6 +675,7 @@ export default function MapPage() {
               loading={loadingArtists}
               onClose={handleClosePanel}
               onArtistClick={handleArtistClick}
+              onShopClick={handleShopClick}
             />
           ) : selectedRegion ? (
             <MapDetailPanel
@@ -637,17 +689,27 @@ export default function MapPage() {
               onClose={handleClosePanel}
               onCityClick={handleRegionCityClick}
               onArtistClick={handleArtistClick}
+              onShopClick={handleShopClick}
             />
           ) : null}
         </div>
       )}
 
-      {/* Desktop artist detail panel */}
+      {/* Desktop secondary detail panel (artist or shop) */}
       {selectedArtist && !isMobile && (
         <div className={styles.artistPanel}>
           <MapArtistPanel
             artist={selectedArtist}
             onClose={() => setSelectedArtist(null)}
+          />
+        </div>
+      )}
+      {selectedShop && !isMobile && (
+        <div className={styles.artistPanel}>
+          <MapShopPanel
+            shop={selectedShop}
+            onClose={() => setSelectedShop(null)}
+            onArtistClick={handleArtistClick}
           />
         </div>
       )}
@@ -661,6 +723,13 @@ export default function MapPage() {
               onClose={() => setSelectedArtist(null)}
               showBackButton
             />
+          ) : selectedShop ? (
+            <MapShopPanel
+              shop={selectedShop}
+              onClose={() => setSelectedShop(null)}
+              showBackButton
+              onArtistClick={handleArtistClick}
+            />
           ) : selectedCity ? (
             <MapDetailPanel
               title={selectedCity.cityName}
@@ -671,6 +740,7 @@ export default function MapPage() {
               loading={loadingArtists}
               onClose={handleClosePanel}
               onArtistClick={handleArtistClick}
+              onShopClick={handleShopClick}
             />
           ) : selectedRegion ? (
             <MapDetailPanel
@@ -684,6 +754,7 @@ export default function MapPage() {
               onClose={handleClosePanel}
               onCityClick={handleRegionCityClick}
               onArtistClick={handleArtistClick}
+              onShopClick={handleShopClick}
             />
           ) : null}
         </div>

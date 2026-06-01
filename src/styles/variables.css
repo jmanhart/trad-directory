@@ -135,6 +135,11 @@
   /* Focus ring */
   --color-focus: color-mix(in srgb, var(--blue-300) 55%, white);
 
+  /* Map fill colors (documented here, used as HSL strings in MapLibre expressions) */
+  --map-fill-empty: #e6e6e6; /* hsl(0, 0%, 90%) */
+  --map-fill-has-data: #d1d1d1; /* hsl(0, 0%, 82%) */
+  --map-fill-active: #b8b8b8; /* hsl(0, 0%, 72%) */
+
   /*
     ----------------------------------------------
     SPACING SCALE
