@@ -281,6 +281,8 @@ function getTier(
   return "city";
 }
 
+const TIER_ORDER = { continent: 0, country: 1, state: 2, city: 3 } as const;
+
 // Cluster marker sizing (screen pixels)
 function getClusterSize(
   totalArtists: number,
@@ -648,11 +650,26 @@ function MapInner({
   const worldGeoJSON = useGeoJSON(WORLD_GEO_URL, "countries");
   const usStatesGeoJSON = useGeoJSON(US_STATES_GEO_URL, "states");
 
+  // Minimum tier override — when set, tier won't drop below this level
+  // Used when fitBounds zooms to a level below the desired tier (e.g. country click)
+  const minTierRef = useRef<"continent" | "country" | "state" | "city" | null>(
+    null
+  );
+
   // Sync tier from zoom
   const syncTier = useCallback((z: number) => {
     zoomRef.current = z;
-    const newTier = getTier(z);
+    let newTier = getTier(z);
+    // Enforce minimum tier if set (e.g. after country click → fitBounds)
+    if (
+      minTierRef.current &&
+      TIER_ORDER[newTier] < TIER_ORDER[minTierRef.current]
+    ) {
+      console.log(`[syncTier] Enforcing minTier: ${minTierRef.current}, zoom=${z.toFixed(2)}, natural=${newTier}`);
+      newTier = minTierRef.current;
+    }
     if (newTier !== tierRef.current) {
+      console.log(`[syncTier] Tier change: ${tierRef.current} → ${newTier}, zoom=${z.toFixed(2)}`);
       tierRef.current = newTier;
       setTier(newTier);
     }
@@ -662,6 +679,10 @@ function MapInner({
   // Handle map zoom changes
   const handleZoom = useCallback(
     (e: ViewStateChangeEvent) => {
+      // Clear minimum tier override when user zooms out to continent level
+      if (minTierRef.current && e.viewState.zoom < ZOOM_CONTINENT) {
+        minTierRef.current = null;
+      }
       syncTier(e.viewState.zoom);
     },
     [syncTier]
@@ -903,6 +924,7 @@ function MapInner({
   }, []);
 
   const handleReset = useCallback(() => {
+    minTierRef.current = null;
     mapRef.current?.flyTo({
       center: [0, 30],
       zoom: 1.5,
@@ -917,44 +939,62 @@ function MapInner({
   const handleCountryClick = useCallback(
     (geoName: string) => {
       const dbName = REVERSE_COUNTRY_MAP[geoName] || geoName;
-      const countryDots = cityData.filter(d => {
-        const dotCountry = d.countryName || "";
-        return (
-          dotCountry === dbName ||
-          dotCountry === geoName ||
-          COUNTRY_NAME_MAP[dotCountry] === geoName
-        );
-      });
 
-      if (countryDots.length === 0) return;
+      if (!worldGeoJSON || !mapRef.current) return;
 
-      const lats = countryDots.map(d => d.lat);
-      const lngs = countryDots.map(d => d.lng);
-      const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
-      const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
-      const latSpread = Math.max(...lats) - Math.min(...lats);
-      const lngSpread = Math.max(...lngs) - Math.min(...lngs);
-      const spread = Math.max(latSpread, lngSpread, 1);
+      // Find the country feature in GeoJSON
+      const feat = worldGeoJSON.features.find(
+        f => f.properties?.name === geoName
+      );
+      if (!feat) return;
 
-      let targetZoom: number;
-      if (spread > 30) targetZoom = 3;
-      else if (spread > 15) targetZoom = 3.8;
-      else if (spread > 8) targetZoom = 4.8;
-      else if (spread > 3) targetZoom = 5.5;
-      else targetZoom = 6.5;
+      // Walk all coordinates to find bounding box
+      let minLng = Infinity,
+        maxLng = -Infinity,
+        minLat = Infinity,
+        maxLat = -Infinity;
 
-      targetZoom = Math.max(targetZoom, ZOOM_CITY);
+      const walkCoords = (coords: unknown) => {
+        if (
+          Array.isArray(coords) &&
+          coords.length >= 2 &&
+          typeof coords[0] === "number"
+        ) {
+          const [lng, lat] = coords as [number, number];
+          if (lng < minLng) minLng = lng;
+          if (lng > maxLng) maxLng = lng;
+          if (lat < minLat) minLat = lat;
+          if (lat > maxLat) maxLat = lat;
+        } else if (Array.isArray(coords)) {
+          for (const c of coords) walkCoords(c);
+        }
+      };
 
-      mapRef.current?.flyTo({
-        center: [centerLng, centerLat],
-        zoom: targetZoom,
-        duration: 1000,
-        padding: getMapPadding(),
-      });
-      syncTier(targetZoom);
+      walkCoords((feat.geometry as { coordinates: unknown }).coordinates);
+
+      if (!isFinite(minLng)) return;
+
+      // Force city tier minimum so dots render even if fitBounds zoom < ZOOM_CITY
+      console.log(`[countryClick] Setting minTierRef=city, bbox: lng=${minLng.toFixed(1)}..${maxLng.toFixed(1)}, lat=${minLat.toFixed(1)}..${maxLat.toFixed(1)}`);
+      minTierRef.current = "city";
+
+      mapRef.current.fitBounds(
+        [
+          [minLng, minLat],
+          [maxLng, maxLat],
+        ],
+        { padding: getMapPadding(), duration: 1000 }
+      );
+
+      // Estimate resulting zoom and sync tier (minTierRef ensures "city")
+      const lngSpan = maxLng - minLng;
+      const latSpan = maxLat - minLat;
+      const span = Math.max(lngSpan, latSpan, 0.5);
+      const estimatedZoom = Math.log2(360 / span) + 0.5;
+      syncTier(Math.max(estimatedZoom, ZOOM_CITY));
       onCountrySelect?.(dbName);
     },
-    [cityData, onCountrySelect, syncTier]
+    [worldGeoJSON, onCountrySelect, syncTier]
   );
 
   // Handle clicks on the map layers (countries, states)
@@ -1000,6 +1040,17 @@ function MapInner({
     (e: MapLayerMouseEvent) => {
       if (e.features && e.features.length > 0) {
         const feat = e.features[0];
+        // At city tier, ignore country fill hover — only city dots matter
+        if (
+          feat.layer?.id === "countries-fill" &&
+          tierRef.current === "city"
+        ) {
+          if (mapRef.current) {
+            mapRef.current.getCanvas().style.cursor = "";
+          }
+          setHoveredCountryId(null);
+          return;
+        }
         if (
           feat.layer?.id === "countries-fill" ||
           feat.layer?.id === "states-fill"
@@ -1094,37 +1145,12 @@ function MapInner({
         onStateClick?.(cluster.name);
       } else {
         setSelectedStateName(null);
-        // Calculate zoom from data spread, same as handleCountryClick
-        const countryDots = cityData.filter(
-          d => (d.countryName || "") === cluster.name
-        );
-        let targetZoom: number;
-        if (countryDots.length > 1) {
-          const lats = countryDots.map(d => d.lat);
-          const lngs = countryDots.map(d => d.lng);
-          const latSpread = Math.max(...lats) - Math.min(...lats);
-          const lngSpread = Math.max(...lngs) - Math.min(...lngs);
-          const spread = Math.max(latSpread, lngSpread, 1);
-          if (spread > 30) targetZoom = 3;
-          else if (spread > 15) targetZoom = 3.8;
-          else if (spread > 8) targetZoom = 4.8;
-          else if (spread > 3) targetZoom = 5.5;
-          else targetZoom = 6.5;
-        } else {
-          targetZoom = 6.5;
-        }
-        targetZoom = Math.max(targetZoom, ZOOM_CITY);
-        mapRef.current?.flyTo({
-          center: [cluster.lng, cluster.lat],
-          zoom: targetZoom,
-          duration: 800,
-          padding: getMapPadding(),
-        });
-        syncTier(targetZoom);
-        onCountrySelect?.(cluster.name);
+        // Use the country's GeoJSON boundary to fitBounds, same as handleCountryClick
+        const geoName = COUNTRY_NAME_MAP[cluster.name] || cluster.name;
+        handleCountryClick(geoName);
       }
     },
-    [cityData, onCountrySelect, onStateClick, syncTier, flyToStateBounds]
+    [cityData, onStateClick, flyToStateBounds, handleCountryClick]
   );
 
   // State cluster click — zoom to fit state bounds (US) or fly to centroid
@@ -1309,7 +1335,11 @@ function MapInner({
         onClick={handleMapClick}
         onMouseMove={handleMapMouseMove}
         onMouseLeave={handleMapMouseLeave}
-        interactiveLayerIds={["countries-fill", "states-fill"]}
+        interactiveLayerIds={
+          tier === "city"
+            ? ["states-fill"]
+            : ["countries-fill", "states-fill"]
+        }
         scrollZoom={{
           around: "center",
         }}
