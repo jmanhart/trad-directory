@@ -542,6 +542,16 @@ export default function MapPage() {
     [ensureArtistsLoaded]
   );
 
+  const handleCountrySelect = useCallback(
+    (country: string | null) => {
+      setSelectedCountry(country);
+      if (country) {
+        ensureArtistsLoaded();
+      }
+    },
+    [ensureArtistsLoaded]
+  );
+
   const handleMapSearch = useCallback(
     (query: string) => {
       if (query.trim()) {
@@ -653,7 +663,7 @@ export default function MapPage() {
       <MapView
         cityData={cityDots}
         loading={loadingMap}
-        onCountrySelect={setSelectedCountry}
+        onCountrySelect={handleCountrySelect}
         onCityClick={handleCityClick}
         onStateClick={handleStateClick}
         selectedCity={selectedCity}

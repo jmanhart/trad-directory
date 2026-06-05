@@ -943,7 +943,7 @@ function MapInner({
       else if (spread > 3) targetZoom = 5.5;
       else targetZoom = 6.5;
 
-      targetZoom = Math.max(targetZoom, ZOOM_COUNTRY);
+      targetZoom = Math.max(targetZoom, ZOOM_CITY);
 
       mapRef.current?.flyTo({
         center: [centerLng, centerLat],
@@ -1094,7 +1094,26 @@ function MapInner({
         onStateClick?.(cluster.name);
       } else {
         setSelectedStateName(null);
-        const targetZoom = ZOOM_COUNTRY + 0.5;
+        // Calculate zoom from data spread, same as handleCountryClick
+        const countryDots = cityData.filter(
+          d => (d.countryName || "") === cluster.name
+        );
+        let targetZoom: number;
+        if (countryDots.length > 1) {
+          const lats = countryDots.map(d => d.lat);
+          const lngs = countryDots.map(d => d.lng);
+          const latSpread = Math.max(...lats) - Math.min(...lats);
+          const lngSpread = Math.max(...lngs) - Math.min(...lngs);
+          const spread = Math.max(latSpread, lngSpread, 1);
+          if (spread > 30) targetZoom = 3;
+          else if (spread > 15) targetZoom = 3.8;
+          else if (spread > 8) targetZoom = 4.8;
+          else if (spread > 3) targetZoom = 5.5;
+          else targetZoom = 6.5;
+        } else {
+          targetZoom = 6.5;
+        }
+        targetZoom = Math.max(targetZoom, ZOOM_CITY);
         mapRef.current?.flyTo({
           center: [cluster.lng, cluster.lat],
           zoom: targetZoom,
