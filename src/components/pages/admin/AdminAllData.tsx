@@ -30,6 +30,7 @@ import { useAdminData } from "./useAdminData";
 import type { City } from "./adminTypes";
 import { getCityDisplayName } from "./adminUtils";
 import SearchIcon from "../../../assets/icons/searchIcon";
+import DataBuilder from "./DataBuilder";
 import styles from "./AdminAllData.module.css";
 
 interface Artist {
@@ -94,7 +95,8 @@ type TabType =
   | "states"
   | "new_artists"
   | "bugs"
-  | "broken_links";
+  | "broken_links"
+  | "data_builder";
 type ArtistSortColumn =
   | "id"
   | "name"
@@ -1026,6 +1028,7 @@ export default function AdminAllData() {
               label: "Broken Links",
               badge: brokenLinksCount,
             },
+            { id: "data_builder", label: "Data Builder" },
           ]}
           activeTab={activeTab}
           onTabChange={tabId => setActiveTab(tabId as TabType)}
@@ -1569,13 +1572,22 @@ export default function AdminAllData() {
             </div>
           )}
 
+          {activeTab === "data_builder" && (
+            <DataBuilder
+              cities={cities}
+              states={states}
+              countries={countries}
+            />
+          )}
+
           {activeTab !== "artists" &&
             activeTab !== "shops" &&
             activeTab !== "cities" &&
             activeTab !== "countries" &&
             activeTab !== "new_artists" &&
             activeTab !== "bugs" &&
-            activeTab !== "broken_links" && (
+            activeTab !== "broken_links" &&
+            activeTab !== "data_builder" && (
               <div className={styles.comingSoon}>
                 <p>Coming soon: {activeTab} table view</p>
               </div>

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Tabs } from "../common/Tabs";
 import { CountBadge } from "../common/CountBadge";
+import ShareMenu from "./ShareMenu";
 import type { Artist } from "../../types/entities";
 import type { CityDot } from "./MapView";
 import styles from "./MapDetailPanel.module.css";
@@ -191,13 +192,20 @@ export default function MapDetailPanel({
           <h2 className={styles.title}>{title}</h2>
           {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
         </div>
-        <button
-          className={styles.closeButton}
-          onClick={onClose}
-          title="Close"
-        >
-          &times;
-        </button>
+        <div className={styles.headerActions}>
+          <ShareMenu
+            heading={`Traditional Tattoo Artists in ${title}`}
+            artists={artists}
+            className={styles.actionButton}
+          />
+          <button
+            className={styles.closeButton}
+            onClick={onClose}
+            title="Close"
+          >
+            &times;
+          </button>
+        </div>
       </div>
 
       {hasTabs ? (
@@ -294,7 +302,14 @@ export default function MapDetailPanel({
                           {cityName}
                         </span>
                       </span>
-                      <CountBadge count={group.artists.length} />
+                      <span className={styles.cityGroupRight}>
+                        <ShareMenu
+                          heading={`Traditional Tattoo Artists in ${cityName}`}
+                          artists={group.artists}
+                          className={styles.cityAction}
+                        />
+                        <CountBadge count={group.artists.length} />
+                      </span>
                     </button>
                     {isExpanded &&
                       group.artists.map(artist => (
