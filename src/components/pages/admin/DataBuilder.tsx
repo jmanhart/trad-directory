@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { FormGroup, Label, Select } from "./AdminFormComponents";
-import { fetchBrokenLinks } from "../../../services/adminApi";
 import { useToast } from "../../common/Toast";
 import type { City, State } from "./adminTypes";
 import styles from "./DataBuilder.module.css";
@@ -31,6 +30,8 @@ interface Props {
   cities: City[];
   states: State[];
   countries: Country[];
+  artists: ArtistRow[];
+  brokenHandles: Set<string>;
 }
 
 function MultiSelect({
@@ -181,7 +182,7 @@ function MultiSelect({
   );
 }
 
-export default function DataBuilder({ cities, states, countries }: Props) {
+export default function DataBuilder({ cities, states, countries, artists, brokenHandles }: Props) {
   const { showToast } = useToast();
 
   const [selectedCountryId, setSelectedCountryId] = useState("");
@@ -191,7 +192,6 @@ export default function DataBuilder({ cities, states, countries }: Props) {
   const [selectedCityIds, setSelectedCityIds] = useState<Set<number>>(
     new Set()
   );
-  const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerateResult | null>(null);
 
   const sortedCountries = useMemo(
@@ -323,131 +323,105 @@ export default function DataBuilder({ cities, states, countries }: Props) {
     return "Traditional Tattoo Artists";
   };
 
-  const handleGenerate = async (e: React.FormEvent) => {
+  const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      setLoading(true);
+    // Filter by selected cities (most specific level)
+    let filtered = artists;
 
-      const baseUrl = import.meta.env.VITE_API_URL || "/api";
-      const [artistRes, brokenLinkResults] = await Promise.all([
-        fetch(`${baseUrl}/listAllArtists`),
-        fetchBrokenLinks().catch(() => []),
-      ]);
-
-      if (!artistRes.ok) throw new Error("Failed to fetch artists");
-      const data = await artistRes.json();
-      const allArtists: ArtistRow[] = data.artists || [];
-
-      const brokenHandles = new Set(
-        brokenLinkResults.map(b =>
-          b.instagram_handle.replace("@", "").toLowerCase()
-        )
+    if (selectedCityIds.size > 0) {
+      const cityNames = new Set(
+        cities
+          .filter(c => selectedCityIds.has(c.id))
+          .map(c => c.city_name)
       );
-
-      // Filter by selected cities (most specific level)
-      let filtered = allArtists;
-
-      if (selectedCityIds.size > 0) {
-        const cityNames = new Set(
-          cities
-            .filter(c => selectedCityIds.has(c.id))
-            .map(c => c.city_name)
+      filtered = artists.filter(
+        a => a.city_name && cityNames.has(a.city_name)
+      );
+    } else if (selectedStateIds.size > 0) {
+      const stateNames = new Set(
+        states
+          .filter(s => selectedStateIds.has(s.id))
+          .map(s => s.state_name)
+      );
+      filtered = artists.filter(
+        a => a.state_name && stateNames.has(a.state_name)
+      );
+    } else if (selectedCountryId) {
+      const country = countries.find(
+        c => c.id === parseInt(selectedCountryId)
+      );
+      if (country) {
+        filtered = artists.filter(
+          a => a.country_name === country.country_name
         );
-        filtered = allArtists.filter(
-          a => a.city_name && cityNames.has(a.city_name)
-        );
-      } else if (selectedStateIds.size > 0) {
-        const stateNames = new Set(
-          states
-            .filter(s => selectedStateIds.has(s.id))
-            .map(s => s.state_name)
-        );
-        filtered = allArtists.filter(
-          a => a.state_name && stateNames.has(a.state_name)
-        );
-      } else if (selectedCountryId) {
-        const country = countries.find(
-          c => c.id === parseInt(selectedCountryId)
-        );
-        if (country) {
-          filtered = allArtists.filter(
-            a => a.country_name === country.country_name
-          );
-        }
       }
-
-      const totalCount = filtered.length;
-
-      const broken: { name: string; handle: string }[] = [];
-      const clean = filtered.filter(a => {
-        if (!a.instagram_handle) return true;
-        const normalized = a.instagram_handle.replace("@", "").toLowerCase();
-        if (brokenHandles.has(normalized)) {
-          broken.push({ name: a.name, handle: a.instagram_handle });
-          return false;
-        }
-        return true;
-      });
-
-      clean.sort((a, b) =>
-        a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
-      );
-
-      const heading = buildHeading();
-
-      const formatArtistLine = (a: ArtistRow): string => {
-        const handle = a.instagram_handle?.replace("@", "");
-        if (handle) {
-          return `- ${a.name} [@${handle}](https://instagram.com/${handle})`;
-        }
-        return `- ${a.name}`;
-      };
-
-      // Group by city when multiple cities are in the output
-      const distinctCities = new Set(clean.map(a => a.city_name || "Unknown"));
-      const shouldGroup = distinctCities.size > 1;
-
-      let md: string;
-
-      if (shouldGroup) {
-        // Group artists by city, cities in A-Z order
-        const byCity = new Map<string, ArtistRow[]>();
-        for (const a of clean) {
-          const key = a.city_name || "Unknown";
-          if (!byCity.has(key)) byCity.set(key, []);
-          byCity.get(key)!.push(a);
-        }
-
-        const sortedCityKeys = [...byCity.keys()].sort((a, b) =>
-          a.localeCompare(b, undefined, { sensitivity: "base" })
-        );
-
-        const sections = sortedCityKeys.map(cityName => {
-          const artists = byCity.get(cityName)!;
-          const lines = artists.map(formatArtistLine);
-          return `**${cityName}**\n${lines.join("\n")}`;
-        });
-
-        md = `**${heading}**\n\n${sections.join("\n\n")}`;
-      } else {
-        const lines = clean.map(formatArtistLine);
-        md = `**${heading}**\n\n${lines.join("\n")}`;
-      }
-
-      setResult({
-        output: md,
-        totalCount,
-        includedCount: clean.length,
-        brokenLinks: broken,
-      });
-    } catch (err) {
-      showToast(
-        err instanceof Error ? err.message : "Failed to generate list"
-      );
-    } finally {
-      setLoading(false);
     }
+
+    const totalCount = filtered.length;
+
+    const broken: { name: string; handle: string }[] = [];
+    const clean = filtered.filter(a => {
+      if (!a.instagram_handle) return true;
+      const normalized = a.instagram_handle.replace("@", "").toLowerCase();
+      if (brokenHandles.has(normalized)) {
+        broken.push({ name: a.name, handle: a.instagram_handle });
+        return false;
+      }
+      return true;
+    });
+
+    clean.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+    );
+
+    const heading = buildHeading();
+
+    const formatArtistLine = (a: ArtistRow): string => {
+      const handle = a.instagram_handle?.replace("@", "");
+      if (handle) {
+        return `- ${a.name} [@${handle}](https://instagram.com/${handle})`;
+      }
+      return `- ${a.name}`;
+    };
+
+    // Group by city when multiple cities are in the output
+    const distinctCities = new Set(clean.map(a => a.city_name || "Unknown"));
+    const shouldGroup = distinctCities.size > 1;
+
+    let md: string;
+
+    if (shouldGroup) {
+      // Group artists by city, cities in A-Z order
+      const byCity = new Map<string, ArtistRow[]>();
+      for (const a of clean) {
+        const key = a.city_name || "Unknown";
+        if (!byCity.has(key)) byCity.set(key, []);
+        byCity.get(key)!.push(a);
+      }
+
+      const sortedCityKeys = [...byCity.keys()].sort((a, b) =>
+        a.localeCompare(b, undefined, { sensitivity: "base" })
+      );
+
+      const sections = sortedCityKeys.map(cityName => {
+        const cityArtists = byCity.get(cityName)!;
+        const lines = cityArtists.map(formatArtistLine);
+        return `**${cityName}**\n${lines.join("\n")}`;
+      });
+
+      md = `**${heading}**\n\n${sections.join("\n\n")}`;
+    } else {
+      const lines = clean.map(formatArtistLine);
+      md = `**${heading}**\n\n${lines.join("\n")}`;
+    }
+
+    setResult({
+      output: md,
+      totalCount,
+      includedCount: clean.length,
+      brokenLinks: broken,
+    });
   };
 
   const handleCopy = async () => {
@@ -519,9 +493,9 @@ export default function DataBuilder({ cities, states, countries }: Props) {
               <button
                 type="submit"
                 className={styles.generateButton}
-                disabled={hasNoSelection || loading}
+                disabled={hasNoSelection}
               >
-                {loading ? "Generating..." : "Generate"}
+                Generate
               </button>
               <button
                 type="button"
