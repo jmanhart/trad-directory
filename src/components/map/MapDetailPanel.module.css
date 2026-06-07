@@ -15,7 +15,6 @@
   align-items: flex-start;
   justify-content: space-between;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
 
@@ -56,7 +55,6 @@
   display: flex;
   align-items: center;
   padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
 
@@ -84,10 +82,11 @@
   margin: 0 0.75rem;
 }
 
-/* Override shared Tabs margin inside the card */
+/* Override shared Tabs inside the card */
 .tabs {
   margin-bottom: 0;
   flex-shrink: 0;
+  border-bottom: 1px solid var(--gray-200);
 }
 
 .list {
@@ -101,27 +100,24 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.625rem 1.5rem;
+  padding: 0.625rem 0.75rem;
+  margin: 0 0.75rem;
+  width: calc(100% - 1.5rem);
   text-decoration: none;
   color: var(--color-text-secondary);
-  border-bottom: 1px solid var(--gray-100);
+  border: none;
+  outline: none;
+  box-shadow: none;
   transition: background 0.15s;
   background: none;
-  border-left: none;
-  border-right: none;
-  border-top: none;
-  width: 100%;
+  border-radius: 2px;
   cursor: pointer;
   font: inherit;
   text-align: left;
 }
 
 .listItem:hover {
-  background: var(--color-primary-soft);
-}
-
-.listItem:last-child {
-  border-bottom: none;
+  background: var(--list-item-hover-bg);
 }
 
 .artistName {
@@ -180,11 +176,6 @@
 
 /* ── Region variant: city group headers ── */
 .cityGroup {
-  border-bottom: 1px solid var(--color-border);
-}
-
-.cityGroup:last-child {
-  border-bottom: none;
 }
 
 .cityGroupHeader {
@@ -197,9 +188,20 @@
   width: 100%;
   cursor: pointer;
   transition: background 0.15s;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .cityGroupHeader:hover {
+  background: var(--gray-100);
+}
+
+.cityGroupHeader:focus,
+.cityGroupHeader:active {
+  outline: none;
+  border: none;
+  box-shadow: none;
   background: var(--gray-100);
 }
 
@@ -231,27 +233,6 @@
   letter-spacing: 0.03em;
 }
 
-.cityGroupCount {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.125rem;
-  padding: 0.125rem 0.25rem;
-  border-radius: var(--border-radius);
-  transition: background 0.15s, color 0.15s;
-}
-
-.cityGroupCount:hover {
-  background: var(--gray-200);
-  color: var(--color-text-secondary);
-}
-
-.cityGroupArrow {
-  font-size: var(--font-size-sm);
-  line-height: 1;
-}
 
 /* Items inside a city group get slightly indented */
 .cityGroup .listItem {
@@ -297,7 +278,9 @@
 
   .listItem {
     min-height: 44px;
-    padding: 0.625rem 1rem;
+    padding: 0.625rem 0.5rem;
+    margin: 0 0.5rem;
+    width: calc(100% - 1rem);
   }
 
   .cityGroupHeader {
@@ -307,13 +290,6 @@
 
   .cityGroup .listItem {
     padding-left: 1rem;
-  }
-
-  .cityGroupCount {
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    padding: 0 0.5rem;
   }
 
   .closeButton {

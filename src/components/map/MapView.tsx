@@ -258,6 +258,7 @@ interface MapViewProps {
   onCityClick?: (city: CityDot) => void;
   onStateClick?: (stateName: string) => void;
   selectedCity?: CityDot | null;
+  highlightedCity?: CityDot | null;
   flyTo?: { coordinates: [number, number]; zoom: number } | null;
   flyToKey?: number;
   onBackgroundClick?: () => void;
@@ -613,6 +614,7 @@ function MapInner({
   onCityClick,
   onStateClick,
   selectedCity,
+  highlightedCity,
   flyTo,
   flyToKey = 0,
   onBackgroundClick,
@@ -1226,10 +1228,13 @@ function MapInner({
 
   const isSelected = useCallback(
     (city: CityDot) =>
-      selectedCity?.cityName === city.cityName &&
-      selectedCity?.lat === city.lat &&
-      selectedCity?.lng === city.lng,
-    [selectedCity]
+      (selectedCity?.cityName === city.cityName &&
+        selectedCity?.lat === city.lat &&
+        selectedCity?.lng === city.lng) ||
+      (highlightedCity?.cityName === city.cityName &&
+        highlightedCity?.lat === city.lat &&
+        highlightedCity?.lng === city.lng),
+    [selectedCity, highlightedCity]
   );
 
   // Derive which states and countries have entries for visual distinction

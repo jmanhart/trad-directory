@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Tabs } from "../common/Tabs";
+import { CountBadge } from "../common/CountBadge";
 import type { Artist } from "../../types/entities";
 import type { CityDot } from "./MapView";
 import styles from "./MapDetailPanel.module.css";
@@ -80,14 +81,14 @@ export default function MapDetailPanel({
   onShopClick,
 }: MapDetailPanelProps) {
   const [activeTab, setActiveTab] = useState("artists");
-  const [collapsedCities, setCollapsedCities] = useState<Set<string>>(
+  const [expandedCities, setExpandedCities] = useState<Set<string>>(
     new Set()
   );
 
   const hasTabs = shops.length > 0;
 
   const toggleCity = (cityName: string) => {
-    setCollapsedCities(prev => {
+    setExpandedCities(prev => {
       const next = new Set(prev);
       if (next.has(cityName)) {
         next.delete(cityName);
@@ -182,9 +183,6 @@ export default function MapDetailPanel({
       ]) as [string, { dot: CityDot | null; shops: ShopEntry[] }][];
   }, [variant, artists, cityDots]);
 
-  // Region stats
-  const cityCount = cityDots?.length || 0;
-
   return (
     <div className={styles.card}>
       <div className={styles.dragHandle} />
@@ -202,38 +200,11 @@ export default function MapDetailPanel({
         </button>
       </div>
 
-      {variant === "region" ? (
-        <div className={styles.stats}>
-          <div className={styles.stat}>
-            <span className={styles.statValue}>{cityCount}</span>
-            <span className={styles.statLabel}>
-              {cityCount === 1 ? "City" : "Cities"}
-            </span>
-          </div>
-          <div className={styles.statDivider} />
-          <div className={styles.stat}>
-            <span className={styles.statValue}>{artists.length}</span>
-            <span className={styles.statLabel}>
-              {artists.length === 1 ? "Artist" : "Artists"}
-            </span>
-          </div>
-          {shops.length > 0 && (
-            <>
-              <div className={styles.statDivider} />
-              <div className={styles.stat}>
-                <span className={styles.statValue}>{shops.length}</span>
-                <span className={styles.statLabel}>
-                  {shops.length === 1 ? "Shop" : "Shops"}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-      ) : hasTabs ? (
+      {hasTabs ? (
         <Tabs
           items={[
-            { id: "artists", label: `Artists (${artists.length})` },
-            { id: "shops", label: `Shops (${shops.length})` },
+            { id: "artists", label: "Artists", count: artists.length },
+            { id: "shops", label: "Shops", count: shops.length },
           ]}
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -248,18 +219,6 @@ export default function MapDetailPanel({
             </span>
           </div>
         </div>
-      )}
-
-      {variant === "region" && hasTabs && (
-        <Tabs
-          items={[
-            { id: "artists", label: `Artists (${artists.length})` },
-            { id: "shops", label: `Shops (${shops.length})` },
-          ]}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          className={styles.tabs}
-        />
       )}
 
       <div className={styles.list}>
@@ -313,44 +272,31 @@ export default function MapDetailPanel({
                 </div>
               )}
               {artistsByCity.map(([cityName, group]) => {
-                const isCollapsed = collapsedCities.has(
+                const isExpanded = expandedCities.has(
                   `artists:${cityName}`
                 );
                 return (
                   <div key={cityName} className={styles.cityGroup}>
                     <button
                       className={styles.cityGroupHeader}
-                      onClick={() => toggleCity(`artists:${cityName}`)}
+                      onClick={() => {
+                        toggleCity(`artists:${cityName}`);
+                        if (group.dot) {
+                          onCityClick?.(group.dot);
+                        }
+                      }}
                     >
                       <span className={styles.cityGroupLeft}>
                         <ChevronIcon
-                          className={`${styles.cityGroupChevron} ${isCollapsed ? styles.chevronCollapsed : ""}`}
+                          className={`${styles.cityGroupChevron} ${!isExpanded ? styles.chevronCollapsed : ""}`}
                         />
                         <span className={styles.cityGroupName}>
                           {cityName}
                         </span>
                       </span>
-                      <span
-                        className={styles.cityGroupCount}
-                        onClick={e => {
-                          if (group.dot) {
-                            e.stopPropagation();
-                            onCityClick?.(group.dot);
-                          }
-                        }}
-                        title={
-                          group.dot ? `View ${cityName}` : undefined
-                        }
-                      >
-                        {group.artists.length}
-                        {group.dot && (
-                          <span className={styles.cityGroupArrow}>
-                            &rsaquo;
-                          </span>
-                        )}
-                      </span>
+                      <CountBadge count={group.artists.length} />
                     </button>
-                    {!isCollapsed &&
+                    {isExpanded &&
                       group.artists.map(artist => (
                         <button
                           key={artist.id}
@@ -402,42 +348,29 @@ export default function MapDetailPanel({
           variant === "region" &&
           shopsByCity &&
           shopsByCity.map(([cityName, group]) => {
-            const isCollapsed = collapsedCities.has(`shops:${cityName}`);
+            const isExpanded = expandedCities.has(`shops:${cityName}`);
             return (
               <div key={cityName} className={styles.cityGroup}>
                 <button
                   className={styles.cityGroupHeader}
-                  onClick={() => toggleCity(`shops:${cityName}`)}
+                  onClick={() => {
+                    toggleCity(`shops:${cityName}`);
+                    if (group.dot) {
+                      onCityClick?.(group.dot);
+                    }
+                  }}
                 >
                   <span className={styles.cityGroupLeft}>
-                    <span
-                      className={`${styles.cityGroupChevron} ${isCollapsed ? styles.chevronCollapsed : ""}`}
-                    >
-                      &#9662;
-                    </span>
+                    <ChevronIcon
+                      className={`${styles.cityGroupChevron} ${!isExpanded ? styles.chevronCollapsed : ""}`}
+                    />
                     <span className={styles.cityGroupName}>
                       {cityName}
                     </span>
                   </span>
-                  <span
-                    className={styles.cityGroupCount}
-                    onClick={e => {
-                      if (group.dot) {
-                        e.stopPropagation();
-                        onCityClick?.(group.dot);
-                      }
-                    }}
-                    title={group.dot ? `View ${cityName}` : undefined}
-                  >
-                    {group.shops.length}
-                    {group.dot && (
-                      <span className={styles.cityGroupArrow}>
-                        &rsaquo;
-                      </span>
-                    )}
-                  </span>
+                  <CountBadge count={group.shops.length} />
                 </button>
-                {!isCollapsed &&
+                {isExpanded &&
                   group.shops.map(shop => (
                     <button
                       key={shop.id}

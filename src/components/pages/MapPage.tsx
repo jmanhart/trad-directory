@@ -46,6 +46,7 @@ export default function MapPage() {
     useState<SelectedRegion | null>(null);
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
   const [selectedShop, setSelectedShop] = useState<MapShopData | null>(null);
+  const [highlightedCity, setHighlightedCity] = useState<CityDot | null>(null);
 
   // flyTo state for programmatic map navigation
   const [flyTo, setFlyTo] = useState<{
@@ -386,6 +387,7 @@ export default function MapPage() {
         selectedCity?.cityName === city.cityName &&
         selectedCity?.stateName === city.stateName;
 
+      setHighlightedCity(null);
       if (isToggleOff) {
         setSelectedCity(null);
       } else {
@@ -430,6 +432,7 @@ export default function MapPage() {
       setSelectedRegion({ name: stateName, type: "state" });
       setSelectedArtist(null);
       setSelectedShop(null);
+      setHighlightedCity(null);
       setFlyTo({ coordinates: [centerLng, centerLat], zoom });
       setFlyToKey(k => k + 1);
       ensureArtistsLoaded();
@@ -439,6 +442,7 @@ export default function MapPage() {
 
   // Zoom to a city from the region panel (stays on region view)
   const handleRegionCityClick = useCallback((city: CityDot) => {
+    setHighlightedCity(city);
     setFlyTo({
       coordinates: [city.lng, city.lat],
       zoom: Math.max(6, 8),
@@ -456,6 +460,7 @@ export default function MapPage() {
     setSelectedShop(null);
     setSelectedCity(null);
     setSelectedRegion(null);
+    setHighlightedCity(null);
   }, []);
 
   const handleArtistClick = useCallback((artist: Artist) => {
@@ -667,6 +672,7 @@ export default function MapPage() {
         onCityClick={handleCityClick}
         onStateClick={handleStateClick}
         selectedCity={selectedCity}
+        highlightedCity={highlightedCity}
         flyTo={flyTo}
         flyToKey={flyToKey}
         onBackgroundClick={handleBackgroundClick}

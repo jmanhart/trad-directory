@@ -123,16 +123,17 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.5rem 0;
+  padding: 0.625rem 0.75rem;
+  margin: 0 0.75rem;
+  width: calc(100% - 1.5rem);
   background: none;
   border: none;
-  border-bottom: 1px solid var(--gray-100);
-  width: 100%;
+  border-bottom: var(--list-item-divider);
   cursor: pointer;
   font: inherit;
   text-align: left;
   transition: background 0.15s;
-  border-radius: 0;
+  border-radius: 2px;
 }
 
 .artistItem:last-child {
@@ -140,7 +141,7 @@
 }
 
 .artistItem:hover {
-  background: var(--color-primary-soft);
+  background: var(--list-item-hover-bg);
 }
 
 .artistName {

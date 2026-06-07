@@ -135,6 +135,10 @@
   /* Focus ring */
   --color-focus: color-mix(in srgb, var(--blue-300) 55%, white);
 
+  /* List items */
+  --list-item-hover-bg: var(--gray-100);
+  --list-item-divider: 1px solid var(--gray-100);
+
   /* Map fill colors (documented here, used as HSL strings in MapLibre expressions) */
   --map-fill-empty: #e6e6e6; /* hsl(0, 0%, 90%) */
   --map-fill-has-data: #d1d1d1; /* hsl(0, 0%, 82%) */
