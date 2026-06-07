@@ -84,6 +84,27 @@
   color: var(--color-text-tertiary);
 }
 
+.details {
+  padding: 0.75rem 1.5rem;
+  flex-shrink: 0;
+}
+
+.detailRow {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.detailLink {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.detailLink:hover {
+  color: var(--color-primary);
+}
+
 .body {
   flex: 1;
   overflow-y: auto;
@@ -128,16 +149,12 @@
   width: calc(100% - 1.5rem);
   background: none;
   border: none;
-  border-bottom: var(--list-item-divider);
+  outline: none;
   cursor: pointer;
   font: inherit;
   text-align: left;
   transition: background 0.15s;
   border-radius: 2px;
-}
-
-.artistItem:last-child {
-  border-bottom: none;
 }
 
 .artistItem:hover {

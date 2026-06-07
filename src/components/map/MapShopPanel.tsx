@@ -12,6 +12,10 @@ export interface MapShopData {
   city_name?: string | null;
   state_name?: string | null;
   country_name?: string | null;
+  address?: string | null;
+  phone_number?: string | null;
+  website_url?: string | null;
+  contact?: string | null;
   artists: Artist[];
 }
 
@@ -63,14 +67,38 @@ export default function MapShopPanel({
         </button>
       </div>
 
-      <div className={styles.body}>
+      <div className={styles.details}>
         {locationString && (
-          <div className={styles.section}>
-            <div className={styles.sectionLabel}>Location</div>
-            <div className={styles.location}>{locationString}</div>
+          <div className={styles.detailRow}>{locationString}</div>
+        )}
+        {shop.address && (
+          <div className={styles.detailRow}>{shop.address}</div>
+        )}
+        {shop.phone_number && (
+          <div className={styles.detailRow}>
+            <a href={`tel:${shop.phone_number}`} className={styles.detailLink}>
+              {shop.phone_number}
+            </a>
           </div>
         )}
+        {shop.website_url && (
+          <div className={styles.detailRow}>
+            <a
+              href={shop.website_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.detailLink}
+            >
+              {shop.website_url.replace(/^https?:\/\//, "")}
+            </a>
+          </div>
+        )}
+        {shop.contact && (
+          <div className={styles.detailRow}>{shop.contact}</div>
+        )}
+      </div>
 
+      <div className={styles.body}>
         {shop.artists.length > 0 && (
           <div className={styles.section}>
             <div className={styles.sectionLabel}>Artists</div>

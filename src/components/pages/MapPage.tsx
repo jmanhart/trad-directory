@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { fetchTattooShopsWithArtists } from "../../services/api";
+import { supabase } from "../../lib/supabaseClient";
 import type { Artist } from "../../types/entities";
 import useIsMobile from "../../hooks/useIsMobile";
 import { useSearchSuggestions } from "../../hooks/useSearchSuggestions";
@@ -496,7 +497,7 @@ export default function MapPage() {
         }
       });
 
-      setSelectedShop({
+      const shopData: MapShopData = {
         id: shop.id,
         shop_name: shop.shop_name,
         slug: shop.slug,
@@ -505,8 +506,31 @@ export default function MapPage() {
         state_name: stateName,
         country_name: countryName,
         artists: shopArtists,
-      });
+      };
+      setSelectedShop(shopData);
       setSelectedArtist(null);
+
+      // Fetch extra shop details (address, phone, website, contact)
+      supabase
+        .from("tattoo_shops")
+        .select("address, phone_number, website_url, contact")
+        .eq("id", shop.id)
+        .single()
+        .then(({ data }) => {
+          if (data) {
+            setSelectedShop(prev =>
+              prev && prev.id === shop.id
+                ? {
+                    ...prev,
+                    address: data.address || null,
+                    phone_number: data.phone_number || null,
+                    website_url: data.website_url || null,
+                    contact: data.contact || null,
+                  }
+                : prev
+            );
+          }
+        });
     },
     [allArtists]
   );
