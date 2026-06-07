@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { FormGroup, Label, Select, SubmitButton } from "./AdminFormComponents";
 import { fetchBrokenLinks } from "../../../services/adminApi";
@@ -35,19 +35,36 @@ interface Props {
 }
 
 function MultiSelect({
-  id,
+  label,
   options,
   selected,
   onChange,
   placeholder,
+  disabled,
 }: {
-  id: string;
+  label: string;
   options: { value: number; label: string }[];
   selected: Set<number>;
   onChange: (selected: Set<number>) => void;
   placeholder: string;
+  disabled?: boolean;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setIsOpen(false);
+        setSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [isOpen]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return options;
@@ -65,57 +82,102 @@ function MultiSelect({
     onChange(next);
   };
 
-  const selectedOptions = options.filter(o => selected.has(o.value));
+  const allFilteredSelected = filtered.length > 0 &&
+    filtered.every(o => selected.has(o.value));
+
+  const handleSelectAll = () => {
+    const next = new Set(selected);
+    for (const o of filtered) next.add(o.value);
+    onChange(next);
+  };
+
+  const handleDeselectAll = () => {
+    if (search.trim()) {
+      // Only deselect filtered items
+      const next = new Set(selected);
+      for (const o of filtered) next.delete(o.value);
+      onChange(next);
+    } else {
+      onChange(new Set());
+    }
+  };
+
+  // Summary text for closed state
+  const getSummary = (): string => {
+    const total = options.length;
+    const count = selected.size;
+    if (count === 0 || count === total) {
+      return `All ${label.toLowerCase()} (${total})`;
+    }
+    return `${count} of ${total} selected`;
+  };
 
   return (
-    <div className={styles.multiSelect}>
-      {selectedOptions.length > 0 && (
-        <div className={styles.selectedTags}>
-          {selectedOptions.map(o => (
-            <span key={o.value} className={styles.tag}>
-              {o.label}
-              <button
-                type="button"
-                className={styles.tagRemove}
-                onClick={() => toggle(o.value)}
-              >
-                ×
+    <div className={styles.multiSelect} ref={ref}>
+      <button
+        type="button"
+        className={`${styles.multiSelectTrigger} ${isOpen ? styles.multiSelectTriggerOpen : ""} ${disabled ? styles.multiSelectTriggerDisabled : ""}`}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+      >
+        <span>{getSummary()}</span>
+        <span className={styles.chevron}>{isOpen ? "▲" : "▼"}</span>
+      </button>
+
+      {isOpen && (
+        <div className={styles.multiSelectDropdown}>
+          <input
+            type="text"
+            className={styles.multiSelectSearch}
+            placeholder={placeholder}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            autoFocus
+          />
+
+          <div className={styles.multiSelectBulkActions}>
+            {allFilteredSelected ? (
+              <button type="button" onClick={handleDeselectAll}>
+                Deselect all{search.trim() ? " shown" : ""}
               </button>
-            </span>
-          ))}
-          <button
-            type="button"
-            className={styles.clearAll}
-            onClick={() => onChange(new Set())}
-          >
-            Clear all
-          </button>
+            ) : (
+              <button type="button" onClick={handleSelectAll}>
+                Select all{search.trim() ? " shown" : ""}
+              </button>
+            )}
+          </div>
+
+          <div className={styles.multiSelectList}>
+            {filtered.length === 0 ? (
+              <div className={styles.multiSelectEmpty}>No matches</div>
+            ) : (
+              filtered.map(o => (
+                <label key={o.value} className={styles.multiSelectOption}>
+                  <input
+                    type="checkbox"
+                    checked={selected.has(o.value)}
+                    onChange={() => toggle(o.value)}
+                  />
+                  <span>{o.label}</span>
+                </label>
+              ))
+            )}
+          </div>
+
+          <div className={styles.multiSelectFooter}>
+            <button
+              type="button"
+              className={styles.doneButton}
+              onClick={() => {
+                setIsOpen(false);
+                setSearch("");
+              }}
+            >
+              Done
+            </button>
+          </div>
         </div>
       )}
-      <input
-        id={id}
-        type="text"
-        className={styles.multiSelectSearch}
-        placeholder={placeholder}
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-      />
-      <div className={styles.multiSelectList}>
-        {filtered.length === 0 ? (
-          <div className={styles.multiSelectEmpty}>No matches</div>
-        ) : (
-          filtered.map(o => (
-            <label key={o.value} className={styles.multiSelectOption}>
-              <input
-                type="checkbox"
-                checked={selected.has(o.value)}
-                onChange={() => toggle(o.value)}
-              />
-              <span>{o.label}</span>
-            </label>
-          ))
-        )}
-      </div>
     </div>
   );
 }
@@ -142,46 +204,37 @@ export default function DataBuilder({ cities, states, countries }: Props) {
   );
 
   const filteredStates = useMemo(() => {
-    let list = states;
-    if (selectedCountryId) {
-      const country = countries.find(
-        c => c.id === parseInt(selectedCountryId)
-      );
-      if (country) {
-        list = states.filter(s => s.country_name === country.country_name);
-      }
-    }
-    return [...list].sort((a, b) =>
-      a.state_name.localeCompare(b.state_name)
+    if (!selectedCountryId) return [];
+    const country = countries.find(
+      c => c.id === parseInt(selectedCountryId)
     );
+    if (!country) return [];
+    return [...states]
+      .filter(s => s.country_name === country.country_name)
+      .sort((a, b) => a.state_name.localeCompare(b.state_name));
   }, [states, countries, selectedCountryId]);
 
   const filteredCities = useMemo(() => {
-    let list = cities;
+    if (!selectedCountryId) return [];
     if (selectedStateIds.size > 0) {
-      list = cities.filter(
-        c => c.state_id && selectedStateIds.has(c.state_id)
-      );
-    } else if (selectedCountryId) {
-      const country = countries.find(
-        c => c.id === parseInt(selectedCountryId)
-      );
-      if (country) {
-        list = cities.filter(c => c.country_name === country.country_name);
-      }
+      return [...cities]
+        .filter(c => c.state_id && selectedStateIds.has(c.state_id))
+        .sort((a, b) => a.city_name.localeCompare(b.city_name));
     }
-    return [...list].sort((a, b) =>
-      a.city_name.localeCompare(b.city_name)
+    const country = countries.find(
+      c => c.id === parseInt(selectedCountryId)
     );
+    if (!country) return [];
+    return [...cities]
+      .filter(c => c.country_name === country.country_name)
+      .sort((a, b) => a.city_name.localeCompare(b.city_name));
   }, [cities, countries, selectedCountryId, selectedStateIds]);
 
   const stateOptions = useMemo(
     () =>
       filteredStates.map(s => ({
         value: s.id,
-        label: s.country_name
-          ? `${s.state_name} (${s.country_name})`
-          : s.state_name,
+        label: s.state_name,
       })),
     [filteredStates]
   );
@@ -197,20 +250,47 @@ export default function DataBuilder({ cities, states, countries }: Props) {
     [filteredCities]
   );
 
-  const hasNoSelection =
-    !selectedCountryId &&
-    selectedStateIds.size === 0 &&
-    selectedCityIds.size === 0;
+  const hasNoSelection = !selectedCountryId;
 
+  // When country changes, reset states and auto-select all cities
   const handleCountryChange = (value: string) => {
     setSelectedCountryId(value);
     setSelectedStateIds(new Set());
-    setSelectedCityIds(new Set());
+
+    if (value) {
+      const country = countries.find(c => c.id === parseInt(value));
+      if (country) {
+        const countryCities = cities.filter(
+          c => c.country_name === country.country_name
+        );
+        setSelectedCityIds(new Set(countryCities.map(c => c.id)));
+      }
+    } else {
+      setSelectedCityIds(new Set());
+    }
   };
 
+  // When states change, auto-select all cities in selected states
   const handleStatesChange = (ids: Set<number>) => {
     setSelectedStateIds(ids);
-    setSelectedCityIds(new Set());
+
+    if (ids.size > 0) {
+      const stateCities = cities.filter(
+        c => c.state_id && ids.has(c.state_id)
+      );
+      setSelectedCityIds(new Set(stateCities.map(c => c.id)));
+    } else if (selectedCountryId) {
+      // Reset to all cities in country
+      const country = countries.find(
+        c => c.id === parseInt(selectedCountryId)
+      );
+      if (country) {
+        const countryCities = cities.filter(
+          c => c.country_name === country.country_name
+        );
+        setSelectedCityIds(new Set(countryCities.map(c => c.id)));
+      }
+    }
   };
 
   const buildHeading = (): string => {
@@ -223,7 +303,7 @@ export default function DataBuilder({ cities, states, countries }: Props) {
         return `Traditional Tattoo Artists in ${parts.join(", ")}`;
       }
     }
-    if (selectedCityIds.size > 1) {
+    if (selectedCityIds.size > 1 && selectedCityIds.size < filteredCities.length) {
       return "Traditional Tattoo Artists — Multiple Cities";
     }
     if (selectedStateIds.size === 1) {
@@ -250,7 +330,6 @@ export default function DataBuilder({ cities, states, countries }: Props) {
     try {
       setLoading(true);
 
-      // Fetch artists and broken links in parallel
       const baseUrl = import.meta.env.VITE_API_URL || "/api";
       const [artistRes, brokenLinkResults] = await Promise.all([
         fetch(`${baseUrl}/listAllArtists`),
@@ -261,14 +340,13 @@ export default function DataBuilder({ cities, states, countries }: Props) {
       const data = await artistRes.json();
       const allArtists: ArtistRow[] = data.artists || [];
 
-      // Build set of broken handles for fast lookup
       const brokenHandles = new Set(
         brokenLinkResults.map(b =>
           b.instagram_handle.replace("@", "").toLowerCase()
         )
       );
 
-      // Filter by selected geo level
+      // Filter by selected cities (most specific level)
       let filtered = allArtists;
 
       if (selectedCityIds.size > 0) {
@@ -302,7 +380,6 @@ export default function DataBuilder({ cities, states, countries }: Props) {
 
       const totalCount = filtered.length;
 
-      // Separate broken from clean
       const broken: { name: string; handle: string }[] = [];
       const clean = filtered.filter(a => {
         if (!a.instagram_handle) return true;
@@ -314,22 +391,50 @@ export default function DataBuilder({ cities, states, countries }: Props) {
         return true;
       });
 
-      // Sort alphabetically
       clean.sort((a, b) =>
         a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
       );
 
-      // Build markdown
       const heading = buildHeading();
-      const lines = clean.map(a => {
+
+      const formatArtistLine = (a: ArtistRow): string => {
         const handle = a.instagram_handle?.replace("@", "");
         if (handle) {
           return `- ${a.name} [@${handle}](https://instagram.com/${handle})`;
         }
         return `- ${a.name}`;
-      });
+      };
 
-      const md = `**${heading}**\n\n${lines.join("\n")}`;
+      // Group by city when multiple cities are in the output
+      const distinctCities = new Set(clean.map(a => a.city_name || "Unknown"));
+      const shouldGroup = distinctCities.size > 1;
+
+      let md: string;
+
+      if (shouldGroup) {
+        // Group artists by city, cities in A-Z order
+        const byCity = new Map<string, ArtistRow[]>();
+        for (const a of clean) {
+          const key = a.city_name || "Unknown";
+          if (!byCity.has(key)) byCity.set(key, []);
+          byCity.get(key)!.push(a);
+        }
+
+        const sortedCityKeys = [...byCity.keys()].sort((a, b) =>
+          a.localeCompare(b, undefined, { sensitivity: "base" })
+        );
+
+        const sections = sortedCityKeys.map(cityName => {
+          const artists = byCity.get(cityName)!;
+          const lines = artists.map(formatArtistLine);
+          return `**${cityName}**\n${lines.join("\n")}`;
+        });
+
+        md = `**${heading}**\n\n${sections.join("\n\n")}`;
+      } else {
+        const lines = clean.map(formatArtistLine);
+        md = `**${heading}**\n\n${lines.join("\n")}`;
+      }
 
       setResult({
         output: md,
@@ -377,7 +482,7 @@ export default function DataBuilder({ cities, states, countries }: Props) {
                 value={selectedCountryId}
                 onChange={e => handleCountryChange(e.target.value)}
               >
-                <option value="">All countries</option>
+                <option value="">Select a country</option>
                 {sortedCountries.map(c => (
                   <option key={c.id} value={c.id}>
                     {c.country_name}
@@ -386,41 +491,31 @@ export default function DataBuilder({ cities, states, countries }: Props) {
               </Select>
             </FormGroup>
 
-            <FormGroup>
-              <Label htmlFor="db_state">
-                States{" "}
-                {selectedStateIds.size > 0 && (
-                  <span className={styles.filterCount}>
-                    ({selectedStateIds.size})
-                  </span>
-                )}
-              </Label>
-              <MultiSelect
-                id="db_state"
-                options={stateOptions}
-                selected={selectedStateIds}
-                onChange={handleStatesChange}
-                placeholder="Search states..."
-              />
-            </FormGroup>
+            {selectedCountryId && filteredStates.length > 0 && (
+              <FormGroup>
+                <Label htmlFor="db_state">States / Provinces</Label>
+                <MultiSelect
+                  label="states"
+                  options={stateOptions}
+                  selected={selectedStateIds}
+                  onChange={handleStatesChange}
+                  placeholder="Search states..."
+                />
+              </FormGroup>
+            )}
 
-            <FormGroup>
-              <Label htmlFor="db_city">
-                Cities{" "}
-                {selectedCityIds.size > 0 && (
-                  <span className={styles.filterCount}>
-                    ({selectedCityIds.size})
-                  </span>
-                )}
-              </Label>
-              <MultiSelect
-                id="db_city"
-                options={cityOptions}
-                selected={selectedCityIds}
-                onChange={setSelectedCityIds}
-                placeholder="Search cities..."
-              />
-            </FormGroup>
+            {selectedCountryId && (
+              <FormGroup>
+                <Label htmlFor="db_city">Cities</Label>
+                <MultiSelect
+                  label="cities"
+                  options={cityOptions}
+                  selected={selectedCityIds}
+                  onChange={setSelectedCityIds}
+                  placeholder="Search cities..."
+                />
+              </FormGroup>
+            )}
           </div>
 
           <div className={styles.formActions}>

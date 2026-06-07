@@ -52,6 +52,13 @@
   padding-bottom: 0;
 }
 
+.adminContent {
+  overflow: hidden;
+  height: calc(100vh - 52px);
+  flex: none;
+  padding-top: 0;
+}
+
 .header {
   position: sticky;
   top: 0;

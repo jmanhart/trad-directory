@@ -97,7 +97,7 @@ function AppContent() {
         />
       )}
       <main
-        className={`${styles.mainContent} ${!showFooter ? styles.mainContentNoFixedFooter : ""}`}
+        className={`${styles.mainContent} ${!showFooter ? styles.mainContentNoFixedFooter : ""} ${isAdminRoute ? styles.adminContent : ""}`}
       >
         <Routes>
           <Route path="/" element={<HomePage />} />
