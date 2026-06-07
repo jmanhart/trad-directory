@@ -15,7 +15,9 @@
 }
 
 .filterColumn {
-  composes: column;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -23,30 +25,19 @@
 }
 
 .outputColumn {
-  composes: column;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
 }
 
-.backLink {
-  display: inline-block;
-  color: var(--color-text-secondary);
-  text-decoration: none;
-  font-size: 0.8rem;
-  transition: color 0.2s ease;
-  flex-shrink: 0;
-}
-
-.backLink:hover {
-  color: var(--color-primary);
-  text-decoration: underline;
-}
-
 .pageTitle {
   font-size: 1.5rem;
-  margin: 0.25rem 0 1rem;
+  margin: 0;
+  padding: 1.5rem 1.5rem 1rem;
   color: var(--color-text-primary);
   flex-shrink: 0;
 }
@@ -68,27 +59,54 @@
 .filterFields {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 0.5rem;
+  padding: 0 1.5rem 0.5rem;
+}
+
+.formActionsWrapper {
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-border);
+  padding: 1rem 1.5rem;
 }
 
 .formActions {
   display: flex;
-  align-items: center;
+  align-items: stretch;
+  justify-content: flex-end;
+  flex-direction: row-reverse;
   gap: 0.75rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-border);
-  flex-shrink: 0;
+}
+
+.generateButton,
+.resetButton {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.5;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.generateButton {
+  background-color: var(--color-primary);
+  color: white;
+  border: 1px solid var(--color-primary);
+}
+
+.generateButton:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.generateButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .resetButton {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
   background: transparent;
   border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
   color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
 }
 
 .resetButton:hover:not(:disabled) {
@@ -105,18 +123,27 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
 
+.outputLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .artistCount {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: var(--color-text-secondary);
 }
 
 .copyButton {
-  padding: 0.4rem 0.75rem;
-  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
   background: transparent;
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
@@ -131,23 +158,23 @@
 }
 
 .outputPre {
-  background-color: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 1rem;
-  font-size: 0.85rem;
-  line-height: 1.5;
+  background: transparent;
+  border: none;
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  line-height: 1.6;
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-word;
   overflow-y: auto;
   margin: 0;
   flex: 1;
+  text-align: left;
 }
 
 .emptyState {
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-align: center;
   padding: 3rem 1rem;
   flex: 1;

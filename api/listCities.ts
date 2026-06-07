@@ -35,7 +35,7 @@ export default async function handler(req: any, res: any) {
     // Fetch all cities first (without relationships to avoid null FK issues)
     const { data: cities, error: citiesError } = await supabase
       .from("cities")
-      .select("id, city_name, state_id, latitude, longitude")
+      .select("id, city_name, state_id, country_id, latitude, longitude")
       .order("city_name");
 
     if (citiesError) {
@@ -89,17 +89,37 @@ export default async function handler(req: any, res: any) {
       });
     }
 
+    // Fetch all countries for fallback lookup when city has country_id but no state
+    const countryIds = [
+      ...new Set(
+        (cities || []).map((c: any) => c.country_id).filter(Boolean)
+      ),
+    ];
+    let countriesMap = new Map<number, string>();
+    if (countryIds.length > 0) {
+      const { data: countryRows } = await supabase
+        .from("countries")
+        .select("id, country_name")
+        .in("id", countryIds);
+      (countryRows || []).forEach((c: any) => {
+        countriesMap.set(c.id, c.country_name);
+      });
+    }
+
     // Transform the data to a flatter structure
     const results = (cities || []).map((city: any) => {
       const state = city.state_id ? statesMap.get(city.state_id) : null;
-      
+
       return {
         id: city.id,
         city_name: city.city_name,
         state_id: state?.id || city.state_id || null,
         state_name: state?.state_name || null,
-        country_id: state?.country_id || null,
-        country_name: state?.country_name || null,
+        country_id: state?.country_id || city.country_id || null,
+        country_name:
+          state?.country_name ||
+          (city.country_id ? countriesMap.get(city.country_id) : null) ||
+          null,
         latitude: city.latitude || null,
         longitude: city.longitude || null,
       };

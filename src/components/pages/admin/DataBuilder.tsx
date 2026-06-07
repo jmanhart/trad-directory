@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
-import { FormGroup, Label, Select, SubmitButton } from "./AdminFormComponents";
+import { FormGroup, Label, Select } from "./AdminFormComponents";
 import { fetchBrokenLinks } from "../../../services/adminApi";
 import { useToast } from "../../common/Toast";
 import type { City, State } from "./adminTypes";
@@ -469,9 +468,6 @@ export default function DataBuilder({ cities, states, countries }: Props) {
     <div className={styles.container}>
       {/* Left column — filters */}
       <div className={styles.filterColumn}>
-        <Link to="/admin" className={styles.backLink}>
-          ← Back to Admin
-        </Link>
         <h2 className={styles.pageTitle}>Data Builder</h2>
         <form onSubmit={handleGenerate} className={styles.filterForm}>
           <div className={styles.filterFields}>
@@ -518,28 +514,29 @@ export default function DataBuilder({ cities, states, countries }: Props) {
             )}
           </div>
 
-          <div className={styles.formActions}>
-            <SubmitButton
-              loading={loading}
-              loadingText="Generating..."
-              type="submit"
-              disabled={hasNoSelection}
-            >
-              Generate
-            </SubmitButton>
-            <button
-              type="button"
-              className={styles.resetButton}
-              disabled={hasNoSelection && !result}
-              onClick={() => {
-                setSelectedCountryId("");
-                setSelectedStateIds(new Set());
-                setSelectedCityIds(new Set());
-                setResult(null);
-              }}
-            >
-              Reset
-            </button>
+          <div className={styles.formActionsWrapper}>
+            <div className={styles.formActions}>
+              <button
+                type="submit"
+                className={styles.generateButton}
+                disabled={hasNoSelection || loading}
+              >
+                {loading ? "Generating..." : "Generate"}
+              </button>
+              <button
+                type="button"
+                className={styles.resetButton}
+                disabled={hasNoSelection && !result}
+                onClick={() => {
+                  setSelectedCountryId("");
+                  setSelectedStateIds(new Set());
+                  setSelectedCityIds(new Set());
+                  setResult(null);
+                }}
+              >
+                Reset
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -547,17 +544,17 @@ export default function DataBuilder({ cities, states, countries }: Props) {
       {/* Right column — output */}
       <div className={styles.outputColumn}>
         <div className={styles.outputHeader}>
-          <h3 className={styles.columnTitle} style={{ marginBottom: 0 }}>
+          <span className={styles.outputLabel}>
             Output
-          </h3>
+            {result && (
+              <> — {result.includedCount} artist
+              {result.includedCount !== 1 ? "s" : ""}</>
+            )}
+          </span>
           {result && (
             <div
-              style={{ display: "flex", alignItems: "center", gap: "1rem" }}
+              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
             >
-              <span className={styles.artistCount}>
-                {result.includedCount} artist
-                {result.includedCount !== 1 ? "s" : ""}
-              </span>
               <button
                 type="button"
                 className={styles.copyButton}

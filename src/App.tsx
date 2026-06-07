@@ -68,6 +68,7 @@ function AppContent() {
   const isHomePage = location.pathname === "/";
   const isMapPage = location.pathname === "/map";
   const isAdminRoute = location.pathname.startsWith("/admin");
+  const isDataBuilder = location.pathname === "/admin/data-builder";
   const showFooter =
     !isAdminRoute && !PAGES_WITHOUT_FOOTER.includes(location.pathname);
   const [isAddArtistModalOpen, setIsAddArtistModalOpen] = useState(false);
@@ -76,9 +77,9 @@ function AppContent() {
   usePageTracking();
 
   return (
-    <div className={styles.appContainer}>
+    <div className={`${styles.appContainer} ${isAdminRoute ? styles.adminContainer : ""}`}>
       <ScatteredSvgBackground preset="default" intensity="subtle" />
-      {isAdminRoute ? (
+      {isDataBuilder ? null : isAdminRoute ? (
         <AdminTopAppBar />
       ) : (
         <>
@@ -97,7 +98,7 @@ function AppContent() {
         />
       )}
       <main
-        className={`${styles.mainContent} ${!showFooter ? styles.mainContentNoFixedFooter : ""} ${isAdminRoute ? styles.adminContent : ""}`}
+        className={`${styles.mainContent} ${!showFooter ? styles.mainContentNoFixedFooter : ""} ${isAdminRoute ? styles.adminContent : ""} ${isDataBuilder ? styles.dataBuilderContent : ""}`}
       >
         <Routes>
           <Route path="/" element={<HomePage />} />
