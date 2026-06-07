@@ -378,9 +378,9 @@ const CityMarker = memo(function CityMarker({
           onDotClick(city, e);
         }}
         onMouseEnter={
-          isMobile ? undefined : e => onMouseEnter?.(city, e)
+          isMobile || selected ? undefined : e => onMouseEnter?.(city, e)
         }
-        onMouseLeave={isMobile ? undefined : onMouseLeave}
+        onMouseLeave={isMobile || selected ? undefined : onMouseLeave}
       >
         <div
           className={styles.cityDotWrapper}

@@ -63,15 +63,6 @@ export default function MapShopPanel({
         </button>
       </div>
 
-      <div className={styles.stats}>
-        <div className={styles.stat}>
-          <span className={styles.statValue}>{shop.artists.length}</span>
-          <span className={styles.statLabel}>
-            {shop.artists.length === 1 ? "Artist" : "Artists"}
-          </span>
-        </div>
-      </div>
-
       <div className={styles.body}>
         {locationString && (
           <div className={styles.section}>
@@ -103,8 +94,8 @@ export default function MapShopPanel({
         )}
       </div>
 
-      <div className={styles.footer}>
-        {shop.instagram_handle && (
+      {shop.instagram_handle && (
+        <div className={styles.footer}>
           <a
             href={`https://instagram.com/${shop.instagram_handle}`}
             target="_blank"
@@ -113,11 +104,8 @@ export default function MapShopPanel({
           >
             View on Instagram
           </a>
-        )}
-        <Link to={getShopUrl(shop)} className={styles.viewPageLink}>
-          View Full Shop Page
-        </Link>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
