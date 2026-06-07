@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { FormGroup, Label, Select, SubmitButton } from "./AdminFormComponents";
+import { fetchBrokenLinks } from "../../../services/adminApi";
 import { useToast } from "../../common/Toast";
 import type { City, State } from "./adminTypes";
 import styles from "./DataBuilder.module.css";
@@ -17,6 +18,13 @@ interface ArtistRow {
   city_name: string | null;
   state_name: string | null;
   country_name: string | null;
+}
+
+interface GenerateResult {
+  output: string;
+  totalCount: number;
+  includedCount: number;
+  brokenLinks: { name: string; handle: string }[];
 }
 
 interface Props {
@@ -122,8 +130,7 @@ export default function DataBuilder({ cities, states, countries }: Props) {
     new Set()
   );
   const [loading, setLoading] = useState(false);
-  const [output, setOutput] = useState("");
-  const [artistCount, setArtistCount] = useState<number | null>(null);
+  const [result, setResult] = useState<GenerateResult | null>(null);
 
   const sortedCountries = useMemo(
     () =>
@@ -151,7 +158,9 @@ export default function DataBuilder({ cities, states, countries }: Props) {
   const filteredCities = useMemo(() => {
     let list = cities;
     if (selectedStateIds.size > 0) {
-      list = cities.filter(c => c.state_id && selectedStateIds.has(c.state_id));
+      list = cities.filter(
+        c => c.state_id && selectedStateIds.has(c.state_id)
+      );
     } else if (selectedCountryId) {
       const country = countries.find(
         c => c.id === parseInt(selectedCountryId)
@@ -234,11 +243,24 @@ export default function DataBuilder({ cities, states, countries }: Props) {
 
     try {
       setLoading(true);
+
+      // Fetch artists and broken links in parallel
       const baseUrl = import.meta.env.VITE_API_URL || "/api";
-      const response = await fetch(`${baseUrl}/listAllArtists`);
-      if (!response.ok) throw new Error("Failed to fetch artists");
-      const data = await response.json();
+      const [artistRes, brokenLinkResults] = await Promise.all([
+        fetch(`${baseUrl}/listAllArtists`),
+        fetchBrokenLinks().catch(() => []),
+      ]);
+
+      if (!artistRes.ok) throw new Error("Failed to fetch artists");
+      const data = await artistRes.json();
       const allArtists: ArtistRow[] = data.artists || [];
+
+      // Build set of broken handles for fast lookup
+      const brokenHandles = new Set(
+        brokenLinkResults.map(b =>
+          b.instagram_handle.replace("@", "").toLowerCase()
+        )
+      );
 
       // Filter by selected geo level
       let filtered = allArtists;
@@ -272,14 +294,28 @@ export default function DataBuilder({ cities, states, countries }: Props) {
         }
       }
 
+      const totalCount = filtered.length;
+
+      // Separate broken from clean
+      const broken: { name: string; handle: string }[] = [];
+      const clean = filtered.filter(a => {
+        if (!a.instagram_handle) return true;
+        const normalized = a.instagram_handle.replace("@", "").toLowerCase();
+        if (brokenHandles.has(normalized)) {
+          broken.push({ name: a.name, handle: a.instagram_handle });
+          return false;
+        }
+        return true;
+      });
+
       // Sort alphabetically
-      filtered.sort((a, b) =>
+      clean.sort((a, b) =>
         a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
       );
 
       // Build markdown
       const heading = buildHeading();
-      const lines = filtered.map(a => {
+      const lines = clean.map(a => {
         const handle = a.instagram_handle?.replace("@", "");
         if (handle) {
           return `- ${a.name} [@${handle}](https://instagram.com/${handle})`;
@@ -288,8 +324,13 @@ export default function DataBuilder({ cities, states, countries }: Props) {
       });
 
       const md = `**${heading}**\n\n${lines.join("\n")}`;
-      setOutput(md);
-      setArtistCount(filtered.length);
+
+      setResult({
+        output: md,
+        totalCount,
+        includedCount: clean.length,
+        brokenLinks: broken,
+      });
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : "Failed to generate list"
@@ -300,12 +341,17 @@ export default function DataBuilder({ cities, states, countries }: Props) {
   };
 
   const handleCopy = async () => {
+    if (!result) return;
     try {
-      await navigator.clipboard.writeText(output);
+      await navigator.clipboard.writeText(result.output);
       showToast("Copied to clipboard");
     } catch {
       showToast("Failed to copy");
     }
+  };
+
+  const handleClear = () => {
+    setResult(null);
   };
 
   return (
@@ -384,10 +430,13 @@ export default function DataBuilder({ cities, states, countries }: Props) {
           <h3 className={styles.columnTitle} style={{ marginBottom: 0 }}>
             Output
           </h3>
-          {output && (
-            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          {result && (
+            <div
+              style={{ display: "flex", alignItems: "center", gap: "1rem" }}
+            >
               <span className={styles.artistCount}>
-                {artistCount} artist{artistCount !== 1 ? "s" : ""}
+                {result.includedCount} artist
+                {result.includedCount !== 1 ? "s" : ""}
               </span>
               <button
                 type="button"
@@ -399,10 +448,7 @@ export default function DataBuilder({ cities, states, countries }: Props) {
               <button
                 type="button"
                 className={styles.copyButton}
-                onClick={() => {
-                  setOutput("");
-                  setArtistCount(null);
-                }}
+                onClick={handleClear}
               >
                 Clear
               </button>
@@ -410,8 +456,28 @@ export default function DataBuilder({ cities, states, countries }: Props) {
           )}
         </div>
 
-        {output ? (
-          <pre className={styles.outputPre}>{output}</pre>
+        {result ? (
+          <>
+            {result.brokenLinks.length > 0 && (
+              <div className={styles.brokenLinksBanner}>
+                <strong>
+                  {result.brokenLinks.length} removed (broken IG link
+                  {result.brokenLinks.length !== 1 ? "s" : ""})
+                </strong>
+                <ul className={styles.brokenLinksList}>
+                  {result.brokenLinks.map((b, i) => (
+                    <li key={i}>
+                      {b.name}{" "}
+                      <span className={styles.brokenHandle}>
+                        @{b.handle.replace("@", "")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <pre className={styles.outputPre}>{result.output}</pre>
+          </>
         ) : (
           <div className={styles.emptyState}>
             Select a location and click Generate to create an artist list.
