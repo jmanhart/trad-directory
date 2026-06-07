@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { FormGroup, Label, Select, SubmitButton } from "./AdminFormComponents";
 import { fetchBrokenLinks } from "../../../services/adminApi";
 import { useToast } from "../../common/Toast";
@@ -196,6 +197,11 @@ export default function DataBuilder({ cities, states, countries }: Props) {
     [filteredCities]
   );
 
+  const hasNoSelection =
+    !selectedCountryId &&
+    selectedStateIds.size === 0 &&
+    selectedCityIds.size === 0;
+
   const handleCountryChange = (value: string) => {
     setSelectedCountryId(value);
     setSelectedStateIds(new Set());
@@ -357,69 +363,88 @@ export default function DataBuilder({ cities, states, countries }: Props) {
   return (
     <div className={styles.container}>
       {/* Left column — filters */}
-      <div className={styles.column}>
-        <h3 className={styles.columnTitle}>Artist List Generator</h3>
-        <form onSubmit={handleGenerate}>
-          <FormGroup>
-            <Label htmlFor="db_country">Country</Label>
-            <Select
-              id="db_country"
-              value={selectedCountryId}
-              onChange={e => handleCountryChange(e.target.value)}
-            >
-              <option value="">All countries</option>
-              {sortedCountries.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.country_name}
-                </option>
-              ))}
-            </Select>
-          </FormGroup>
+      <div className={styles.filterColumn}>
+        <Link to="/admin" className={styles.backLink}>
+          ← Back to Admin
+        </Link>
+        <h2 className={styles.pageTitle}>Data Builder</h2>
+        <form onSubmit={handleGenerate} className={styles.filterForm}>
+          <div className={styles.filterFields}>
+            <FormGroup>
+              <Label htmlFor="db_country">Country</Label>
+              <Select
+                id="db_country"
+                value={selectedCountryId}
+                onChange={e => handleCountryChange(e.target.value)}
+              >
+                <option value="">All countries</option>
+                {sortedCountries.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.country_name}
+                  </option>
+                ))}
+              </Select>
+            </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="db_state">
-              States{" "}
-              {selectedStateIds.size > 0 && (
-                <span className={styles.filterCount}>
-                  ({selectedStateIds.size})
-                </span>
-              )}
-            </Label>
-            <MultiSelect
-              id="db_state"
-              options={stateOptions}
-              selected={selectedStateIds}
-              onChange={handleStatesChange}
-              placeholder="Search states..."
-            />
-          </FormGroup>
+            <FormGroup>
+              <Label htmlFor="db_state">
+                States{" "}
+                {selectedStateIds.size > 0 && (
+                  <span className={styles.filterCount}>
+                    ({selectedStateIds.size})
+                  </span>
+                )}
+              </Label>
+              <MultiSelect
+                id="db_state"
+                options={stateOptions}
+                selected={selectedStateIds}
+                onChange={handleStatesChange}
+                placeholder="Search states..."
+              />
+            </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="db_city">
-              Cities{" "}
-              {selectedCityIds.size > 0 && (
-                <span className={styles.filterCount}>
-                  ({selectedCityIds.size})
-                </span>
-              )}
-            </Label>
-            <MultiSelect
-              id="db_city"
-              options={cityOptions}
-              selected={selectedCityIds}
-              onChange={setSelectedCityIds}
-              placeholder="Search cities..."
-            />
-          </FormGroup>
+            <FormGroup>
+              <Label htmlFor="db_city">
+                Cities{" "}
+                {selectedCityIds.size > 0 && (
+                  <span className={styles.filterCount}>
+                    ({selectedCityIds.size})
+                  </span>
+                )}
+              </Label>
+              <MultiSelect
+                id="db_city"
+                options={cityOptions}
+                selected={selectedCityIds}
+                onChange={setSelectedCityIds}
+                placeholder="Search cities..."
+              />
+            </FormGroup>
+          </div>
 
-          <div className={styles.generateButton}>
+          <div className={styles.formActions}>
             <SubmitButton
               loading={loading}
               loadingText="Generating..."
               type="submit"
+              disabled={hasNoSelection}
             >
               Generate
             </SubmitButton>
+            <button
+              type="button"
+              className={styles.resetButton}
+              disabled={hasNoSelection && !result}
+              onClick={() => {
+                setSelectedCountryId("");
+                setSelectedStateIds(new Set());
+                setSelectedCityIds(new Set());
+                setResult(null);
+              }}
+            >
+              Reset
+            </button>
           </div>
         </form>
       </div>

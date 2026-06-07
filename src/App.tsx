@@ -30,6 +30,7 @@ import AdminAddArtistShopLink from "./components/pages/admin/AdminAddArtistShopL
 import AdminBrokenLinks from "./components/pages/admin/AdminBrokenLinks";
 import AdminNewAdding from "./components/pages/admin/AdminNewAdding";
 import AdminAllData from "./components/pages/admin/AdminAllData";
+import AdminDataBuilder from "./components/pages/admin/AdminDataBuilder";
 import TopAppBar from "./components/common/TopAppBar";
 import AdminTopAppBar from "./components/common/AdminTopAppBar";
 import Footer from "./components/common/Footer";
@@ -67,7 +68,8 @@ function AppContent() {
   const isHomePage = location.pathname === "/";
   const isMapPage = location.pathname === "/map";
   const isAdminRoute = location.pathname.startsWith("/admin");
-  const showFooter = !PAGES_WITHOUT_FOOTER.includes(location.pathname);
+  const showFooter =
+    !isAdminRoute && !PAGES_WITHOUT_FOOTER.includes(location.pathname);
   const [isAddArtistModalOpen, setIsAddArtistModalOpen] = useState(false);
 
   // Track page views on route changes
@@ -179,6 +181,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <AdminAllData />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/data-builder"
+            element={
+              <ProtectedRoute>
+                <AdminDataBuilder />
               </ProtectedRoute>
             }
           />

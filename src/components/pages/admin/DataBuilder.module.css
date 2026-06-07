@@ -2,8 +2,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
-  margin-top: 1rem;
-  align-items: start;
+  align-items: stretch;
+  height: calc(100vh - 140px);
 }
 
 .column {
@@ -13,11 +13,39 @@
   padding: 1.5rem;
 }
 
+.filterColumn {
+  composes: column;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .outputColumn {
   composes: column;
   display: flex;
   flex-direction: column;
-  min-height: 400px;
+  overflow: hidden;
+}
+
+.backLink {
+  display: inline-block;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: 0.8rem;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.backLink:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  margin: 0.25rem 0 1rem;
+  color: var(--color-text-primary);
+  flex-shrink: 0;
 }
 
 .columnTitle {
@@ -27,8 +55,47 @@
   color: var(--color-text-primary);
 }
 
-.generateButton {
-  margin-top: 0.5rem;
+.filterForm {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.filterFields {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 0.5rem;
+}
+
+.formActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.resetButton {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resetButton:hover:not(:disabled) {
+  border-color: var(--color-text-primary);
+  color: var(--color-text-primary);
+}
+
+.resetButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .outputHeader {
@@ -36,6 +103,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1rem;
+  flex-shrink: 0;
 }
 
 .artistCount {

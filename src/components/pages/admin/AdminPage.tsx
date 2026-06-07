@@ -47,6 +47,11 @@ export default function AdminPage() {
           <span className={styles.buttonIcon}>📊</span>
           <span className={styles.buttonText}>ALL DATA</span>
         </Link>
+
+        <Link to="/admin/data-builder" className={styles.actionButton}>
+          <span className={styles.buttonIcon}>📋</span>
+          <span className={styles.buttonText}>Data Builder</span>
+        </Link>
       </div>
     </div>
   );
