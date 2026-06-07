@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { Tabs } from "../common/Tabs";
 import { CountBadge } from "../common/CountBadge";
-import ShareMenu from "./ShareMenu";
 import type { Artist } from "../../types/entities";
 import type { CityDot } from "./MapView";
 import styles from "./MapDetailPanel.module.css";
@@ -193,11 +192,6 @@ export default function MapDetailPanel({
           {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
         </div>
         <div className={styles.headerActions}>
-          <ShareMenu
-            heading={`Traditional Tattoo Artists in ${title}`}
-            artists={artists}
-            className={styles.actionButton}
-          />
           <button
             className={styles.closeButton}
             onClick={onClose}
@@ -303,11 +297,6 @@ export default function MapDetailPanel({
                         </span>
                       </span>
                       <span className={styles.cityGroupRight}>
-                        <ShareMenu
-                          heading={`Traditional Tattoo Artists in ${cityName}`}
-                          artists={group.artists}
-                          className={styles.cityAction}
-                        />
                         <CountBadge count={group.artists.length} />
                       </span>
                     </button>

@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { getShopUrl } from "../../services/api";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
-import ShareMenu from "./ShareMenu";
 import type { Artist } from "../../types/entities";
 import styles from "./MapShopPanel.module.css";
 
@@ -60,13 +59,6 @@ export default function MapShopPanel({
           )}
         </div>
         <div className={styles.headerActions}>
-          {shop.artists.length > 0 && (
-            <ShareMenu
-              heading={`Traditional Tattoo Artists at ${shop.shop_name}`}
-              artists={shop.artists}
-              className={styles.actionButton}
-            />
-          )}
           <button
             className={styles.closeButton}
             onClick={onClose}

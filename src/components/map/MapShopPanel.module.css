@@ -47,22 +47,6 @@
   flex-shrink: 0;
 }
 
-.actionButton {
-  background: none;
-  border: none;
-  color: var(--color-text-tertiary);
-  cursor: pointer;
-  padding: 0.25rem;
-  line-height: 1;
-  border-radius: var(--border-radius);
-  transition: color 0.15s, background 0.15s;
-}
-
-.actionButton:hover {
-  color: var(--color-text-primary);
-  background: var(--gray-100);
-}
-
 .closeButton {
   background: none;
   border: none;

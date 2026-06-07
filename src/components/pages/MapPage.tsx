@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { fetchTattooShopsWithArtists } from "../../services/api";
 import { supabase } from "../../lib/supabaseClient";
 import type { Artist } from "../../types/entities";
@@ -12,6 +12,7 @@ import MapArtistPanel from "../../components/map/MapArtistPanel";
 import MapShopPanel from "../../components/map/MapShopPanel";
 import type { MapShopData } from "../../components/map/MapShopPanel";
 import SearchBar from "../../components/common/SearchBar";
+import MapSidebar from "../../components/map/MapSidebar";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import styles from "./MapPage.module.css";
 
@@ -48,6 +49,7 @@ export default function MapPage() {
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
   const [selectedShop, setSelectedShop] = useState<MapShopData | null>(null);
   const [highlightedCity, setHighlightedCity] = useState<CityDot | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // flyTo state for programmatic map navigation
   const [flyTo, setFlyTo] = useState<{
@@ -675,10 +677,27 @@ export default function MapPage() {
 
   return (
     <div className={styles.container}>
+      <MapSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className={styles.mapOverlay}>
-        <Link to="/" className={styles.overlayLogo}>
-          <img src="/TRAD-NEW-SMALL.svg" alt="TRAD" />
-        </Link>
+        <button
+          className={styles.hamburgerButton}
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Open menu"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
+            <line x1="3" y1="5" x2="17" y2="5" />
+            <line x1="3" y1="10" x2="17" y2="10" />
+            <line x1="3" y1="15" x2="17" y2="15" />
+          </svg>
+        </button>
         <div className={styles.overlaySearch}>
           <SearchBar
             size="compact"
