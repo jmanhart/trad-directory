@@ -602,7 +602,13 @@ export default function MapPage() {
         if (artist) {
           const dot = findDotForArtist(artist);
           if (dot) {
-            flyToDot(dot);
+            // Fly to location but don't open the city panel
+            setSelectedCity(null);
+            setSelectedRegion(null);
+            setSelectedShop(null);
+            setSelectedArtist(artist);
+            setFlyTo({ coordinates: [dot.lng, dot.lat], zoom: 6 });
+            setFlyToKey(k => k + 1);
             return true;
           }
         }
@@ -619,6 +625,8 @@ export default function MapPage() {
           const dot = findDotForArtist(artist);
           if (dot) {
             flyToDot(dot);
+            setSelectedArtist(null);
+            // TODO: set shop panel when shop data structure is available
             return true;
           }
         }
@@ -673,7 +681,7 @@ export default function MapPage() {
     : "";
 
   // Whether any panel is showing
-  const hasPanel = !!(selectedCity || selectedRegion);
+  const hasPanel = !!(selectedCity || selectedRegion || selectedArtist || selectedShop);
 
   return (
     <div className={styles.container}>
@@ -705,6 +713,7 @@ export default function MapPage() {
             suggestions={suggestions}
             onSelectSuggestion={handleMapSelectSuggestion}
             placeholder="Search artist, shop, or city..."
+            className={styles.mapSearchBar}
           />
         </div>
       </div>
@@ -722,7 +731,7 @@ export default function MapPage() {
       />
 
       {/* Desktop side panel */}
-      {hasPanel && !isMobile && (
+      {(selectedCity || selectedRegion) && !isMobile && (
         <div className={styles.sidePanel}>
           {selectedCity ? (
             <MapDetailPanel
@@ -754,9 +763,9 @@ export default function MapPage() {
         </div>
       )}
 
-      {/* Desktop secondary detail panel (artist or shop) */}
+      {/* Desktop artist/shop detail panel — primary position if no city, secondary if city is open */}
       {selectedArtist && !isMobile && (
-        <div className={styles.artistPanel}>
+        <div className={selectedCity || selectedRegion ? styles.artistPanel : styles.sidePanelFit}>
           <MapArtistPanel
             artist={selectedArtist}
             onClose={() => setSelectedArtist(null)}
@@ -764,7 +773,7 @@ export default function MapPage() {
         </div>
       )}
       {selectedShop && !isMobile && (
-        <div className={styles.artistPanel}>
+        <div className={selectedCity || selectedRegion ? styles.artistPanel : styles.sidePanelFit}>
           <MapShopPanel
             shop={selectedShop}
             onClose={() => setSelectedShop(null)}

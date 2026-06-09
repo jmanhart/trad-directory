@@ -19,6 +19,8 @@ interface SearchBarProps {
   placeholder?: string;
   /** Keep suggestions dropdown open for styling/testing - prevents auto-close */
   keepOpen?: boolean;
+  /** Additional CSS class for parent override */
+  className?: string;
 }
 
 /**
@@ -37,6 +39,7 @@ export default function SearchBar({
   debug = false,
   placeholder = "Search by artist, shop, city, or country...",
   keepOpen = false,
+  className,
 }: SearchBarProps) {
   const [query, setQuery] = useState(keepOpen ? "test" : "");
   const [showSuggestions, setShowSuggestions] = useState(keepOpen);
@@ -342,7 +345,7 @@ export default function SearchBar({
 
   return (
     <div
-      className={`${styles.searchBar} ${sizeClass} ${keepOpen ? styles.keepOpen : ""}`}
+      className={`${styles.searchBar} ${sizeClass} ${keepOpen ? styles.keepOpen : ""} ${className || ""}`}
       ref={wrapperRef}
       data-debug={debug ? "true" : undefined}
       data-keep-open={keepOpen ? "true" : undefined}
@@ -367,6 +370,33 @@ export default function SearchBar({
           aria-controls="search-suggestions"
           data-testid="search-input"
         />
+
+        {query && (
+          <button
+            className={styles.clearButton}
+            onClick={() => {
+              setQuery("");
+              setShowSuggestions(false);
+              setHighlightedIndex(-1);
+              inputRef.current?.focus();
+            }}
+            aria-label="Clear search"
+            type="button"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              <line x1="4" y1="4" x2="12" y2="12" />
+              <line x1="12" y1="4" x2="4" y2="12" />
+            </svg>
+          </button>
+        )}
 
         {showSuggestions && filteredSuggestions.length > 0 && (
           <ul

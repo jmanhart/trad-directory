@@ -67,6 +67,27 @@
   z-index: 1;
 }
 
+.clearButton {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--color-text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.clearButton:hover {
+  color: var(--color-text-primary);
+}
+
 /* Icon sizes */
 .iconSmall {
   height: 16px;
