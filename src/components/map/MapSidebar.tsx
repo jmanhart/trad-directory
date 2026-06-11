@@ -5,9 +5,10 @@ import styles from "./MapSidebar.module.css";
 interface MapSidebarProps {
   open: boolean;
   onClose: () => void;
+  onOpenSuggestModal?: () => void;
 }
 
-export default function MapSidebar({ open, onClose }: MapSidebarProps) {
+export default function MapSidebar({ open, onClose, onOpenSuggestModal }: MapSidebarProps) {
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -38,7 +39,13 @@ export default function MapSidebar({ open, onClose }: MapSidebarProps) {
         <nav className={styles.content}>
           <ul className={styles.navList}>
             <li>
-              <Link to="/suggest" className={styles.navItem} onClick={onClose}>
+              <button
+                className={styles.navItem}
+                onClick={() => {
+                  onOpenSuggestModal?.();
+                  onClose();
+                }}
+              >
                 <span className={styles.navIcon}>
                   <svg
                     width="18"
@@ -56,7 +63,7 @@ export default function MapSidebar({ open, onClose }: MapSidebarProps) {
                   </svg>
                 </span>
                 Add an Artist or Shop
-              </Link>
+              </button>
             </li>
             <li>
               <Link to="/admin" className={styles.navItem} onClick={onClose}>

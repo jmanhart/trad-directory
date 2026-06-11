@@ -13,6 +13,7 @@ import MapShopPanel from "../../components/map/MapShopPanel";
 import type { MapShopData } from "../../components/map/MapShopPanel";
 import SearchBar from "../../components/common/SearchBar";
 import MapSidebar from "../../components/map/MapSidebar";
+import { SuggestArtistModal } from "../../components/common/SuggestArtistModal";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import styles from "./MapPage.module.css";
 
@@ -50,6 +51,7 @@ export default function MapPage() {
   const [selectedShop, setSelectedShop] = useState<MapShopData | null>(null);
   const [highlightedCity, setHighlightedCity] = useState<CityDot | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
 
   // flyTo state for programmatic map navigation
   const [flyTo, setFlyTo] = useState<{
@@ -685,7 +687,15 @@ export default function MapPage() {
 
   return (
     <div className={styles.container}>
-      <MapSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <MapSidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onOpenSuggestModal={() => setIsSuggestModalOpen(true)}
+      />
+      <SuggestArtistModal
+        isOpen={isSuggestModalOpen}
+        onClose={() => setIsSuggestModalOpen(false)}
+      />
       <div className={styles.mapOverlay}>
         <button
           className={styles.hamburgerButton}
