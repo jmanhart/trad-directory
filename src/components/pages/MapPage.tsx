@@ -4,6 +4,7 @@ import { fetchTattooShopsWithArtists } from "../../services/api";
 import { supabase } from "../../lib/supabaseClient";
 import type { Artist } from "../../types/entities";
 import useIsMobile from "../../hooks/useIsMobile";
+import useBottomSheet from "../../hooks/useBottomSheet";
 import { useSearchSuggestions } from "../../hooks/useSearchSuggestions";
 import type { Suggestion } from "../../utils/suggestions";
 import MapView, { CityDot } from "../../components/map/MapView";
@@ -685,6 +686,10 @@ export default function MapPage() {
   // Whether any panel is showing
   const hasPanel = !!(selectedCity || selectedRegion || selectedArtist || selectedShop);
 
+  const { sheetRef, handleRef, isDragging } = useBottomSheet({
+    onDismiss: handleClosePanel,
+  });
+
   return (
     <div className={styles.container}>
       <MapSidebar
@@ -794,47 +799,55 @@ export default function MapPage() {
 
       {/* Mobile bottom sheet */}
       {hasPanel && isMobile && (
-        <div className={styles.mobileSheet}>
-          {selectedArtist ? (
-            <MapArtistPanel
-              artist={selectedArtist}
-              onClose={() => setSelectedArtist(null)}
-              showBackButton
-            />
-          ) : selectedShop ? (
-            <MapShopPanel
-              shop={selectedShop}
-              onClose={() => setSelectedShop(null)}
-              showBackButton
-              onArtistClick={handleArtistClick}
-            />
-          ) : selectedCity ? (
-            <MapDetailPanel
-              title={selectedCity.cityName}
-              subtitle={citySubtitle}
-              variant="city"
-              artists={cityArtists}
-              shops={cityShops}
-              loading={loadingArtists}
-              onClose={handleClosePanel}
-              onArtistClick={handleArtistClick}
-              onShopClick={handleShopClick}
-            />
-          ) : selectedRegion ? (
-            <MapDetailPanel
-              title={selectedRegion.name}
-              subtitle={regionSubtitle}
-              variant="region"
-              artists={regionArtists}
-              shops={regionShops}
-              cityDots={regionCityDots}
-              loading={loadingArtists}
-              onClose={handleClosePanel}
-              onCityClick={handleRegionCityClick}
-              onArtistClick={handleArtistClick}
-              onShopClick={handleShopClick}
-            />
-          ) : null}
+        <div className={styles.mobileSheet} ref={sheetRef}>
+          <div className={styles.dragHandleArea} ref={handleRef}>
+            <div className={styles.dragHandleBar} />
+          </div>
+          <div
+            className={styles.mobileSheetContent}
+            style={{ overflowY: isDragging ? "hidden" : "auto" }}
+          >
+            {selectedArtist ? (
+              <MapArtistPanel
+                artist={selectedArtist}
+                onClose={() => setSelectedArtist(null)}
+                showBackButton
+              />
+            ) : selectedShop ? (
+              <MapShopPanel
+                shop={selectedShop}
+                onClose={() => setSelectedShop(null)}
+                showBackButton
+                onArtistClick={handleArtistClick}
+              />
+            ) : selectedCity ? (
+              <MapDetailPanel
+                title={selectedCity.cityName}
+                subtitle={citySubtitle}
+                variant="city"
+                artists={cityArtists}
+                shops={cityShops}
+                loading={loadingArtists}
+                onClose={handleClosePanel}
+                onArtistClick={handleArtistClick}
+                onShopClick={handleShopClick}
+              />
+            ) : selectedRegion ? (
+              <MapDetailPanel
+                title={selectedRegion.name}
+                subtitle={regionSubtitle}
+                variant="region"
+                artists={regionArtists}
+                shops={regionShops}
+                cityDots={regionCityDots}
+                loading={loadingArtists}
+                onClose={handleClosePanel}
+                onCityClick={handleRegionCityClick}
+                onArtistClick={handleArtistClick}
+                onShopClick={handleShopClick}
+              />
+            ) : null}
+          </div>
         </div>
       )}
     </div>
