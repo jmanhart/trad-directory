@@ -46,35 +46,13 @@ export default function HeroMessageText() {
   return (
     <h1 className={styles.heroMessage}>
       Discover{" "}
-      <Link
-        to="/artists"
-        className={styles.metricLink}
-        onClick={() =>
-          trackHeroMessageClick({
-            link_type: "artists",
-            metric_value: artistCount ?? undefined,
-          })
-        }
-      >
-        <span className={styles.metricNumberText}>
+      <span className={styles.metricNumberText}>
           {artistCount !== null ? artistCount.toLocaleString() : "--"}
-        </span>
-      </Link>{" "}
+        </span>{" "}
       artists working at over{" "}
-      <Link
-        to="/shops"
-        className={styles.metricLink}
-        onClick={() =>
-          trackHeroMessageClick({
-            link_type: "shops",
-            metric_value: shopCount ?? undefined,
-          })
-        }
-      >
-        <span className={styles.metricNumberText}>
+      <span className={styles.metricNumberText}>
           {shopCount !== null ? shopCount.toLocaleString() : "--"}
-        </span>
-      </Link>{" "}
+        </span>{" "}
       tattoo shops in{" "}
       <Link
         to="/map"
