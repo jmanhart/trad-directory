@@ -77,7 +77,7 @@ function AppContent() {
   usePageTracking();
 
   return (
-    <div className={`${styles.appContainer} ${isAdminRoute ? styles.adminContainer : ""}`}>
+    <div className={`${styles.appContainer} ${isDataBuilder ? styles.adminContainer : ""}`}>
       <ScatteredSvgBackground preset="default" intensity="subtle" />
       {isDataBuilder ? null : isAdminRoute ? (
         <AdminTopAppBar />

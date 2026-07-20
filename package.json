@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:admin": "concurrently \"npm run dev\" \"vercel dev --listen 3001\" --names \"VITE,API\" --prefix-colors \"cyan,magenta\"",
+    "dev:admin": "concurrently \"npm run dev\" \"bash -c 'set -a; [ -f .vercel/.env.development.local ] && source .vercel/.env.development.local; set +a; vercel dev --listen 3001'\" --names \"VITE,API\" --prefix-colors \"cyan,magenta\"",
     "everything": "npm run dev:admin",
     "build": "vite build",
     "lint": "eslint .",

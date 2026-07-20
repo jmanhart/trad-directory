@@ -32,14 +32,17 @@ export default async function handler(req: any, res: any) {
       process.env.SUPABASE_SERVICE_KEY
     );
 
-    // Fetch ALL artists without pagination
-    const {
-      data: artists,
-      error,
-    } = await supabase
-      .from("artists")
-      .select(
-        `
+    // Fetch ALL artists, paginating past Supabase's 1000-row default cap
+    const pageSize = 1000;
+    let artists: any[] = [];
+    let offset = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from("artists")
+        .select(
+          `
         id,
         name,
         instagram_handle,
@@ -53,15 +56,21 @@ export default async function handler(req: any, res: any) {
           shop: tattoo_shops (id, shop_name, instagram_handle)
         )
       `
-      )
-      .order("name");
+        )
+        .order("name")
+        .range(offset, offset + pageSize - 1);
 
-    if (error) {
-      console.error("Supabase error:", error);
-      res.status(500).json({
-        error: "Database query failed",
-      });
-      return;
+      if (error) {
+        console.error("Supabase error:", error);
+        res.status(500).json({
+          error: "Database query failed",
+        });
+        return;
+      }
+
+      artists = artists.concat(data || []);
+      hasMore = (data?.length || 0) === pageSize;
+      offset += pageSize;
     }
 
     const results = (artists || []).map((artist: any) => ({

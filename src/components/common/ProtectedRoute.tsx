@@ -6,15 +6,19 @@ interface ProtectedRouteProps {
 }
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "admin123";
+const AUTH_STORAGE_KEY = "admin_authenticated";
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => sessionStorage.getItem(AUTH_STORAGE_KEY) === "true"
+  );
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === ADMIN_PASSWORD) {
+      sessionStorage.setItem(AUTH_STORAGE_KEY, "true");
       setIsAuthenticated(true);
       setError("");
     } else {

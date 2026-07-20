@@ -59,13 +59,13 @@
 }
 
 .adminContent {
-  overflow: hidden;
   flex: 1;
   padding-top: 0;
 }
 
 .dataBuilderContent {
   height: 100vh;
+  overflow: hidden;
 }
 
 .header {

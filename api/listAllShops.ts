@@ -62,10 +62,10 @@ export default async function handler(req: any, res: any) {
         : shop.city?.city_name || null,
       state_name: Array.isArray(shop.city?.state)
         ? shop.city.state[0]?.state_name
-        : shop.city.state?.state_name || null,
+        : shop.city?.state?.state_name || null,
       country_name: Array.isArray(shop.city?.country)
         ? shop.city.country[0]?.country_name
-        : shop.city.country?.country_name || null,
+        : shop.city?.country?.country_name || null,
     }));
 
     res.status(200).json({ shops: results });
