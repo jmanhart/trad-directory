@@ -108,8 +108,33 @@ type ShopSortColumn =
   | "instagram_handle"
   | "location"
   | "address";
-type SortColumn = ArtistSortColumn | ShopSortColumn;
+type CitySortColumn =
+  | "city_name"
+  | "state"
+  | "country"
+  | "city_artist_count"
+  | "city_shop_count";
+type CountrySortColumn =
+  | "country_name"
+  | "continent"
+  | "country_city_count"
+  | "country_artist_count"
+  | "country_shop_count";
+type SortColumn =
+  | ArtistSortColumn
+  | ShopSortColumn
+  | CitySortColumn
+  | CountrySortColumn;
 type SortDirection = "asc" | "desc";
+
+// Count columns default to descending ("most first") on first click.
+const NUMERIC_SORT_COLUMNS = new Set<SortColumn>([
+  "city_artist_count",
+  "city_shop_count",
+  "country_city_count",
+  "country_artist_count",
+  "country_shop_count",
+]);
 
 function formatSubmissionStatus(status: string | undefined): string {
   if (!status) return "—";
@@ -162,6 +187,19 @@ function SubmissionActions({
     </div>
   );
 }
+
+// Composite keys for client-side location counts (Option A — keyed on names,
+// so same-named cities in different states/countries stay distinct).
+const cityCountKey = (
+  city?: string | null,
+  state?: string | null,
+  country?: string | null
+) =>
+  `${(city || "").toLowerCase()}|${(state || "").toLowerCase()}|${(
+    country || ""
+  ).toLowerCase()}`;
+const countryCountKey = (country?: string | null) =>
+  (country || "").toLowerCase();
 
 export default function AdminAllData() {
   const [activeTab, setActiveTab] = useState<TabType>("artists");
@@ -559,7 +597,56 @@ export default function AdminAllData() {
     return sorted;
   }, [allShops, searchQuery, sortColumn, sortDirection]);
 
-  // Filter and sort cities (search only; sort by city name)
+  // Client-side location counts (Option A). Counts each entity's PRIMARY
+  // location only, keyed on name — upgrade to server-side counts if secondary
+  // locations or same-name collisions ever matter. Defined before the
+  // cities/countries memos so those can sort by these counts.
+  const artistCountByCity = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const a of artists) {
+      const k = cityCountKey(a.city_name, a.state_name, a.country_name);
+      m.set(k, (m.get(k) || 0) + 1);
+    }
+    return m;
+  }, [artists]);
+
+  const shopCountByCity = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const s of allShops) {
+      const k = cityCountKey(s.city_name, s.state_name, s.country_name);
+      m.set(k, (m.get(k) || 0) + 1);
+    }
+    return m;
+  }, [allShops]);
+
+  const artistCountByCountry = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const a of artists) {
+      const k = countryCountKey(a.country_name);
+      m.set(k, (m.get(k) || 0) + 1);
+    }
+    return m;
+  }, [artists]);
+
+  const shopCountByCountry = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const s of allShops) {
+      const k = countryCountKey(s.country_name);
+      m.set(k, (m.get(k) || 0) + 1);
+    }
+    return m;
+  }, [allShops]);
+
+  const cityCountByCountry = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const c of cities) {
+      const k = countryCountKey(c.country_name);
+      m.set(k, (m.get(k) || 0) + 1);
+    }
+    return m;
+  }, [cities]);
+
+  // Filter and sort cities (search + column sort, incl. count columns)
   const filteredAndSortedCities = useMemo(() => {
     let filtered = cities;
     if (searchQuery.trim()) {
@@ -573,12 +660,62 @@ export default function AdminAllData() {
           city.id.toString().includes(query)
       );
     }
-    return [...filtered].sort((a, b) =>
-      a.city_name.localeCompare(b.city_name, undefined, { sensitivity: "base" })
-    );
-  }, [cities, searchQuery]);
+    return [...filtered].sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+      switch (sortColumn) {
+        case "id":
+          aValue = a.id;
+          bValue = b.id;
+          break;
+        case "state":
+          aValue = (a.state_name || "").toLowerCase();
+          bValue = (b.state_name || "").toLowerCase();
+          break;
+        case "country":
+          aValue = (a.country_name || "").toLowerCase();
+          bValue = (b.country_name || "").toLowerCase();
+          break;
+        case "city_artist_count":
+          aValue =
+            artistCountByCity.get(
+              cityCountKey(a.city_name, a.state_name, a.country_name)
+            ) || 0;
+          bValue =
+            artistCountByCity.get(
+              cityCountKey(b.city_name, b.state_name, b.country_name)
+            ) || 0;
+          break;
+        case "city_shop_count":
+          aValue =
+            shopCountByCity.get(
+              cityCountKey(a.city_name, a.state_name, a.country_name)
+            ) || 0;
+          bValue =
+            shopCountByCity.get(
+              cityCountKey(b.city_name, b.state_name, b.country_name)
+            ) || 0;
+          break;
+        case "city_name":
+        default:
+          aValue = a.city_name.toLowerCase();
+          bValue = b.city_name.toLowerCase();
+          break;
+      }
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [
+    cities,
+    searchQuery,
+    sortColumn,
+    sortDirection,
+    artistCountByCity,
+    shopCountByCity,
+  ]);
 
-  // Filter and sort countries (search only; sort by country name)
+  // Filter and sort countries (search + column sort, incl. count columns)
   const filteredAndSortedCountries = useMemo(() => {
     let filtered = countries;
     if (searchQuery.trim()) {
@@ -589,12 +726,51 @@ export default function AdminAllData() {
           c.id.toString().includes(query)
       );
     }
-    return [...filtered].sort((a, b) =>
-      a.country_name.localeCompare(b.country_name, undefined, {
-        sensitivity: "base",
-      })
-    );
-  }, [countries, searchQuery]);
+    return [...filtered].sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+      switch (sortColumn) {
+        case "id":
+          aValue = a.id;
+          bValue = b.id;
+          break;
+        case "continent":
+          aValue = (a.continent || "").toLowerCase();
+          bValue = (b.continent || "").toLowerCase();
+          break;
+        case "country_city_count":
+          aValue = cityCountByCountry.get(countryCountKey(a.country_name)) || 0;
+          bValue = cityCountByCountry.get(countryCountKey(b.country_name)) || 0;
+          break;
+        case "country_artist_count":
+          aValue =
+            artistCountByCountry.get(countryCountKey(a.country_name)) || 0;
+          bValue =
+            artistCountByCountry.get(countryCountKey(b.country_name)) || 0;
+          break;
+        case "country_shop_count":
+          aValue = shopCountByCountry.get(countryCountKey(a.country_name)) || 0;
+          bValue = shopCountByCountry.get(countryCountKey(b.country_name)) || 0;
+          break;
+        case "country_name":
+        default:
+          aValue = a.country_name.toLowerCase();
+          bValue = b.country_name.toLowerCase();
+          break;
+      }
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [
+    countries,
+    searchQuery,
+    sortColumn,
+    sortDirection,
+    cityCountByCountry,
+    artistCountByCountry,
+    shopCountByCountry,
+  ]);
 
   // Hide "deleted" submissions from the admin table (they stay in DB)
   const visibleSubmissions = useMemo(
@@ -633,7 +809,7 @@ export default function AdminAllData() {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortColumn(column);
-      setSortDirection("asc");
+      setSortDirection(NUMERIC_SORT_COLUMNS.has(column) ? "desc" : "asc");
     }
   };
 
@@ -1282,17 +1458,49 @@ export default function AdminAllData() {
                 <table className={styles.table}>
                   <thead>
                     <tr>
-                      <th className={styles.sortableHeader}>ID</th>
-                      <th className={styles.sortableHeader}>City</th>
-                      <th className={styles.sortableHeader}>State</th>
-                      <th className={styles.sortableHeader}>Country</th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("id")}
+                      >
+                        ID {getSortIcon("id")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("city_name")}
+                      >
+                        City {getSortIcon("city_name")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("state")}
+                      >
+                        State {getSortIcon("state")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("country")}
+                      >
+                        Country {getSortIcon("country")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("city_artist_count")}
+                      >
+                        Artists {getSortIcon("city_artist_count")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("city_shop_count")}
+                      >
+                        Shops {getSortIcon("city_shop_count")}
+                      </th>
                       <th className={styles.actionHeader}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredAndSortedCities.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className={styles.emptyCell}>
+                        <td colSpan={7} className={styles.emptyCell}>
                           {searchQuery
                             ? "No cities match your search"
                             : "No cities found"}
@@ -1308,6 +1516,24 @@ export default function AdminAllData() {
                           </td>
                           <td className={styles.locationCell}>
                             {city.country_name || "—"}
+                          </td>
+                          <td className={styles.locationCell}>
+                            {artistCountByCity.get(
+                              cityCountKey(
+                                city.city_name,
+                                city.state_name,
+                                city.country_name
+                              )
+                            ) || 0}
+                          </td>
+                          <td className={styles.locationCell}>
+                            {shopCountByCity.get(
+                              cityCountKey(
+                                city.city_name,
+                                city.state_name,
+                                city.country_name
+                              )
+                            ) || 0}
                           </td>
                           <td className={styles.actionCell}>
                             <button
@@ -1332,16 +1558,49 @@ export default function AdminAllData() {
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th className={styles.sortableHeader}>ID</th>
-                    <th className={styles.sortableHeader}>Country</th>
-                    <th className={styles.sortableHeader}>Continent</th>
+                    <th
+                      className={styles.sortableHeader}
+                      onClick={() => handleSort("id")}
+                    >
+                      ID {getSortIcon("id")}
+                    </th>
+                    <th
+                      className={styles.sortableHeader}
+                      onClick={() => handleSort("country_name")}
+                    >
+                      Country {getSortIcon("country_name")}
+                    </th>
+                    <th
+                      className={styles.sortableHeader}
+                      onClick={() => handleSort("continent")}
+                    >
+                      Continent {getSortIcon("continent")}
+                    </th>
+                    <th
+                      className={styles.sortableHeader}
+                      onClick={() => handleSort("country_city_count")}
+                    >
+                      Cities {getSortIcon("country_city_count")}
+                    </th>
+                    <th
+                      className={styles.sortableHeader}
+                      onClick={() => handleSort("country_artist_count")}
+                    >
+                      Artists {getSortIcon("country_artist_count")}
+                    </th>
+                    <th
+                      className={styles.sortableHeader}
+                      onClick={() => handleSort("country_shop_count")}
+                    >
+                      Shops {getSortIcon("country_shop_count")}
+                    </th>
                     <th className={styles.actionHeader}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredAndSortedCountries.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className={styles.emptyCell}>
+                      <td colSpan={7} className={styles.emptyCell}>
                         {searchQuery
                           ? "No countries match your search"
                           : "No countries found"}
@@ -1356,6 +1615,21 @@ export default function AdminAllData() {
                         </td>
                         <td className={styles.locationCell}>
                           {country.continent || "—"}
+                        </td>
+                        <td className={styles.locationCell}>
+                          {cityCountByCountry.get(
+                            countryCountKey(country.country_name)
+                          ) || 0}
+                        </td>
+                        <td className={styles.locationCell}>
+                          {artistCountByCountry.get(
+                            countryCountKey(country.country_name)
+                          ) || 0}
+                        </td>
+                        <td className={styles.locationCell}>
+                          {shopCountByCountry.get(
+                            countryCountKey(country.country_name)
+                          ) || 0}
                         </td>
                         <td className={styles.actionCell}>
                           <button
