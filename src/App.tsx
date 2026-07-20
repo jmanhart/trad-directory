@@ -3,6 +3,7 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
+  Navigate,
   useLocation,
 } from "react-router-dom";
 import HomePage from "./components/pages/HomePage";
@@ -27,7 +28,8 @@ import AdminAddShop from "./components/pages/admin/AdminAddShop";
 import AdminAddCity from "./components/pages/admin/AdminAddCity";
 import AdminAddCountry from "./components/pages/admin/AdminAddCountry";
 import AdminAddArtistShopLink from "./components/pages/admin/AdminAddArtistShopLink";
-import AdminBrokenLinks from "./components/pages/admin/AdminBrokenLinks";
+import AdminLayout from "./components/pages/admin/AdminLayout";
+import AllAnalyticsPage from "./components/pages/admin/pages/AllAnalyticsPage";
 import AdminNewAdding from "./components/pages/admin/AdminNewAdding";
 import AdminAllData from "./components/pages/admin/AdminAllData";
 import AdminDataBuilder from "./components/pages/admin/AdminDataBuilder";
@@ -113,14 +115,39 @@ function AppContent() {
           <Route path="/search-results" element={<SearchResults />} />
           <Route path="/logo-type" element={<LogoTypePlayground />} />
           <Route path="/artist/:slugOrId" element={<ArtistPage />} />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <AdminAllData />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route
+              index
+              element={<Navigate to="/admin/analytics" replace />}
+            />
+            <Route path="analytics" element={<AllAnalyticsPage />} />
+            <Route
+              path="artists"
+              element={<AdminAllData embeddedTab="artists" />}
+            />
+            <Route
+              path="shops"
+              element={<AdminAllData embeddedTab="shops" />}
+            />
+            <Route
+              path="cities"
+              element={<AdminAllData embeddedTab="cities" />}
+            />
+            <Route
+              path="countries"
+              element={<AdminAllData embeddedTab="countries" />}
+            />
+            <Route
+              path="submissions"
+              element={<AdminAllData embeddedTab="new_artists" />}
+            />
+            <Route path="bugs" element={<AdminAllData embeddedTab="bugs" />} />
+            <Route
+              path="broken-links"
+              element={<AdminAllData embeddedTab="broken_links" />}
+            />
+            <Route path="data-builder" element={<AdminDataBuilder />} />
+          </Route>
           <Route
             path="/admin/add-artist"
             element={
@@ -162,14 +189,6 @@ function AppContent() {
             }
           />
           <Route
-            path="/admin/broken-links"
-            element={
-              <ProtectedRoute>
-                <AdminBrokenLinks />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/admin/new-adding"
             element={
               <ProtectedRoute>
@@ -182,14 +201,6 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <AdminAllData />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/data-builder"
-            element={
-              <ProtectedRoute>
-                <AdminDataBuilder />
               </ProtectedRoute>
             }
           />

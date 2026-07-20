@@ -201,8 +201,16 @@ const cityCountKey = (
 const countryCountKey = (country?: string | null) =>
   (country || "").toLowerCase();
 
-export default function AdminAllData() {
-  const [activeTab, setActiveTab] = useState<TabType>("artists");
+interface AdminAllDataProps {
+  // When set, renders just this one tab's content (used by the sidebar layout
+  // pages) — hides the page title, stats cards, and the Tabs bar.
+  embeddedTab?: TabType;
+}
+
+export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
+  const [activeTab, setActiveTab] = useState<TabType>(
+    embeddedTab ?? "artists"
+  );
   const [artists, setArtists] = useState<Artist[]>([]);
   const [allShops, setAllShops] = useState<Shop[]>([]);
   const [countries, setCountries] = useState<
@@ -1154,58 +1162,62 @@ export default function AdminAllData() {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.container}>
-        <h1 className={styles.title}>ALL DATA</h1>
+        {!embeddedTab && (
+          <>
+            <h1 className={styles.title}>ALL DATA</h1>
 
-        {/* Stats Cards */}
-        <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Total Artists</div>
-            <div className={styles.statValue}>
-              {stats.totalArtists.toLocaleString()}
+            {/* Stats Cards */}
+            <div className={styles.statsGrid}>
+              <div className={styles.statCard}>
+                <div className={styles.statLabel}>Total Artists</div>
+                <div className={styles.statValue}>
+                  {stats.totalArtists.toLocaleString()}
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <div className={styles.statLabel}>Total Shops</div>
+                <div className={styles.statValue}>
+                  {stats.totalShops.toLocaleString()}
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <div className={styles.statLabel}>Total Countries</div>
+                <div className={styles.statValue}>
+                  {stats.totalCountries.toLocaleString()}
+                </div>
+              </div>
+              <div className={styles.statCard}>
+                <div className={styles.statLabel}>Total Cities</div>
+                <div className={styles.statValue}>
+                  {stats.totalCities.toLocaleString()}
+                </div>
+              </div>
             </div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Total Shops</div>
-            <div className={styles.statValue}>
-              {stats.totalShops.toLocaleString()}
-            </div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Total Countries</div>
-            <div className={styles.statValue}>
-              {stats.totalCountries.toLocaleString()}
-            </div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Total Cities</div>
-            <div className={styles.statValue}>
-              {stats.totalCities.toLocaleString()}
-            </div>
-          </div>
-        </div>
 
-        {/* Tabs */}
-        <Tabs
-          items={[
-            { id: "artists", label: "Artists" },
-            { id: "shops", label: "Shops" },
-            { id: "cities", label: "Cities" },
-            { id: "countries", label: "Countries" },
-            { id: "bugs", label: "Bugs", badge: newBugsCount },
-            {
-              id: "new_artists",
-              label: "Submissions",
-              badge: newSubmissionsCount,
-            },
-            {
-              id: "broken_links",
-              label: "Broken Links",
-              badge: brokenLinksCount,
-            },
-          ]}
-          activeTab={activeTab}
-          onTabChange={tabId => setActiveTab(tabId as TabType)}
-        />
+            {/* Tabs */}
+            <Tabs
+              items={[
+                { id: "artists", label: "Artists" },
+                { id: "shops", label: "Shops" },
+                { id: "cities", label: "Cities" },
+                { id: "countries", label: "Countries" },
+                { id: "bugs", label: "Bugs", badge: newBugsCount },
+                {
+                  id: "new_artists",
+                  label: "Submissions",
+                  badge: newSubmissionsCount,
+                },
+                {
+                  id: "broken_links",
+                  label: "Broken Links",
+                  badge: brokenLinksCount,
+                },
+              ]}
+              activeTab={activeTab}
+              onTabChange={tabId => setActiveTab(tabId as TabType)}
+            />
+          </>
+        )}
 
         {/* Search Bar */}
         {(activeTab === "artists" ||
