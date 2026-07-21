@@ -1,5 +1,43 @@
+/* Desktop in-flow push panel. Pinned full-height inside the bounded shell;
+   pushes the content via the flex row in AdminLayout. */
+.aside {
+  flex-shrink: 0;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  transition: width 0.2s ease;
+}
+
+.expanded {
+  width: 240px;
+}
+
+.rail {
+  width: 64px;
+}
+
 .navLabel {
   flex: 1;
+  white-space: nowrap;
+}
+
+.railItem {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+  position: relative;
+}
+
+.railDot {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary, #e5484d);
 }
 
 .navItemActive {

@@ -27,7 +27,7 @@ export default function AboutPage() {
         Now go finish that sleeve, start planning that back piece, and don’t
         forget to tip your artist.
       </p>
-      <p className={styles.description}>This is still very much a work in progress. If you see anything wrong or want to say hi drop me a message on <a href="https://www.instagram.com/trad_tattoo_directory/" target="_blank" rel="noopener noreferrer">Instagram</a>.</p>
+      <p className={styles.description}>This is still very much a work in progress. If you see anything wrong or want to say hi drop me a message on <a href="https://www.instagram.com/trad_directory/" target="_blank" rel="noopener noreferrer">Instagram</a>.</p>
     </div>
   );
 }

@@ -68,6 +68,16 @@
   overflow: hidden;
 }
 
+/* Admin sidebar-layout routes: pin the top bar + sidebar, scroll only the
+   content area. The container is bounded to the viewport and this main fills
+   the remaining height with its own (hidden) overflow so inner panels scroll. */
+.adminLayoutMain {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
 .header {
   position: sticky;
   top: 0;

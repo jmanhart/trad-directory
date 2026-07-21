@@ -1,10 +1,11 @@
 import { NavLink } from "react-router-dom";
-import SideNav, { SideNavList } from "../../common/SideNav/SideNav";
+import SideNav from "../../common/SideNav/SideNav";
 import { useAdminDataContext } from "./AdminDataProvider";
 import styles from "./AdminSidebar.module.css";
 import navStyles from "../../common/SideNav/SideNav.module.css";
 
 interface AdminSidebarProps {
+  isMobile: boolean;
   open: boolean;
   onClose: () => void;
 }
@@ -31,10 +32,12 @@ const icon = (paths: JSX.Element) => (
   </svg>
 );
 
-export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
-  const { badges } = useAdminDataContext();
-
-  const entries: NavEntry[] = [
+function buildEntries(badges: {
+  newSubmissions: number;
+  newBugs: number;
+  brokenLinks: number;
+}): NavEntry[] {
+  return [
     {
       to: "/admin/analytics",
       label: "All Analytics",
@@ -133,28 +136,71 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
       ),
     },
   ];
+}
 
+function NavItems({
+  entries,
+  showLabels,
+  onNavigate,
+}: {
+  entries: NavEntry[];
+  showLabels: boolean;
+  onNavigate?: () => void;
+}) {
   return (
-    <SideNav open={open} onClose={onClose} logoTo="/admin/analytics">
-      <SideNavList>
-        {entries.map(entry => (
-          <li key={entry.to}>
-            <NavLink
-              to={entry.to}
-              onClick={onClose}
-              className={({ isActive }) =>
-                `${navStyles.navItem} ${isActive ? styles.navItemActive : ""}`
-              }
-            >
-              <span className={navStyles.navIcon}>{entry.icon}</span>
+    <ul className={navStyles.navList}>
+      {entries.map(entry => (
+        <li key={entry.to}>
+          <NavLink
+            to={entry.to}
+            onClick={onNavigate}
+            title={showLabels ? undefined : entry.label}
+            className={({ isActive }) =>
+              `${navStyles.navItem} ${showLabels ? "" : styles.railItem} ${
+                isActive ? styles.navItemActive : ""
+              }`
+            }
+          >
+            <span className={navStyles.navIcon}>{entry.icon}</span>
+            {showLabels && (
               <span className={styles.navLabel}>{entry.label}</span>
-              {entry.badge ? (
-                <span className={styles.badge}>{entry.badge}</span>
-              ) : null}
-            </NavLink>
-          </li>
-        ))}
-      </SideNavList>
-    </SideNav>
+            )}
+            {showLabels && entry.badge ? (
+              <span className={styles.badge}>{entry.badge}</span>
+            ) : null}
+            {!showLabels && entry.badge ? (
+              <span className={styles.railDot} />
+            ) : null}
+          </NavLink>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export default function AdminSidebar({
+  isMobile,
+  open,
+  onClose,
+}: AdminSidebarProps) {
+  const { badges } = useAdminDataContext();
+  const entries = buildEntries(badges);
+
+  // Mobile: reuse the shared overlay drawer (same pattern as /map).
+  if (isMobile) {
+    return (
+      <SideNav open={open} onClose={onClose} logoTo="/admin/analytics">
+        <NavItems entries={entries} showLabels onNavigate={onClose} />
+      </SideNav>
+    );
+  }
+
+  // Desktop: in-flow push panel — expanded (labels) or collapsed icon rail.
+  return (
+    <aside
+      className={`${styles.aside} ${open ? styles.expanded : styles.rail}`}
+    >
+      <NavItems entries={entries} showLabels={open} />
+    </aside>
   );
 }

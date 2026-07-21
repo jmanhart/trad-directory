@@ -40,6 +40,7 @@ import { SuggestArtistModal } from "./components/common/SuggestArtistModal";
 import { ToastProvider } from "./components/common/Toast";
 import { usePageTracking } from "./hooks/usePageTracking";
 import ScatteredSvgBackground from "./components/ScatteredSvgBackground/ScatteredSvgBackground";
+import { AdminUiProvider } from "./components/pages/admin/AdminUiContext";
 
 // Enhanced App component with Sentry error boundary
 const SentryApp = Sentry.withErrorBoundary(App, {
@@ -65,12 +66,24 @@ const SentryApp = Sentry.withErrorBoundary(App, {
 
 const PAGES_WITHOUT_FOOTER = ["/artists", "/shops", "/countries", "/map"];
 
+// Admin routes that render standalone (not inside the sidebar AdminLayout).
+const LEGACY_ADMIN_PATHS = [
+  "/admin/all-data",
+  "/admin/add-artist",
+  "/admin/add-shop",
+  "/admin/add-city",
+  "/admin/add-country",
+  "/admin/link-artist-shop",
+  "/admin/new-adding",
+];
+
 function AppContent() {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
   const isMapPage = location.pathname === "/map";
   const isAdminRoute = location.pathname.startsWith("/admin");
-  const isDataBuilder = location.pathname === "/admin/data-builder";
+  const isAdminLayoutRoute =
+    isAdminRoute && !LEGACY_ADMIN_PATHS.includes(location.pathname);
   const showFooter =
     !isAdminRoute && !PAGES_WITHOUT_FOOTER.includes(location.pathname);
   const [isAddArtistModalOpen, setIsAddArtistModalOpen] = useState(false);
@@ -79,9 +92,9 @@ function AppContent() {
   usePageTracking();
 
   return (
-    <div className={`${styles.appContainer} ${isDataBuilder ? styles.adminContainer : ""}`}>
+    <div className={`${styles.appContainer} ${isAdminLayoutRoute ? styles.adminContainer : ""}`}>
       <ScatteredSvgBackground preset="default" intensity="subtle" />
-      {isDataBuilder ? null : isAdminRoute ? (
+      {isAdminRoute ? (
         <AdminTopAppBar />
       ) : (
         <>
@@ -100,7 +113,7 @@ function AppContent() {
         />
       )}
       <main
-        className={`${styles.mainContent} ${!showFooter ? styles.mainContentNoFixedFooter : ""} ${isAdminRoute ? styles.adminContent : ""} ${isDataBuilder ? styles.dataBuilderContent : ""}`}
+        className={`${styles.mainContent} ${!showFooter ? styles.mainContentNoFixedFooter : ""} ${isAdminLayoutRoute ? styles.adminLayoutMain : isAdminRoute ? styles.adminContent : ""}`}
       >
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -215,7 +228,9 @@ function App() {
   return (
     <Router>
       <ToastProvider>
-        <AppContent />
+        <AdminUiProvider>
+          <AppContent />
+        </AdminUiProvider>
       </ToastProvider>
     </Router>
   );

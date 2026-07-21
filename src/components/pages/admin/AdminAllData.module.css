@@ -281,6 +281,16 @@
   font-size: 0.9rem;
 }
 
+/* Integer columns (counts): shrink to ~label width, never wrap. The 1% width
+   is the standard trick to make an auto-layout column collapse to its content
+   so the text columns absorb the remaining space (no horizontal scroll). */
+.numCell {
+  width: 1%;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
 .shopCell {
   min-width: 150px;
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { CONTINENT_OPTIONS } from "../../../types/entities";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
@@ -11,6 +11,7 @@ import {
   Select,
 } from "./AdminFormComponents";
 import { Tabs } from "../../common/Tabs";
+import Pagination from "../../common/Pagination";
 import {
   updateArtist,
   fetchArtistById,
@@ -203,14 +204,53 @@ const countryCountKey = (country?: string | null) =>
 
 interface AdminAllDataProps {
   // When set, renders just this one tab's content (used by the sidebar layout
-  // pages) — hides the page title, stats cards, and the Tabs bar.
+  // pages) — hides the stats cards and Tabs bar, showing a per-page title.
   embeddedTab?: TabType;
 }
+
+const PAGE_SIZE = 50;
+// Tabs whose tables get client-side pagination (the ones that can grow large).
+const PAGINATED_TABS: TabType[] = ["artists", "shops", "cities", "countries"];
+
+// Page titles shown when a tab is rendered as its own sidebar-layout page.
+const EMBEDDED_TITLES: Record<TabType, string> = {
+  artists: "ALL ARTISTS",
+  shops: "ALL SHOPS",
+  cities: "ALL CITIES",
+  countries: "ALL COUNTRIES",
+  states: "ALL STATES",
+  new_artists: "SUBMISSIONS",
+  bugs: "BUGS",
+  broken_links: "BROKEN LINKS",
+};
 
 export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
   const [activeTab, setActiveTab] = useState<TabType>(
     embeddedTab ?? "artists"
   );
+
+  // When used as an embedded page, the same component instance is reused across
+  // routes — keep the active tab in sync with the route's embeddedTab prop.
+  useEffect(() => {
+    if (embeddedTab) setActiveTab(embeddedTab);
+  }, [embeddedTab]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // The admin content scrolls in its own container (pinned layout), so on page
+  // change scroll that container — not the window — back to the top.
+  useEffect(() => {
+    let el: HTMLElement | null = rootRef.current;
+    while (el) {
+      const oy = getComputedStyle(el).overflowY;
+      if (oy === "auto" || oy === "scroll") {
+        el.scrollTop = 0;
+        break;
+      }
+      el = el.parentElement;
+    }
+  }, [currentPage]);
   const [artists, setArtists] = useState<Artist[]>([]);
   const [allShops, setAllShops] = useState<Shop[]>([]);
   const [countries, setCountries] = useState<
@@ -780,6 +820,25 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     shopCountByCountry,
   ]);
 
+  // Reset to the first page whenever the view (tab, search, or sort) changes.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, sortColumn, sortDirection]);
+
+  const pageSlice = <T,>(rows: T[]): T[] =>
+    rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const activeFilteredCount =
+    activeTab === "artists"
+      ? filteredAndSortedArtists.length
+      : activeTab === "shops"
+        ? filteredAndSortedShops.length
+        : activeTab === "cities"
+          ? filteredAndSortedCities.length
+          : activeTab === "countries"
+            ? filteredAndSortedCountries.length
+            : 0;
+
   // Hide "deleted" submissions from the admin table (they stay in DB)
   const visibleSubmissions = useMemo(
     () =>
@@ -1160,8 +1219,11 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
   }, [artists.length, allShops.length, countries.length, cities.length]);
 
   return (
-    <div className={styles.pageContainer}>
+    <div className={styles.pageContainer} ref={rootRef}>
       <div className={styles.container}>
+        {embeddedTab && (
+          <h1 className={styles.title}>{EMBEDDED_TITLES[embeddedTab]}</h1>
+        )}
         {!embeddedTab && (
           <>
             <h1 className={styles.title}>ALL DATA</h1>
@@ -1326,7 +1388,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                         </td>
                       </tr>
                     ) : (
-                      filteredAndSortedArtists.map(artist => (
+                      pageSlice(filteredAndSortedArtists).map(artist => (
                         <tr key={artist.id}>
                           <td className={styles.idCell}>{artist.id}</td>
                           <td className={styles.nameCell}>{artist.name}</td>
@@ -1421,7 +1483,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                         </td>
                       </tr>
                     ) : (
-                      filteredAndSortedShops.map(shop => (
+                      pageSlice(filteredAndSortedShops).map(shop => (
                         <tr key={shop.id}>
                           <td className={styles.idCell}>{shop.id}</td>
                           <td className={styles.nameCell}>{shop.shop_name}</td>
@@ -1519,7 +1581,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                         </td>
                       </tr>
                     ) : (
-                      filteredAndSortedCities.map(city => (
+                      pageSlice(filteredAndSortedCities).map(city => (
                         <tr key={city.id}>
                           <td className={styles.idCell}>{city.id}</td>
                           <td className={styles.nameCell}>{city.city_name}</td>
@@ -1529,7 +1591,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                           <td className={styles.locationCell}>
                             {city.country_name || "—"}
                           </td>
-                          <td className={styles.locationCell}>
+                          <td className={styles.numCell}>
                             {artistCountByCity.get(
                               cityCountKey(
                                 city.city_name,
@@ -1538,7 +1600,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                               )
                             ) || 0}
                           </td>
-                          <td className={styles.locationCell}>
+                          <td className={styles.numCell}>
                             {shopCountByCity.get(
                               cityCountKey(
                                 city.city_name,
@@ -1619,7 +1681,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                       </td>
                     </tr>
                   ) : (
-                    filteredAndSortedCountries.map(country => (
+                    pageSlice(filteredAndSortedCountries).map(country => (
                       <tr key={country.id}>
                         <td className={styles.idCell}>{country.id}</td>
                         <td className={styles.nameCell}>
@@ -1628,17 +1690,17 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                         <td className={styles.locationCell}>
                           {country.continent || "—"}
                         </td>
-                        <td className={styles.locationCell}>
+                        <td className={styles.numCell}>
                           {cityCountByCountry.get(
                             countryCountKey(country.country_name)
                           ) || 0}
                         </td>
-                        <td className={styles.locationCell}>
+                        <td className={styles.numCell}>
                           {artistCountByCountry.get(
                             countryCountKey(country.country_name)
                           ) || 0}
                         </td>
-                        <td className={styles.locationCell}>
+                        <td className={styles.numCell}>
                           {shopCountByCountry.get(
                             countryCountKey(country.country_name)
                           ) || 0}
@@ -1658,6 +1720,14 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                 </tbody>
               </table>
             </div>
+          )}
+
+          {PAGINATED_TABS.includes(activeTab) && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(activeFilteredCount / PAGE_SIZE)}
+              onPageChange={setCurrentPage}
+            />
           )}
 
           {(activeTab === "new_artists" || activeTab === "bugs") && (
