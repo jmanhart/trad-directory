@@ -942,42 +942,52 @@ function MapInner({
     (geoName: string) => {
       const dbName = REVERSE_COUNTRY_MAP[geoName] || geoName;
 
-      if (!worldGeoJSON || !mapRef.current) return;
+      if (!mapRef.current) return;
 
-      // Find the country feature in GeoJSON
-      const feat = worldGeoJSON.features.find(
-        f => f.properties?.name === geoName
-      );
-      if (!feat) return;
-
-      // Walk all coordinates to find bounding box
       let minLng = Infinity,
         maxLng = -Infinity,
         minLat = Infinity,
         maxLat = -Infinity;
 
-      const walkCoords = (coords: unknown) => {
-        if (
-          Array.isArray(coords) &&
-          coords.length >= 2 &&
-          typeof coords[0] === "number"
-        ) {
-          const [lng, lat] = coords as [number, number];
-          if (lng < minLng) minLng = lng;
-          if (lng > maxLng) maxLng = lng;
-          if (lat < minLat) minLat = lat;
-          if (lat > maxLat) maxLat = lat;
-        } else if (Array.isArray(coords)) {
-          for (const c of coords) walkCoords(c);
+      // Prefer fitting the country's actual city dots. Large countries like
+      // Canada/Russia include vast empty/remote territory (e.g. Arctic islands
+      // up to 83°N) that would otherwise force the fit to zoom way out, past
+      // all the artists in the populated band.
+      const countryDots = cityData.filter(d => d.countryName === dbName);
+      if (countryDots.length > 0) {
+        for (const d of countryDots) {
+          if (d.lng < minLng) minLng = d.lng;
+          if (d.lng > maxLng) maxLng = d.lng;
+          if (d.lat < minLat) minLat = d.lat;
+          if (d.lat > maxLat) maxLat = d.lat;
         }
-      };
-
-      walkCoords((feat.geometry as { coordinates: unknown }).coordinates);
+      } else if (worldGeoJSON) {
+        // Fallback: fit the country polygon's bounding box.
+        const feat = worldGeoJSON.features.find(
+          f => f.properties?.name === geoName
+        );
+        if (!feat) return;
+        const walkCoords = (coords: unknown) => {
+          if (
+            Array.isArray(coords) &&
+            coords.length >= 2 &&
+            typeof coords[0] === "number"
+          ) {
+            const [lng, lat] = coords as [number, number];
+            if (lng < minLng) minLng = lng;
+            if (lng > maxLng) maxLng = lng;
+            if (lat < minLat) minLat = lat;
+            if (lat > maxLat) maxLat = lat;
+          } else if (Array.isArray(coords)) {
+            for (const c of coords) walkCoords(c);
+          }
+        };
+        walkCoords((feat.geometry as { coordinates: unknown }).coordinates);
+      }
 
       if (!isFinite(minLng)) return;
 
       // Force city tier minimum so dots render even if fitBounds zoom < ZOOM_CITY
-      console.log(`[countryClick] Setting minTierRef=city, bbox: lng=${minLng.toFixed(1)}..${maxLng.toFixed(1)}, lat=${minLat.toFixed(1)}..${maxLat.toFixed(1)}`);
       minTierRef.current = "city";
 
       mapRef.current.fitBounds(
@@ -985,7 +995,7 @@ function MapInner({
           [minLng, minLat],
           [maxLng, maxLat],
         ],
-        { padding: getMapPadding(), duration: 1000 }
+        { padding: getMapPadding(), duration: 1000, maxZoom: ZOOM_CITY }
       );
 
       // Estimate resulting zoom and sync tier (minTierRef ensures "city")
@@ -996,7 +1006,7 @@ function MapInner({
       syncTier(Math.max(estimatedZoom, ZOOM_CITY));
       onCountrySelect?.(dbName);
     },
-    [worldGeoJSON, onCountrySelect, syncTier]
+    [worldGeoJSON, cityData, onCountrySelect, syncTier]
   );
 
   // Handle clicks on the map layers (countries, states)
