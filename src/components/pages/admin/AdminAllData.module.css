@@ -543,10 +543,81 @@
 .modalFooter {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 1rem;
   padding: 1.5rem;
   border-top: 1px solid var(--color-border);
+}
+
+.modalFooterLeft {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.modalFooterRight {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.deleteButton {
+  padding: var(--form-control-padding-y-medium) var(--button-padding-x-medium);
+  background-color: transparent;
+  border: 1px solid #e0b4b4;
+  border-radius: var(--border-radius);
+  color: #c0392b;
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: var(--form-control-height-medium);
+}
+
+.deleteButton:hover:not(:disabled) {
+  background-color: #c0392b;
+  border-color: #c0392b;
+  color: #fff;
+}
+
+.confirmDelete {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}
+
+.confirmText {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.confirmDeleteYes {
+  padding: 0.4rem 0.75rem;
+  background-color: #c0392b;
+  border: 1px solid #c0392b;
+  border-radius: var(--border-radius);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.confirmDeleteYes:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.confirmDeleteNo {
+  padding: 0.4rem 0.75rem;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
 }
 
 .cancelButton {

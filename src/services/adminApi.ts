@@ -648,3 +648,29 @@ export async function deleteArtistLocation(locationId: number): Promise<void> {
     throw error;
   }
 }
+
+/**
+ * Delete an entity via its server-side endpoint. Returns the success message.
+ * Throws with the server's error text (e.g. blocked deletes) on failure.
+ */
+async function deleteEntity(
+  endpoint: string,
+  id: number
+): Promise<string> {
+  const apiUrl = import.meta.env.VITE_API_URL || `/api/${endpoint}`;
+  const response = await fetch(apiUrl, {
+    method: "POST",
+    headers: adminHeaders(),
+    body: JSON.stringify({ id }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+  }
+  return data.message || "Deleted successfully";
+}
+
+export const deleteArtist = (id: number) => deleteEntity("deleteArtist", id);
+export const deleteShop = (id: number) => deleteEntity("deleteShop", id);
+export const deleteCity = (id: number) => deleteEntity("deleteCity", id);
+export const deleteCountry = (id: number) => deleteEntity("deleteCountry", id);

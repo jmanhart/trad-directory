@@ -24,6 +24,10 @@ import {
   fetchBrokenLinks,
   addArtistLocation,
   deleteArtistLocation,
+  deleteArtist,
+  deleteShop,
+  deleteCity,
+  deleteCountry,
   type SubmissionStatus,
   type BrokenLinkResult,
 } from "../../../services/adminApi";
@@ -108,7 +112,8 @@ type ShopSortColumn =
   | "shop_name"
   | "instagram_handle"
   | "location"
-  | "address";
+  | "address"
+  | "shop_artist_count";
 type CitySortColumn =
   | "city_name"
   | "state"
@@ -130,6 +135,7 @@ type SortDirection = "asc" | "desc";
 
 // Count columns default to descending ("most first") on first click.
 const NUMERIC_SORT_COLUMNS = new Set<SortColumn>([
+  "shop_artist_count",
   "city_artist_count",
   "city_shop_count",
   "country_city_count",
@@ -283,6 +289,8 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
   const [loadingShop, setLoadingShop] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // City / country edit state
   const [editingCityId, setEditingCityId] = useState<number | null>(null);
@@ -587,6 +595,16 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     return sorted;
   }, [artists, searchQuery, sortColumn, sortDirection]);
 
+  // Artists per shop (name-keyed), for the shops table count column.
+  const artistCountByShop = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const a of artists) {
+      const k = (a.shop_name || "").trim().toLowerCase();
+      if (k) m.set(k, (m.get(k) || 0) + 1);
+    }
+    return m;
+  }, [artists]);
+
   // Filter and sort shops
   const filteredAndSortedShops = useMemo(() => {
     let filtered = allShops;
@@ -633,6 +651,12 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
           aValue = (a.address || "").toLowerCase();
           bValue = (b.address || "").toLowerCase();
           break;
+        case "shop_artist_count":
+          aValue =
+            artistCountByShop.get((a.shop_name || "").trim().toLowerCase()) || 0;
+          bValue =
+            artistCountByShop.get((b.shop_name || "").trim().toLowerCase()) || 0;
+          break;
         default:
           return 0;
       }
@@ -643,7 +667,13 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     });
 
     return sorted;
-  }, [allShops, searchQuery, sortColumn, sortDirection]);
+  }, [
+    allShops,
+    searchQuery,
+    sortColumn,
+    sortDirection,
+    artistCountByShop,
+  ]);
 
   // Client-side location counts (Option A). Counts each entity's PRIMARY
   // location only, keyed on name — upgrade to server-side counts if secondary
@@ -1027,6 +1057,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     setEditingCityId(null);
     setEditingCountryId(null);
     setSaveError(null);
+    setConfirmingDelete(false);
     setArtistLocations([]);
     setNewLocationCityId("");
     setNewLocationShopId("");
@@ -1108,6 +1139,43 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
       );
     } finally {
       setLoadingShop(false);
+    }
+  };
+
+  // Short cascade-impact hint shown in the delete confirmation.
+  const deleteImpact = editingArtistId
+    ? "Removes the artist and unlinks it from shops, locations, and saved lists."
+    : editingShopId
+      ? "Removes the shop and unlinks its artists."
+      : editingCityId
+        ? "Blocked if any artists or shops still use this city."
+        : editingCountryId
+          ? "Blocked if any cities or states still use this country."
+          : "";
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setSaveError(null);
+    try {
+      if (editingArtistId) {
+        await deleteArtist(editingArtistId);
+        setArtists(prev => prev.filter(a => a.id !== editingArtistId));
+      } else if (editingShopId) {
+        await deleteShop(editingShopId);
+        setAllShops(prev => prev.filter(s => s.id !== editingShopId));
+      } else if (editingCityId) {
+        await deleteCity(editingCityId);
+        await refetchAdminData();
+      } else if (editingCountryId) {
+        await deleteCountry(editingCountryId);
+        setCountries(prev => prev.filter(c => c.id !== editingCountryId));
+      }
+      handleCloseModal();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Failed to delete");
+      setConfirmingDelete(false);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -1470,13 +1538,19 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                       >
                         Address {getSortIcon("address")}
                       </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("shop_artist_count")}
+                      >
+                        Artists {getSortIcon("shop_artist_count")}
+                      </th>
                       <th className={styles.actionHeader}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredAndSortedShops.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className={styles.emptyCell}>
+                        <td colSpan={7} className={styles.emptyCell}>
                           {searchQuery
                             ? "No shops match your search"
                             : "No shops found"}
@@ -1506,6 +1580,11 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                           </td>
                           <td className={styles.shopCell}>
                             {shop.address || "—"}
+                          </td>
+                          <td className={styles.numCell}>
+                            {artistCountByShop.get(
+                              (shop.shop_name || "").trim().toLowerCase()
+                            ) || 0}
                           </td>
                           <td className={styles.actionCell}>
                             <button
@@ -2382,30 +2461,67 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
               </div>
 
               <div className={styles.modalFooter}>
-                <button
-                  className={styles.cancelButton}
-                  onClick={handleCloseModal}
-                  disabled={saving}
-                >
-                  Cancel
-                </button>
-                {hasChanges && (
+                <div className={styles.modalFooterLeft}>
+                  {!confirmingDelete ? (
+                    <button
+                      type="button"
+                      className={styles.deleteButton}
+                      onClick={() => setConfirmingDelete(true)}
+                      disabled={saving || deleting}
+                    >
+                      Delete
+                    </button>
+                  ) : (
+                    <div className={styles.confirmDelete}>
+                      <span className={styles.confirmText}>
+                        {deleteImpact} Delete permanently?
+                      </span>
+                      <button
+                        type="button"
+                        className={styles.confirmDeleteYes}
+                        onClick={handleDelete}
+                        disabled={deleting}
+                      >
+                        {deleting ? "Deleting…" : "Yes, delete"}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.confirmDeleteNo}
+                        onClick={() => setConfirmingDelete(false)}
+                        disabled={deleting}
+                      >
+                        Keep
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className={styles.modalFooterRight}>
                   <button
-                    className={styles.saveButton}
-                    onClick={handleSave}
-                    disabled={
-                      saving ||
-                      (editingArtistId && !formData?.name) ||
-                      (editingShopId &&
-                        (!shopFormData?.shop_name || !shopFormData?.city_id)) ||
-                      (editingCityId && !cityFormData?.city_name?.trim()) ||
-                      (editingCountryId &&
-                        !countryFormData?.country_name?.trim())
-                    }
+                    className={styles.cancelButton}
+                    onClick={handleCloseModal}
+                    disabled={saving || deleting}
                   >
-                    {saving ? "Saving..." : "Save"}
+                    Cancel
                   </button>
-                )}
+                  {hasChanges && (
+                    <button
+                      className={styles.saveButton}
+                      onClick={handleSave}
+                      disabled={
+                        saving ||
+                        (editingArtistId && !formData?.name) ||
+                        (editingShopId &&
+                          (!shopFormData?.shop_name ||
+                            !shopFormData?.city_id)) ||
+                        (editingCityId && !cityFormData?.city_name?.trim()) ||
+                        (editingCountryId &&
+                          !countryFormData?.country_name?.trim())
+                      }
+                    >
+                      {saving ? "Saving..." : "Save"}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>,
