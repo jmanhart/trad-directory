@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { Tabs } from "../common/Tabs";
 import { CountBadge } from "../common/CountBadge";
 import type { Artist } from "../../types/entities";
@@ -19,6 +19,9 @@ interface MapDetailPanelProps {
   onCityClick?: (city: CityDot) => void;
   onArtistClick?: (artist: Artist) => void;
   onShopClick?: (shop: ShopEntry) => void;
+  onStateClick?: (stateName: string) => void;
+  groupBy?: "city" | "state";
+  breadcrumb?: { label: string; onClick?: () => void }[];
 }
 
 function InstagramIcon({ className }: { className?: string }) {
@@ -79,6 +82,9 @@ export default function MapDetailPanel({
   onCityClick,
   onArtistClick,
   onShopClick,
+  onStateClick,
+  groupBy = "city",
+  breadcrumb,
 }: MapDetailPanelProps) {
   const [activeTab, setActiveTab] = useState("artists");
   const [expandedCities, setExpandedCities] = useState<Set<string>>(
@@ -183,6 +189,52 @@ export default function MapDetailPanel({
       ]) as [string, { dot: CityDot | null; shops: ShopEntry[] }][];
   }, [variant, artists, cityDots]);
 
+  // Group artists by state for state-having country panels (US/CA/AU)
+  const artistsByState = useMemo(() => {
+    if (variant !== "region" || groupBy !== "state") return null;
+    const map = new Map<string, Artist[]>();
+    artists.forEach(artist => {
+      const locations = artist.locations?.length
+        ? artist.locations
+        : [{ state_name: artist.state_name }];
+      for (const loc of locations) {
+        const stateName =
+          loc.state_name && loc.state_name !== "N/A"
+            ? loc.state_name
+            : "Other";
+        if (!map.has(stateName)) map.set(stateName, []);
+        map.get(stateName)!.push(artist);
+        break;
+      }
+    });
+    return Array.from(map.entries()).sort((a, b) =>
+      a[0] === "Other" ? 1 : b[0] === "Other" ? -1 : a[0].localeCompare(b[0])
+    );
+  }, [variant, groupBy, artists]);
+
+  const shopsByState = useMemo(() => {
+    if (variant !== "region" || groupBy !== "state") return null;
+    const map = new Map<string, Set<number>>();
+    artists.forEach(artist => {
+      const locations = artist.locations?.length ? artist.locations : [];
+      locations.forEach(loc => {
+        if (!loc.shop_id) return;
+        const stateName =
+          loc.state_name && loc.state_name !== "N/A"
+            ? loc.state_name
+            : "Other";
+        if (!map.has(stateName)) map.set(stateName, new Set());
+        map.get(stateName)!.add(loc.shop_id);
+      });
+    });
+    return Array.from(map.entries())
+      .map(([state, ids]) => [state, ids.size] as [string, number])
+      .filter(([, count]) => count > 0)
+      .sort((a, b) =>
+        a[0] === "Other" ? 1 : b[0] === "Other" ? -1 : a[0].localeCompare(b[0])
+      );
+  }, [variant, groupBy, artists]);
+
   return (
     <div className={styles.card}>
       <div className={styles.dragHandle} />
@@ -201,6 +253,29 @@ export default function MapDetailPanel({
           </button>
         </div>
       </div>
+
+      {breadcrumb && breadcrumb.length > 1 && (
+        <nav className={styles.breadcrumb} aria-label="Location path">
+          {breadcrumb.map((crumb, i) => (
+            <Fragment key={i}>
+              {i > 0 && (
+                <span className={styles.breadcrumbSeparator}>›</span>
+              )}
+              {crumb.onClick ? (
+                <button
+                  type="button"
+                  className={styles.breadcrumbLink}
+                  onClick={crumb.onClick}
+                >
+                  {crumb.label}
+                </button>
+              ) : (
+                <span className={styles.breadcrumbCurrent}>{crumb.label}</span>
+              )}
+            </Fragment>
+          ))}
+        </nav>
+      )}
 
       {hasTabs ? (
         <Tabs
@@ -266,6 +341,7 @@ export default function MapDetailPanel({
         {!loading &&
           activeTab === "artists" &&
           variant === "region" &&
+          groupBy === "city" &&
           artistsByCity && (
             <>
               {artistsByCity.length === 0 && (
@@ -333,6 +409,35 @@ export default function MapDetailPanel({
           )}
 
         {!loading &&
+          (!hasTabs || activeTab === "artists") &&
+          variant === "region" &&
+          groupBy === "state" &&
+          artistsByState && (
+            <>
+              {artistsByState.length === 0 && (
+                <div className={styles.loading}>
+                  No artist details available
+                </div>
+              )}
+              {artistsByState.map(([stateName, stateArtists]) => (
+                <button
+                  key={stateName}
+                  className={styles.cityGroupHeader}
+                  onClick={() => onStateClick?.(stateName)}
+                >
+                  <span className={styles.cityGroupLeft}>
+                    <span className={styles.cityGroupName}>{stateName}</span>
+                  </span>
+                  <span className={styles.cityGroupRight}>
+                    <CountBadge count={stateArtists.length} />
+                    <ChevronIcon className={styles.drillChevron} />
+                  </span>
+                </button>
+              ))}
+            </>
+          )}
+
+        {!loading &&
           hasTabs &&
           activeTab === "shops" &&
           variant === "city" &&
@@ -350,6 +455,7 @@ export default function MapDetailPanel({
           hasTabs &&
           activeTab === "shops" &&
           variant === "region" &&
+          groupBy === "city" &&
           shopsByCity &&
           shopsByCity.map(([cityName, group]) => {
             const isExpanded = expandedCities.has(`shops:${cityName}`);
@@ -389,6 +495,28 @@ export default function MapDetailPanel({
               </div>
             );
           })}
+
+        {!loading &&
+          hasTabs &&
+          activeTab === "shops" &&
+          variant === "region" &&
+          groupBy === "state" &&
+          shopsByState &&
+          shopsByState.map(([stateName, count]) => (
+            <button
+              key={stateName}
+              className={styles.cityGroupHeader}
+              onClick={() => onStateClick?.(stateName)}
+            >
+              <span className={styles.cityGroupLeft}>
+                <span className={styles.cityGroupName}>{stateName}</span>
+              </span>
+              <span className={styles.cityGroupRight}>
+                <CountBadge count={count} />
+                <ChevronIcon className={styles.drillChevron} />
+              </span>
+            </button>
+          ))}
       </div>
     </div>
   );

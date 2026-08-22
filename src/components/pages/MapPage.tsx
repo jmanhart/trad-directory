@@ -6,6 +6,7 @@ import type { Artist } from "../../types/entities";
 import useIsMobile from "../../hooks/useIsMobile";
 import useBottomSheet from "../../hooks/useBottomSheet";
 import { useSearchSuggestions } from "../../hooks/useSearchSuggestions";
+import { useMapCityDots } from "../../hooks/useMapCityDots";
 import type { Suggestion } from "../../utils/suggestions";
 import MapView, { CityDot } from "../../components/map/MapView";
 import MapDetailPanel from "../../components/map/MapDetailPanel";
@@ -18,30 +19,24 @@ import { SuggestArtistModal } from "../../components/common/SuggestArtistModal";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import styles from "./MapPage.module.css";
 
-interface MapCity {
-  id: number;
-  city_name: string;
-  state_name: string | null;
-  country_name: string | null;
-  continent: string | null;
-  latitude: number;
-  longitude: number;
-  artist_count: number;
-  shop_count: number;
-}
-
 interface SelectedRegion {
   name: string;
   type: "state" | "country";
 }
+
+// Countries whose panel drills through a state/province layer before cities.
+const STATE_HAVING: Record<string, true> = {
+  "United States": true,
+  Canada: true,
+  Australia: true,
+};
 
 export default function MapPage() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { suggestions } = useSearchSuggestions();
-  const [cityDots, setCityDots] = useState<CityDot[]>([]);
-  const [loadingMap, setLoadingMap] = useState(true);
+  const { cityDots, loading: loadingMap } = useMapCityDots();
   const [selectedCountry, setSelectedCountry] = useState<string | null>(
     null
   );
@@ -71,32 +66,6 @@ export default function MapPage() {
 
   // Track which query we last processed to avoid re-processing
   const lastProcessedQuery = useRef<string | null>(null);
-
-  // Fast initial load — just city dots with counts
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch("/api/mapData");
-        const data = await res.json();
-        const dots: CityDot[] = (data.cities || []).map((c: MapCity) => ({
-          cityName: c.city_name,
-          stateName: c.state_name,
-          countryName: c.country_name,
-          continent: c.continent,
-          lat: c.latitude,
-          lng: c.longitude,
-          artistCount: c.artist_count,
-          shopCount: c.shop_count,
-        }));
-        setCityDots(dots);
-      } catch (err) {
-        console.error("Error loading map data:", err);
-      } finally {
-        setLoadingMap(false);
-      }
-    }
-    load();
-  }, []);
 
   // Watch URL params to fly to a city
   // Supports ?city=X&state=Y (deep link) or ?q=X (search from top bar)
@@ -170,16 +139,19 @@ export default function MapPage() {
         else zoom = 6;
 
         setSelectedCity(null);
+        setSelectedCountry(regionDots[0].countryName);
         if (countryDots.length > 0) {
-          setSelectedCountry(regionDots[0].countryName);
-          setSelectedRegion(null);
+          setSelectedRegion({
+            name: regionDots[0].countryName!,
+            type: "country",
+          });
         } else {
           setSelectedRegion({
             name: regionDots[0].stateName!,
             type: "state",
           });
-          ensureArtistsLoaded();
         }
+        ensureArtistsLoaded();
         setFlyTo({ coordinates: [centerLng, centerLat], zoom });
         setFlyToKey(k => k + 1);
         return;
@@ -436,6 +408,7 @@ export default function MapPage() {
 
       setSelectedCity(null);
       setSelectedRegion({ name: stateName, type: "state" });
+      setSelectedCountry(stateDots[0].countryName);
       setSelectedArtist(null);
       setSelectedShop(null);
       setHighlightedCity(null);
@@ -576,14 +549,64 @@ export default function MapPage() {
     [ensureArtistsLoaded]
   );
 
-  const handleCountrySelect = useCallback(
-    (country: string | null) => {
-      setSelectedCountry(country);
-      if (country) {
-        ensureArtistsLoaded();
-      }
+  // Open the country-wide panel without moving the map (map click already
+  // fit-bounds to the country); search/breadcrumb use selectCountry to also fly.
+  const openCountryPanel = useCallback(
+    (countryName: string) => {
+      setSelectedCity(null);
+      setSelectedArtist(null);
+      setSelectedShop(null);
+      setHighlightedCity(null);
+      setSelectedCountry(countryName);
+      setSelectedRegion({ name: countryName, type: "country" });
+      ensureArtistsLoaded();
     },
     [ensureArtistsLoaded]
+  );
+
+  const flyToCountry = useCallback(
+    (countryName: string) => {
+      const dots = cityDots.filter(d => d.countryName === countryName);
+      if (dots.length === 0) return;
+      const lats = dots.map(d => d.lat);
+      const lngs = dots.map(d => d.lng);
+      const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+      const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+      const spread = Math.max(
+        Math.max(...lats) - Math.min(...lats),
+        Math.max(...lngs) - Math.min(...lngs),
+        1
+      );
+      let zoom: number;
+      if (spread > 30) zoom = 2;
+      else if (spread > 15) zoom = 3;
+      else if (spread > 8) zoom = 4;
+      else if (spread > 3) zoom = 5;
+      else zoom = 6;
+      setFlyTo({ coordinates: [centerLng, centerLat], zoom });
+      setFlyToKey(k => k + 1);
+    },
+    [cityDots]
+  );
+
+  const selectCountry = useCallback(
+    (countryName: string) => {
+      openCountryPanel(countryName);
+      flyToCountry(countryName);
+    },
+    [openCountryPanel, flyToCountry]
+  );
+
+  const handleCountrySelect = useCallback(
+    (country: string | null) => {
+      if (country) {
+        openCountryPanel(country);
+      } else {
+        setSelectedCountry(null);
+        setSelectedRegion(null);
+      }
+    },
+    [openCountryPanel]
   );
 
   const handleMapSearch = useCallback(
@@ -679,9 +702,36 @@ export default function MapPage() {
 
   const regionSubtitle = selectedRegion
     ? selectedRegion.type === "state"
-      ? "United States"
+      ? selectedCountry || "United States"
       : ""
     : "";
+
+  const regionGroupBy: "city" | "state" =
+    selectedRegion?.type === "country" && STATE_HAVING[selectedRegion.name]
+      ? "state"
+      : "city";
+
+  const breadcrumb = useMemo(() => {
+    const crumbs: { label: string; onClick?: () => void }[] = [];
+    if (selectedCity) {
+      const c = selectedCity.countryName;
+      const s = selectedCity.stateName;
+      if (c) crumbs.push({ label: c, onClick: () => selectCountry(c) });
+      if (s && c && STATE_HAVING[c])
+        crumbs.push({ label: s, onClick: () => handleStateClick(s) });
+      crumbs.push({ label: selectedCity.cityName });
+    } else if (selectedRegion?.type === "state") {
+      if (selectedCountry)
+        crumbs.push({
+          label: selectedCountry,
+          onClick: () => selectCountry(selectedCountry),
+        });
+      crumbs.push({ label: selectedRegion.name });
+    } else if (selectedRegion?.type === "country") {
+      crumbs.push({ label: selectedRegion.name });
+    }
+    return crumbs;
+  }, [selectedCity, selectedRegion, selectedCountry, selectCountry, handleStateClick]);
 
   // Whether any panel is showing
   const hasPanel = !!(selectedCity || selectedRegion || selectedArtist || selectedShop);
@@ -759,6 +809,7 @@ export default function MapPage() {
               onClose={handleClosePanel}
               onArtistClick={handleArtistClick}
               onShopClick={handleShopClick}
+              breadcrumb={breadcrumb}
             />
           ) : selectedRegion ? (
             <MapDetailPanel
@@ -773,6 +824,9 @@ export default function MapPage() {
               onCityClick={handleRegionCityClick}
               onArtistClick={handleArtistClick}
               onShopClick={handleShopClick}
+              groupBy={regionGroupBy}
+              breadcrumb={breadcrumb}
+              onStateClick={handleStateClick}
             />
           ) : null}
         </div>
@@ -831,6 +885,7 @@ export default function MapPage() {
                 onClose={handleClosePanel}
                 onArtistClick={handleArtistClick}
                 onShopClick={handleShopClick}
+                breadcrumb={breadcrumb}
               />
             ) : selectedRegion ? (
               <MapDetailPanel
@@ -845,6 +900,9 @@ export default function MapPage() {
                 onCityClick={handleRegionCityClick}
                 onArtistClick={handleArtistClick}
                 onShopClick={handleShopClick}
+                groupBy={regionGroupBy}
+                breadcrumb={breadcrumb}
+                onStateClick={handleStateClick}
               />
             ) : null}
           </div>
