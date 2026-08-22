@@ -13,17 +13,15 @@ import MapGL, {
   MapRef,
 } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { feature } from "topojson-client";
-import type { Topology } from "topojson-specification";
-import type { FeatureCollection, Geometry } from "geojson";
+import {
+  MAP_STYLE,
+  WORLD_GEO_URL,
+  US_STATES_GEO_URL,
+  useGeoJSON,
+} from "./mapPrimitives";
 import type { MapLayerMouseEvent, ViewStateChangeEvent } from "react-map-gl";
 import useIsMobile from "../../hooks/useIsMobile";
 import styles from "./MapView.module.css";
-
-const WORLD_GEO_URL =
-  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json";
-const US_STATES_GEO_URL =
-  "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 
 // 4-tier zoom thresholds (MapLibre zoom levels 0-22)
 const ZOOM_CONTINENT = 2.5;
@@ -237,19 +235,6 @@ const REVERSE_COUNTRY_MAP: Record<string, string> = {};
 Object.entries(COUNTRY_NAME_MAP).forEach(([db, geo]) => {
   REVERSE_COUNTRY_MAP[geo] = db;
 });
-
-// Minimal map style with just a background color — we add our own GeoJSON layers
-const MAP_STYLE = {
-  version: 8 as const,
-  sources: {},
-  layers: [
-    {
-      id: "background",
-      type: "background" as const,
-      paint: { "background-color": "#ffffff" },
-    },
-  ],
-};
 
 interface MapViewProps {
   cityData: CityDot[];
@@ -532,79 +517,6 @@ const ClusterMarker = memo(function ClusterMarker({
     </Marker>
   );
 });
-
-// Fix antimeridian artifacts: normalize each polygon ring so consecutive
-// points never jump more than 180° in longitude. This may produce coords
-// outside [-180,180] (e.g. Russia at ~190°), which MapLibre handles fine.
-function normalizeRing(ring: number[][]): number[][] {
-  if (ring.length === 0) return ring;
-  const result: number[][] = [ring[0]];
-  for (let i = 1; i < ring.length; i++) {
-    let lng = ring[i][0];
-    const prevLng = result[i - 1][0];
-    while (lng - prevLng > 180) lng -= 360;
-    while (prevLng - lng > 180) lng += 360;
-    result.push([lng, ring[i][1]]);
-  }
-  return result;
-}
-
-function fixAntimeridian(
-  fc: FeatureCollection<Geometry>
-): FeatureCollection<Geometry> {
-  return {
-    ...fc,
-    features: fc.features.map(f => {
-      const g = f.geometry;
-      if (g.type === "Polygon") {
-        return {
-          ...f,
-          geometry: {
-            ...g,
-            coordinates: g.coordinates.map(normalizeRing),
-          },
-        };
-      }
-      if (g.type === "MultiPolygon") {
-        return {
-          ...f,
-          geometry: {
-            ...g,
-            coordinates: g.coordinates.map(poly =>
-              poly.map(normalizeRing)
-            ),
-          },
-        };
-      }
-      return f;
-    }),
-  };
-}
-
-// Custom hook to fetch and convert TopoJSON to GeoJSON
-function useGeoJSON(url: string, objectKey: string) {
-  const [data, setData] = useState<FeatureCollection<Geometry> | null>(
-    null
-  );
-  useEffect(() => {
-    let cancelled = false;
-    fetch(url)
-      .then(res => res.json())
-      .then((topo: Topology) => {
-        if (cancelled) return;
-        const fc = feature(
-          topo,
-          topo.objects[objectKey]
-        ) as FeatureCollection<Geometry>;
-        setData(fixAntimeridian(fc));
-      })
-      .catch(err => console.error("Failed to load GeoJSON:", err));
-    return () => {
-      cancelled = true;
-    };
-  }, [url, objectKey]);
-  return data;
-}
 
 // Inner component with map logic
 function MapInner({

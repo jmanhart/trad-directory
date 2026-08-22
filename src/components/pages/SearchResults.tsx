@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { searchArtists, searchShops } from "../../services/api";
 import { useListControls } from "../../hooks/useListControls";
@@ -9,6 +9,8 @@ import Pagination from "../common/Pagination";
 import { trackSearch } from "../../utils/analytics";
 import styles from "./SearchResults.module.css";
 import { addBreadcrumb, captureException, Sentry } from "../../utils/sentry";
+import { useMapCityDots } from "../../hooks/useMapCityDots";
+import { classifyLocationQuery } from "../../utils/locationSearch";
 
 interface Artist {
   id: number;
@@ -48,6 +50,12 @@ function SearchResults() {
   const lastSearchQuery = useRef<string>("");
 
   const searchQuery = searchParams.get("q") || "";
+
+  const { cityDots } = useMapCityDots();
+  const locationMatch = useMemo(
+    () => (searchQuery ? classifyLocationQuery(searchQuery, cityDots) : null),
+    [searchQuery, cityDots]
+  );
 
   useEffect(() => {
     // Prevent duplicate calls
@@ -212,6 +220,7 @@ function SearchResults() {
         filteredArtists={filteredArtists}
         filteredShops={filteredShops}
         navigate={navigate}
+        locationMatch={locationMatch}
       />
 
       {combinedLength > 0 && (

@@ -1,5 +1,7 @@
 import styles from "../pages/SearchResults.module.css";
 import LocationResultsHeader from "./LocationResultsHeader";
+import SearchResultMapPreview from "../map/SearchResultMapPreview";
+import type { LocationMatch } from "../../utils/locationSearch";
 
 interface Artist {
   id: number;
@@ -19,6 +21,7 @@ interface SearchResultsDisplayProps {
   filteredArtists: Artist[];
   filteredShops: { id: number }[];
   navigate: (path: string) => void;
+  locationMatch?: LocationMatch | null;
 }
 
 export default function SearchResultsDisplay({
@@ -26,6 +29,7 @@ export default function SearchResultsDisplay({
   hasSearched,
   filteredArtists,
   filteredShops,
+  locationMatch,
 }: SearchResultsDisplayProps) {
   const totalCount = filteredArtists.length + filteredShops.length;
   return (
@@ -33,11 +37,12 @@ export default function SearchResultsDisplay({
       {searchQuery && (
         <div className={styles.searchInfo}>
           <LocationResultsHeader
-            title={searchQuery}
+            title={locationMatch ? locationMatch.name : searchQuery}
             resultsCount={hasSearched ? totalCount : undefined}
           />
         </div>
       )}
+      {locationMatch && <SearchResultMapPreview match={locationMatch} />}
       {/* Intentionally no list rendering here; ResultsSection handles cards */}
       {/* Intentionally no no-results block here; handled in parent */}
     </div>
