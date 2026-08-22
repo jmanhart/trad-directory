@@ -420,21 +420,38 @@ export default function MapDetailPanel({
                   No artist details available
                 </div>
               )}
-              {artistsByState.map(([stateName, stateArtists]) => (
-                <button
-                  key={stateName}
-                  className={styles.cityGroupHeader}
-                  onClick={() => onStateClick?.(stateName)}
-                >
-                  <span className={styles.cityGroupLeft}>
-                    <span className={styles.cityGroupName}>{stateName}</span>
-                  </span>
-                  <span className={styles.cityGroupRight}>
-                    <CountBadge count={stateArtists.length} />
-                    <ChevronIcon className={styles.drillChevron} />
-                  </span>
-                </button>
-              ))}
+              {artistsByState.map(([stateName, stateArtists]) => {
+                const isOther = stateName === "Other";
+                const inner = (
+                  <>
+                    <span className={styles.cityGroupLeft}>
+                      <span className={styles.cityGroupName}>{stateName}</span>
+                    </span>
+                    <span className={styles.cityGroupRight}>
+                      <CountBadge count={stateArtists.length} />
+                      {!isOther && (
+                        <ChevronIcon className={styles.drillChevron} />
+                      )}
+                    </span>
+                  </>
+                );
+                return isOther ? (
+                  <div
+                    key={stateName}
+                    className={`${styles.cityGroupHeader} ${styles.cityGroupStatic}`}
+                  >
+                    {inner}
+                  </div>
+                ) : (
+                  <button
+                    key={stateName}
+                    className={styles.cityGroupHeader}
+                    onClick={() => onStateClick?.(stateName)}
+                  >
+                    {inner}
+                  </button>
+                );
+              })}
             </>
           )}
 
@@ -503,21 +520,38 @@ export default function MapDetailPanel({
           variant === "region" &&
           groupBy === "state" &&
           shopsByState &&
-          shopsByState.map(([stateName, count]) => (
-            <button
-              key={stateName}
-              className={styles.cityGroupHeader}
-              onClick={() => onStateClick?.(stateName)}
-            >
-              <span className={styles.cityGroupLeft}>
-                <span className={styles.cityGroupName}>{stateName}</span>
-              </span>
-              <span className={styles.cityGroupRight}>
-                <CountBadge count={count} />
-                <ChevronIcon className={styles.drillChevron} />
-              </span>
-            </button>
-          ))}
+          shopsByState.map(([stateName, count]) => {
+            const isOther = stateName === "Other";
+            const inner = (
+              <>
+                <span className={styles.cityGroupLeft}>
+                  <span className={styles.cityGroupName}>{stateName}</span>
+                </span>
+                <span className={styles.cityGroupRight}>
+                  <CountBadge count={count} />
+                  {!isOther && (
+                    <ChevronIcon className={styles.drillChevron} />
+                  )}
+                </span>
+              </>
+            );
+            return isOther ? (
+              <div
+                key={stateName}
+                className={`${styles.cityGroupHeader} ${styles.cityGroupStatic}`}
+              >
+                {inner}
+              </div>
+            ) : (
+              <button
+                key={stateName}
+                className={styles.cityGroupHeader}
+                onClick={() => onStateClick?.(stateName)}
+              >
+                {inner}
+              </button>
+            );
+          })}
       </div>
     </div>
   );

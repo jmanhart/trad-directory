@@ -702,7 +702,7 @@ export default function MapPage() {
 
   const regionSubtitle = selectedRegion
     ? selectedRegion.type === "state"
-      ? selectedCountry || "United States"
+      ? selectedCountry || ""
       : ""
     : "";
 

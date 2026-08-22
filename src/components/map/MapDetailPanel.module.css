@@ -245,6 +245,15 @@
   gap: 0.375rem;
 }
 
+/* Non-drillable group row (e.g. the "Other" state bucket) */
+.cityGroupStatic {
+  cursor: default;
+}
+
+.cityGroupStatic:hover {
+  background: transparent;
+}
+
 
 /* Items inside a city group get slightly indented */
 .cityGroup .listItem {
