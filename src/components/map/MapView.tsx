@@ -59,6 +59,7 @@ interface Cluster {
   totalArtists: number;
   totalShops: number;
   cityCount: number;
+  kind?: "continent" | "country";
 }
 
 // Fallback continent lookup for cities missing DB continent data
@@ -225,15 +226,18 @@ function getContinentForDot(d: CityDot): string {
 
 // Map country names from our DB to Natural Earth GeoJSON names
 const COUNTRY_NAME_MAP: Record<string, string> = {
+  // Canonical DB names first so the reverse map (first-wins) resolves GeoJSON
+  // names back to the canonical DB name, not an alias.
   "United States": "United States of America",
+  "United Kingdom": "United Kingdom",
   USA: "United States of America",
   UK: "United Kingdom",
 };
 
-// Reverse map: GeoJSON name -> DB name
+// Reverse map: GeoJSON name -> DB name (first entry wins → canonical name)
 const REVERSE_COUNTRY_MAP: Record<string, string> = {};
 Object.entries(COUNTRY_NAME_MAP).forEach(([db, geo]) => {
-  REVERSE_COUNTRY_MAP[geo] = db;
+  if (!(geo in REVERSE_COUNTRY_MAP)) REVERSE_COUNTRY_MAP[geo] = db;
 });
 
 interface MapViewProps {
@@ -690,29 +694,56 @@ function MapInner({
     [usStatesGeoJSON, syncTier]
   );
 
-  // Tier 1: Continent clusters
+  // Tier 1: Continent clusters — except North America, which is exploded into
+  // country clusters (US/Canada/Mexico/...) because it's dense; every other
+  // continent stays a single cluster.
   const continentClusters = useMemo(() => {
-    const map = new Map<
+    const continentMap = new Map<
+      string,
+      { dots: CityDot[]; artists: number; shops: number }
+    >();
+    const naCountryMap = new Map<
       string,
       { dots: CityDot[]; artists: number; shops: number }
     >();
     cityData.forEach(d => {
       const continent = getContinentForDot(d);
-      if (!map.has(continent)) {
-        map.set(continent, { dots: [], artists: 0, shops: 0 });
+      const bucket =
+        continent === "North America"
+          ? naCountryMap
+          : continentMap;
+      const key =
+        continent === "North America"
+          ? d.countryName || "Unknown"
+          : continent;
+      if (!bucket.has(key)) {
+        bucket.set(key, { dots: [], artists: 0, shops: 0 });
       }
-      const entry = map.get(continent)!;
+      const entry = bucket.get(key)!;
       entry.dots.push(d);
       entry.artists += d.artistCount;
       entry.shops += d.shopCount;
     });
 
     const clusters: Cluster[] = [];
-    map.forEach((v, continent) => {
+    continentMap.forEach((v, continent) => {
       const center =
         CONTINENT_CENTERS[continent] || weightedCentroid(v.dots);
       clusters.push({
         name: continent,
+        kind: "continent",
+        lat: center.lat,
+        lng: center.lng,
+        totalArtists: v.artists,
+        totalShops: v.shops,
+        cityCount: v.dots.length,
+      });
+    });
+    naCountryMap.forEach((v, country) => {
+      const center = COUNTRY_CENTERS[country] || weightedCentroid(v.dots);
+      clusters.push({
+        name: country,
+        kind: "country",
         lat: center.lat,
         lng: center.lng,
         totalArtists: v.artists,
@@ -899,8 +930,11 @@ function MapInner({
 
       if (!isFinite(minLng)) return;
 
-      // Force city tier minimum so dots render even if fitBounds zoom < ZOOM_CITY
-      minTierRef.current = "city";
+      // State-having countries with on-map state clusters (currently the US)
+      // land on the country tier so those clusters show and match the panel;
+      // every other country drops to city dots.
+      const hasStateClusters = dbName === "United States";
+      minTierRef.current = hasStateClusters ? "country" : "city";
 
       mapRef.current.fitBounds(
         [
@@ -915,7 +949,11 @@ function MapInner({
       const latSpan = maxLat - minLat;
       const span = Math.max(lngSpan, latSpan, 0.5);
       const estimatedZoom = Math.log2(360 / span) + 0.5;
-      syncTier(Math.max(estimatedZoom, ZOOM_CITY));
+      syncTier(
+        hasStateClusters
+          ? estimatedZoom
+          : Math.max(estimatedZoom, ZOOM_CITY)
+      );
       onCountrySelect?.(dbName);
     },
     [worldGeoJSON, cityData, onCountrySelect, syncTier]
@@ -1343,7 +1381,11 @@ function MapInner({
               cluster={cluster}
               label={cluster.name}
               isMobile={isMobile}
-              onClick={handleContinentClusterClick}
+              onClick={
+                cluster.kind === "country"
+                  ? handleCountryClusterClick
+                  : handleContinentClusterClick
+              }
               onMouseEnter={
                 isMobile ? undefined : handleClusterEnter
               }
