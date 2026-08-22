@@ -268,14 +268,19 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.375rem;
-  padding: 0 0 0.5rem;
-  font-size: var(--font-size-sm);
+  gap: 0.25rem;
+  margin: 0;
+  padding: 1.25rem 1.5rem 0;
+  font-size: 0.75rem;
   color: var(--color-text-tertiary);
 }
 
+.breadcrumb + .header {
+  padding-top: 0.25rem;
+}
+
 .breadcrumbLink {
-  color: var(--color-primary);
+  color: var(--color-text-tertiary);
   cursor: pointer;
   background: none;
   border: none;
@@ -284,7 +289,7 @@
 }
 
 .breadcrumbLink:hover {
-  color: var(--color-primary-hover);
+  color: var(--color-text-secondary);
   text-decoration: underline;
 }
 

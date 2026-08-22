@@ -238,21 +238,6 @@ export default function MapDetailPanel({
   return (
     <div className={styles.card}>
       <div className={styles.dragHandle} />
-      <div className={styles.header}>
-        <div>
-          <h2 className={styles.title}>{title}</h2>
-          {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
-        </div>
-        <div className={styles.headerActions}>
-          <button
-            className={styles.closeButton}
-            onClick={onClose}
-            title="Close"
-          >
-            &times;
-          </button>
-        </div>
-      </div>
 
       {breadcrumb && breadcrumb.length > 1 && (
         <nav className={styles.breadcrumb} aria-label="Location path">
@@ -276,6 +261,22 @@ export default function MapDetailPanel({
           ))}
         </nav>
       )}
+
+      <div className={styles.header}>
+        <div>
+          <h2 className={styles.title}>{title}</h2>
+          {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+        </div>
+        <div className={styles.headerActions}>
+          <button
+            className={styles.closeButton}
+            onClick={onClose}
+            title="Close"
+          >
+            &times;
+          </button>
+        </div>
+      </div>
 
       {hasTabs ? (
         <Tabs
