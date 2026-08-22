@@ -245,6 +245,15 @@
   gap: 0.375rem;
 }
 
+/* Non-drillable group row (e.g. the "Other" state bucket) */
+.cityGroupStatic {
+  cursor: default;
+}
+
+.cityGroupStatic:hover {
+  background: transparent;
+}
+
 
 /* Items inside a city group get slightly indented */
 .cityGroup .listItem {
@@ -253,6 +262,53 @@
 
 .cityGroup .listItem:last-child {
   border-bottom: none;
+}
+
+.drillChevron {
+  width: 16px;
+  height: 16px;
+  transform: rotate(-90deg);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+/* ── Breadcrumb trail ── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 1.25rem 1.5rem 0;
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+}
+
+.breadcrumb + .header {
+  padding-top: 0.25rem;
+}
+
+.breadcrumbLink {
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  background: none;
+  border: none;
+  font: inherit;
+  padding: 0;
+}
+
+.breadcrumbLink:hover {
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+}
+
+.breadcrumbSeparator {
+  color: var(--gray-400);
+}
+
+.breadcrumbCurrent {
+  color: var(--color-text-secondary);
+  font-weight: 600;
 }
 
 /* ── Mobile: bottom sheet ── */
