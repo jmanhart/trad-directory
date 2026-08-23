@@ -181,5 +181,9 @@
 
   .zoomControls {
     gap: 0.5rem;
+    /* Bottom-right is covered by the bottom sheet; sit below the search card */
+    top: 4.5rem;
+    bottom: auto;
+    right: 1rem;
   }
 }
