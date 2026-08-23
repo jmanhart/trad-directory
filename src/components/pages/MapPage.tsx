@@ -738,6 +738,7 @@ export default function MapPage() {
 
   const { sheetRef, handleRef, isDragging } = useBottomSheet({
     onDismiss: handleClosePanel,
+    isOpen: hasPanel && isMobile,
   });
 
   return (

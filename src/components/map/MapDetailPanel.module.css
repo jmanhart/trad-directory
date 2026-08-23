@@ -314,11 +314,15 @@
 /* ── Mobile: bottom sheet ── */
 @media (max-width: 767px) {
   .card {
-    height: auto;
+    height: 100%;
   }
 
   .header {
     padding: 0.75rem 1rem;
+  }
+
+  .breadcrumb {
+    padding: 0.25rem 1rem 0;
   }
 
   .title {

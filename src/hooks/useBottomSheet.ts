@@ -16,11 +16,13 @@ const VELOCITY_THRESHOLD = 0.3;
 interface UseBottomSheetOptions {
   onDismiss: () => void;
   initialSnap?: SnapPoint;
+  isOpen?: boolean;
 }
 
 export default function useBottomSheet({
   onDismiss,
   initialSnap = "peek",
+  isOpen = false,
 }: UseBottomSheetOptions) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HTMLDivElement>(null);
@@ -58,7 +60,7 @@ export default function useBottomSheet({
       el.style.transition = transition
         ? "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
         : "none";
-      el.style.transform = `translateY(${translateVh}vh)`;
+      el.style.transform = `translateY(${translateVh}dvh)`;
     },
     []
   );
@@ -211,7 +213,7 @@ export default function useBottomSheet({
       handle.removeEventListener("touchmove", onTouchMove);
       handle.removeEventListener("touchend", onTouchEnd);
     };
-  }, [onTouchStart, onTouchMove, onTouchEnd]);
+  }, [onTouchStart, onTouchMove, onTouchEnd, isOpen]);
 
   // After the CSS entrance animation finishes, set the inline transform
   // so the hook owns positioning from this point forward.
@@ -226,7 +228,14 @@ export default function useBottomSheet({
 
     el.addEventListener("animationend", onAnimationEnd, { once: true });
     return () => el.removeEventListener("animationend", onAnimationEnd);
-  }, [initialSnap, applyTransform, snapToTranslateVh]);
+  }, [initialSnap, applyTransform, snapToTranslateVh, isOpen]);
+
+  // Reset to the initial snap each time the sheet opens, so a stale snap from
+  // a previous open can't be read on first touch (e.g. if the entrance
+  // animationend never fires under prefers-reduced-motion).
+  useEffect(() => {
+    if (isOpen) setCurrentSnap(initialSnap);
+  }, [isOpen, initialSnap]);
 
   return {
     sheetRef,

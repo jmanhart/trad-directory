@@ -34,11 +34,17 @@ const STATE_CLUSTER_MIN_CITIES = 5;
 // Panel-aware padding for map zoom/fit operations
 const PANEL_WIDTH = 400; // 340px panel + gap + breathing room
 
-function getMapPadding() {
+function getMapPadding(opensPanel = true) {
   const isDesktop = window.innerWidth > 767;
-  return isDesktop
-    ? { top: 80, bottom: 50, left: PANEL_WIDTH, right: 50 }
-    : { top: 50, bottom: 50, left: 50, right: 50 };
+  if (isDesktop) {
+    return { top: 80, bottom: 50, left: PANEL_WIDTH, right: 50 };
+  }
+  // Mobile: reserve room for the bottom sheet's peek height (~33vh, matching
+  // useBottomSheet SNAP_HEIGHTS.peek) so a selected dot isn't centered behind
+  // the sheet — but only when this navigation opens a panel. Pure cluster-zoom
+  // exploration keeps the target centered in the full viewport.
+  const bottom = opensPanel ? Math.round(window.innerHeight * 0.33) + 24 : 50;
+  return { top: 50, bottom, left: 50, right: 50 };
 }
 
 export interface CityDot {
@@ -1084,7 +1090,7 @@ function MapInner({
         center: [cluster.lng, cluster.lat],
         zoom: targetZoom,
         duration: 800,
-        padding: getMapPadding(),
+        padding: getMapPadding(false),
       });
       syncTier(targetZoom);
     },
@@ -1137,7 +1143,7 @@ function MapInner({
           center: [cluster.lng, cluster.lat],
           zoom: targetZoom,
           duration: 800,
-          padding: getMapPadding(),
+          padding: getMapPadding(false),
         });
         syncTier(targetZoom);
       }
@@ -1311,6 +1317,9 @@ function MapInner({
         maxZoom={18}
         minZoom={1}
         attributionControl={false}
+        dragRotate={false}
+        touchPitch={false}
+        pitchWithRotate={false}
       >
         {/* Country borders */}
         {worldGeoJSON && (
