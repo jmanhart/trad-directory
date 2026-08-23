@@ -1316,6 +1316,9 @@ function MapInner({
         maxZoom={18}
         minZoom={1}
         attributionControl={false}
+        dragRotate={false}
+        touchPitch={false}
+        pitchWithRotate={false}
       >
         {/* Country borders */}
         {worldGeoJSON && (
