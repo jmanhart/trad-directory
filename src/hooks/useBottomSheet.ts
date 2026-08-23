@@ -16,11 +16,13 @@ const VELOCITY_THRESHOLD = 0.3;
 interface UseBottomSheetOptions {
   onDismiss: () => void;
   initialSnap?: SnapPoint;
+  isOpen?: boolean;
 }
 
 export default function useBottomSheet({
   onDismiss,
   initialSnap = "peek",
+  isOpen = false,
 }: UseBottomSheetOptions) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HTMLDivElement>(null);
@@ -211,7 +213,7 @@ export default function useBottomSheet({
       handle.removeEventListener("touchmove", onTouchMove);
       handle.removeEventListener("touchend", onTouchEnd);
     };
-  }, [onTouchStart, onTouchMove, onTouchEnd]);
+  }, [onTouchStart, onTouchMove, onTouchEnd, isOpen]);
 
   // After the CSS entrance animation finishes, set the inline transform
   // so the hook owns positioning from this point forward.
@@ -226,7 +228,7 @@ export default function useBottomSheet({
 
     el.addEventListener("animationend", onAnimationEnd, { once: true });
     return () => el.removeEventListener("animationend", onAnimationEnd);
-  }, [initialSnap, applyTransform, snapToTranslateVh]);
+  }, [initialSnap, applyTransform, snapToTranslateVh, isOpen]);
 
   return {
     sheetRef,
