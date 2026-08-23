@@ -1,8 +1,10 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import SideNav from "../../common/SideNav/SideNav";
 import { useAdminDataContext } from "./AdminDataProvider";
 import styles from "./AdminSidebar.module.css";
 import navStyles from "../../common/SideNav/SideNav.module.css";
+import { useAdminUi } from "./AdminUiContext";
+import AdminAddMenu from "./AdminAddMenu";
 
 interface AdminSidebarProps {
   isMobile: boolean;
@@ -156,6 +158,7 @@ export default function AdminSidebar({
 }: AdminSidebarProps) {
   const { badges } = useAdminDataContext();
   const entries = buildEntries(badges);
+  const { toggleSidebar } = useAdminUi();
 
   // Mobile: reuse the shared overlay drawer (same pattern as /map).
   if (isMobile) {
@@ -171,7 +174,58 @@ export default function AdminSidebar({
     <aside
       className={`${styles.aside} ${open ? styles.expanded : styles.rail}`}
     >
-      <NavItems entries={entries} showLabels={open} />
+      <div className={styles.sideHeader}>
+        {open && (
+          <Link
+            to="/admin/analytics"
+            className={styles.logoLink}
+            aria-label="Trad Directory admin"
+          >
+            <img
+              src="/TRAD-NEW-SMALL.svg"
+              alt="Trad Directory"
+              className={styles.logoImg}
+            />
+          </Link>
+        )}
+        <button
+          type="button"
+          className={styles.collapseBtn}
+          onClick={toggleSidebar}
+          aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+          title={open ? "Collapse" : "Expand"}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {open ? (
+              <>
+                <polyline points="14 6 8 12 14 18" />
+                <line x1="8" y1="12" x2="20" y2="12" />
+              </>
+            ) : (
+              <>
+                <line x1="4" y1="7" x2="20" y2="7" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="17" x2="20" y2="17" />
+              </>
+            )}
+          </svg>
+        </button>
+      </div>
+      <div className={styles.navScroll}>
+        <NavItems entries={entries} showLabels={open} />
+      </div>
+      <div className={styles.sideFooter}>
+        <AdminAddMenu collapsed={!open} />
+      </div>
     </aside>
   );
 }
