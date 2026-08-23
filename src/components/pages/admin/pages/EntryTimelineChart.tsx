@@ -96,25 +96,38 @@ export default function EntryTimelineChart() {
   const chartElRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ECharts | null>(null);
 
-  // Fetch the 90-day window once; the range toggle re-buckets client-side.
+  // Fetch the 90-day window on mount, then silently refresh when the tab
+  // regains focus. Refetching re-buckets against the current date, so counts
+  // stay current and a page left open across midnight rolls forward.
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    fetch(`${baseUrl}/entryTimeline?days=90`)
-      .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((data: unknown) => {
-        if (cancelled) return;
-        setEntries(readEntries(data));
-        setError(null);
-      })
-      .catch((e: unknown) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : "load failed");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    const load = (silent = false) => {
+      if (!silent) setLoading(true);
+      fetch(`${baseUrl}/entryTimeline?days=90`)
+        .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+        .then((data: unknown) => {
+          if (cancelled) return;
+          setEntries(readEntries(data));
+          setError(null);
+        })
+        .catch((e: unknown) => {
+          // Keep the last good chart on a background refresh failure.
+          if (!cancelled && !silent) {
+            setError(e instanceof Error ? e.message : "load failed");
+          }
+        })
+        .finally(() => {
+          if (!cancelled && !silent) setLoading(false);
+        });
+    };
+    load();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load(true);
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 
