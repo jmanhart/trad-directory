@@ -314,7 +314,7 @@
 /* ── Mobile: bottom sheet ── */
 @media (max-width: 767px) {
   .card {
-    height: auto;
+    height: 100%;
   }
 
   .header {
