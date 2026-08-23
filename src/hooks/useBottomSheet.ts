@@ -230,6 +230,13 @@ export default function useBottomSheet({
     return () => el.removeEventListener("animationend", onAnimationEnd);
   }, [initialSnap, applyTransform, snapToTranslateVh, isOpen]);
 
+  // Reset to the initial snap each time the sheet opens, so a stale snap from
+  // a previous open can't be read on first touch (e.g. if the entrance
+  // animationend never fires under prefers-reduced-motion).
+  useEffect(() => {
+    if (isOpen) setCurrentSnap(initialSnap);
+  }, [isOpen, initialSnap]);
+
   return {
     sheetRef,
     handleRef,
