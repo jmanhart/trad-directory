@@ -134,21 +134,22 @@ function AppContent() {
               element={<Navigate to="/admin/analytics" replace />}
             />
             <Route path="analytics" element={<AllAnalyticsPage />} />
+            <Route path="data" element={<AdminAllData />} />
             <Route
               path="artists"
-              element={<AdminAllData embeddedTab="artists" />}
+              element={<Navigate to="/admin/data?tab=artists" replace />}
             />
             <Route
               path="shops"
-              element={<AdminAllData embeddedTab="shops" />}
+              element={<Navigate to="/admin/data?tab=shops" replace />}
             />
             <Route
               path="cities"
-              element={<AdminAllData embeddedTab="cities" />}
+              element={<Navigate to="/admin/data?tab=cities" replace />}
             />
             <Route
               path="countries"
-              element={<AdminAllData embeddedTab="countries" />}
+              element={<Navigate to="/admin/data?tab=countries" replace />}
             />
             <Route
               path="submissions"

@@ -25,24 +25,24 @@ export default function AllAnalyticsPage() {
     {
       label: "Artists Missing IG",
       value: health.artistsMissingIg,
-      to: "/admin/artists",
+      to: "/admin/data?tab=artists",
     },
     {
       label: "Artists Missing Location",
       value: health.artistsMissingLocation,
-      to: "/admin/artists",
+      to: "/admin/data?tab=artists",
     },
     {
       label: "Empty Cities",
       value: health.emptyCities,
       sub: "no artists or shops",
-      to: "/admin/cities",
+      to: "/admin/data?tab=cities",
     },
     {
       label: "Orphaned Shops",
       value: health.orphanedShops,
       sub: "no linked artists",
-      to: "/admin/shops",
+      to: "/admin/data?tab=shops",
     },
     {
       label: "Pending Submissions",

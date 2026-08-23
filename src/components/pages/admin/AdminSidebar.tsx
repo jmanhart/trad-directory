@@ -50,42 +50,13 @@ function buildEntries(badges: {
       ),
     },
     {
-      to: "/admin/artists",
-      label: "All Artists",
+      to: "/admin/data",
+      label: "Data",
       icon: icon(
         <>
-          <circle cx="10" cy="7" r="3" />
-          <path d="M4 17c0-3 3-5 6-5s6 2 6 5" />
-        </>
-      ),
-    },
-    {
-      to: "/admin/shops",
-      label: "All Shops",
-      icon: icon(
-        <>
-          <path d="M3 8l1-4h12l1 4" />
-          <path d="M4 8v8h12V8" />
-        </>
-      ),
-    },
-    {
-      to: "/admin/cities",
-      label: "All Cities",
-      icon: icon(
-        <>
-          <rect x="4" y="8" width="4" height="9" />
-          <rect x="12" y="5" width="4" height="12" />
-        </>
-      ),
-    },
-    {
-      to: "/admin/countries",
-      label: "All Countries",
-      icon: icon(
-        <>
-          <circle cx="10" cy="10" r="7" />
-          <path d="M3 10h14M10 3a12 12 0 010 14M10 3a12 12 0 000 14" />
+          <rect x="3" y="4" width="14" height="12" rx="1" />
+          <line x1="3" y1="8" x2="17" y2="8" />
+          <line x1="9" y1="8" x2="9" y2="16" />
         </>
       ),
     },

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { CONTINENT_OPTIONS } from "../../../types/entities";
 import { createPortal } from "react-dom";
-import { Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   Message,
   MessageWithRetry,
@@ -230,16 +230,40 @@ const EMBEDDED_TITLES: Record<TabType, string> = {
   broken_links: "BROKEN LINKS",
 };
 
+// Entity tabs shown in the consolidated /admin/data view (submissions, bugs,
+// and broken links remain their own sidebar pages).
+function isDataTab(value: string | null): value is TabType {
+  return (
+    value === "artists" ||
+    value === "shops" ||
+    value === "cities" ||
+    value === "countries"
+  );
+}
+
 export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTab = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState<TabType>(
-    embeddedTab ?? "artists"
+    embeddedTab ?? (isDataTab(urlTab) ? urlTab : "artists")
   );
 
-  // When used as an embedded page, the same component instance is reused across
-  // routes — keep the active tab in sync with the route's embeddedTab prop.
+  // Embedded pages (submissions/bugs/broken-links) sync from the route prop;
+  // the /admin/data view syncs from the ?tab= query param.
   useEffect(() => {
     if (embeddedTab) setActiveTab(embeddedTab);
-  }, [embeddedTab]);
+    else if (isDataTab(urlTab)) setActiveTab(urlTab);
+  }, [embeddedTab, urlTab]);
+
+  // In the /admin/data view, reflect the active tab in the URL for deep links.
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    if (!embeddedTab) {
+      const next = new URLSearchParams(searchParams);
+      next.set("tab", tab);
+      setSearchParams(next, { replace: true });
+    }
+  };
 
   const [currentPage, setCurrentPage] = useState(1);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -263,10 +287,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     { id: number; country_name: string; continent: string | null }[]
   >([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
-  const [newSubmissionsCount, setNewSubmissionsCount] = useState(0);
-  const [newBugsCount, setNewBugsCount] = useState(0);
   const [brokenLinks, setBrokenLinks] = useState<BrokenLinkResult[]>([]);
-  const [brokenLinksCount, setBrokenLinksCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ type: "error"; text: string } | null>(
     null
@@ -330,48 +351,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     loadStats();
     loadArtists();
     loadShops(false); // Load shops silently for stats
-    loadNewCounts();
   }, []);
-
-  const loadNewCounts = async () => {
-    const baseUrl = import.meta.env.VITE_API_URL || "/api";
-    try {
-      const authHeaders = {
-        Authorization: `Bearer ${import.meta.env.VITE_ADMIN_PASSWORD || ""}`,
-      };
-      const [subRes, bugsRes] = await Promise.all([
-        fetch(`${baseUrl}/listSubmissions?type=new_artist`, {
-          headers: authHeaders,
-        }),
-        fetch(`${baseUrl}/listSubmissions?type=report`, {
-          headers: authHeaders,
-        }),
-      ]);
-      if (subRes.ok) {
-        const data = await subRes.json();
-        const count = (data.submissions || []).filter(
-          (s: { status?: string }) => s.status === "new"
-        ).length;
-        setNewSubmissionsCount(count);
-      }
-      if (bugsRes.ok) {
-        const data = await bugsRes.json();
-        const count = (data.submissions || []).filter(
-          (s: { status?: string }) => s.status === "new"
-        ).length;
-        setNewBugsCount(count);
-      }
-      // Also fetch broken links count
-      try {
-        const blData = await fetchBrokenLinks();
-        setBrokenLinksCount(blData.length);
-      } catch {
-        // Non-blocking
-      }
-    } catch {
-      // Non-blocking; badges just stay 0
-    }
-  };
 
   useEffect(() => {
     // Reload data when switching tabs if needed
@@ -393,7 +373,6 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
       setError(null);
       const data = await fetchBrokenLinks();
       setBrokenLinks(data);
-      setBrokenLinksCount(data.length);
     } catch (err) {
       setError({
         type: "error",
@@ -431,11 +410,6 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
       // Only update if we're still on the same tab
       if (activeTab === "new_artists" || activeTab === "bugs") {
         setSubmissions(result.submissions || []);
-        const newCount = (result.submissions || []).filter(
-          (s: { status?: string }) => s.status === "new"
-        ).length;
-        if (activeTab === "new_artists") setNewSubmissionsCount(newCount);
-        else setNewBugsCount(newCount);
       }
     } catch (err) {
       console.error("Error loading submissions:", err);
@@ -888,7 +862,6 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
       setUpdatingSubmissionId(id);
       await updateSubmission(id, status);
       await loadSubmissions();
-      await loadNewCounts(); // Keep both tab badges in sync
     } catch (err) {
       console.error("Failed to update submission status:", err);
       setError({
@@ -1331,20 +1304,9 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                 { id: "shops", label: "Shops" },
                 { id: "cities", label: "Cities" },
                 { id: "countries", label: "Countries" },
-                { id: "bugs", label: "Bugs", badge: newBugsCount },
-                {
-                  id: "new_artists",
-                  label: "Submissions",
-                  badge: newSubmissionsCount,
-                },
-                {
-                  id: "broken_links",
-                  label: "Broken Links",
-                  badge: brokenLinksCount,
-                },
               ]}
               activeTab={activeTab}
-              onTabChange={tabId => setActiveTab(tabId as TabType)}
+              onTabChange={tabId => handleTabChange(tabId as TabType)}
             />
           </>
         )}
