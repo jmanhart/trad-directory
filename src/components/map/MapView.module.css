@@ -173,17 +173,8 @@
 }
 
 @media (max-width: 767px) {
-  .zoomButton {
-    width: 2.75rem;
-    height: 2.75rem;
-    font-size: var(--font-size-xl);
-  }
-
+  /* Pinch-zoom is the obvious gesture on mobile; the buttons are noise */
   .zoomControls {
-    gap: 0.5rem;
-    /* Bottom-right is covered by the bottom sheet; sit below the search card */
-    top: 4.5rem;
-    bottom: auto;
-    right: 1rem;
+    display: none;
   }
 }
