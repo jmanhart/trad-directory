@@ -34,5 +34,6 @@ BLOG-DRAFTS/
 .env*.local
 backups/
 .env*
+!.env.example
 
 *storybook.log
