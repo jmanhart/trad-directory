@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
 import { useAdminDataContext } from "../AdminDataProvider";
 import styles from "./AllAnalyticsPage.module.css";
+import { lazy, Suspense } from "react";
+
+const EntryTimelineChart = lazy(() => import("./EntryTimelineChart"));
 
 export default function AllAnalyticsPage() {
   const { stats, health, loading } = useAdminDataContext();
@@ -62,6 +65,10 @@ export default function AllAnalyticsPage() {
           </div>
         ))}
       </div>
+
+      <Suspense fallback={<div className={styles.chartFallback} />}>
+        <EntryTimelineChart />
+      </Suspense>
 
       <h2 className={styles.sectionTitle}>Data Health</h2>
       <div className={styles.healthGrid}>
