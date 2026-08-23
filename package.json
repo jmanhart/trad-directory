@@ -25,7 +25,9 @@
     "backup": "node scripts/backup.cjs",
     "backup:push": "node scripts/backup.cjs --push",
     "restore": "node scripts/restore.cjs",
-    "restore:execute": "node scripts/restore.cjs --execute"
+    "restore:execute": "node scripts/restore.cjs --execute",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@sentry/browser": "^10.0.0",
@@ -49,6 +51,12 @@
     "@eslint/js": "^9.13.0",
     "@sentry/cli": "^2.42.3",
     "@sentry/vite-plugin": "^3.2.2",
+    "@storybook/addon-essentials": "^8.6.18",
+    "@storybook/addon-interactions": "^8.6.18",
+    "@storybook/blocks": "^8.6.18",
+    "@storybook/react": "^8.6.18",
+    "@storybook/react-vite": "^8.6.18",
+    "@storybook/test": "^8.6.18",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react-swc": "^3.5.0",
@@ -58,6 +66,7 @@
     "eslint-plugin-react-refresh": "^0.4.14",
     "globals": "^15.11.0",
     "prettier": "^3.6.2",
+    "storybook": "^8.6.18",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.11.0",
     "vite": "^5.4.10",
