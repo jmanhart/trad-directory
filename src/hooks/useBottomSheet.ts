@@ -58,7 +58,7 @@ export default function useBottomSheet({
       el.style.transition = transition
         ? "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
         : "none";
-      el.style.transform = `translateY(${translateVh}vh)`;
+      el.style.transform = `translateY(${translateVh}dvh)`;
     },
     []
   );
