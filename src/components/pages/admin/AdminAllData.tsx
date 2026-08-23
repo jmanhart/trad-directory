@@ -1249,16 +1249,6 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     }
   };
 
-  // Calculate stats
-  const stats = useMemo(() => {
-    return {
-      totalArtists: artists.length,
-      totalShops: allShops.length,
-      totalCountries: countries.length,
-      totalCities: cities.length,
-    };
-  }, [artists.length, allShops.length, countries.length, cities.length]);
-
   return (
     <div className={styles.pageContainer} ref={rootRef}>
       <div className={styles.container}>
@@ -1268,34 +1258,6 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
         {!embeddedTab && (
           <>
             <h1 className={styles.title}>ALL DATA</h1>
-
-            {/* Stats Cards */}
-            <div className={styles.statsGrid}>
-              <div className={styles.statCard}>
-                <div className={styles.statLabel}>Total Artists</div>
-                <div className={styles.statValue}>
-                  {stats.totalArtists.toLocaleString()}
-                </div>
-              </div>
-              <div className={styles.statCard}>
-                <div className={styles.statLabel}>Total Shops</div>
-                <div className={styles.statValue}>
-                  {stats.totalShops.toLocaleString()}
-                </div>
-              </div>
-              <div className={styles.statCard}>
-                <div className={styles.statLabel}>Total Countries</div>
-                <div className={styles.statValue}>
-                  {stats.totalCountries.toLocaleString()}
-                </div>
-              </div>
-              <div className={styles.statCard}>
-                <div className={styles.statLabel}>Total Cities</div>
-                <div className={styles.statValue}>
-                  {stats.totalCities.toLocaleString()}
-                </div>
-              </div>
-            </div>
 
             {/* Tabs */}
             <Tabs
@@ -1772,7 +1734,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
           )}
 
           {(activeTab === "new_artists" || activeTab === "bugs") && (
-            <div className={styles.tableContainer}>
+            <div className={styles.tableWrapper}>
               {loading ? (
                 <div className={styles.loading}>Loading submissions...</div>
               ) : error ? (
