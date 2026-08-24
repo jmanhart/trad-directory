@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { CONTINENT_OPTIONS } from "../../../types/entities";
-import { createPortal } from "react-dom";
 import { useSearchParams } from "react-router-dom";
 import {
   Message,
@@ -36,6 +35,7 @@ import type { City } from "./adminTypes";
 import { getCityDisplayName } from "./adminUtils";
 import SearchIcon from "../../../assets/icons/searchIcon";
 import styles from "./AdminAllData.module.css";
+import AdminDetailPanel from "./AdminDetailPanel";
 
 interface Artist {
   id: number;
@@ -298,6 +298,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [panelMode, setPanelMode] = useState<"view" | "edit">("view");
   const [editingArtistId, setEditingArtistId] = useState<number | null>(null);
   const [editingShopId, setEditingShopId] = useState<number | null>(null);
   const [formData, setFormData] = useState<ArtistFormData | null>(null);
@@ -898,6 +899,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     setOriginalCityFormData(JSON.parse(JSON.stringify(formData)));
     setEditingCityId(city.id);
     setIsModalOpen(true);
+    setPanelMode("view");
   };
 
   const handleEditCountryClick = (country: {
@@ -914,6 +916,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     setOriginalCountryFormData(JSON.parse(JSON.stringify(formData)));
     setEditingCountryId(country.id);
     setIsModalOpen(true);
+    setPanelMode("view");
   };
 
   const handleCityFormChange = (field: keyof CityFormData, value: string) => {
@@ -1006,6 +1009,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
       setArtistLocations(artist.locations || []);
       setEditingArtistId(artistId);
       setIsModalOpen(true);
+      setPanelMode("view");
     } catch (err) {
       setSaveError(
         err instanceof Error ? err.message : "Failed to load artist data"
@@ -1017,6 +1021,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+    setPanelMode("view");
     setFormData(null);
     setShopFormData(null);
     setCityFormData(null);
@@ -1106,6 +1111,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
       setOriginalShopFormData(JSON.parse(JSON.stringify(formData)));
       setEditingShopId(shopId);
       setIsModalOpen(true);
+      setPanelMode("view");
     } catch (err) {
       setSaveError(
         err instanceof Error ? err.message : "Failed to load shop data"
@@ -1249,726 +1255,101 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     }
   };
 
-  return (
-    <div className={styles.pageContainer} ref={rootRef}>
-      <div className={styles.container}>
-        {embeddedTab && (
-          <h1 className={styles.title}>{EMBEDDED_TITLES[embeddedTab]}</h1>
-        )}
-        {!embeddedTab && (
-          <>
-            <h1 className={styles.title}>ALL DATA</h1>
+  const panelTitle =
+    panelMode === "edit"
+      ? editingArtistId
+        ? "Edit Artist"
+        : editingShopId
+          ? "Edit Shop"
+          : editingCityId
+            ? "Edit City"
+            : "Edit Country"
+      : editingArtistId
+        ? formData?.name || "Artist"
+        : editingShopId
+          ? shopFormData?.shop_name || "Shop"
+          : editingCityId
+            ? cityFormData?.city_name || "City"
+            : countryFormData?.country_name || "Country";
 
-            {/* Tabs */}
-            <Tabs
-              className={styles.dataTabs}
-              items={[
-                { id: "artists", label: "Artists" },
-                { id: "shops", label: "Shops" },
-                { id: "cities", label: "Cities" },
-                { id: "countries", label: "Countries" },
-              ]}
-              activeTab={activeTab}
-              onTabChange={tabId => handleTabChange(tabId as TabType)}
-            />
-          </>
-        )}
+  const cityLabel = (id: string) => {
+    const c = cities.find(x => String(x.id) === id);
+    return c ? getCityDisplayName(c) : "";
+  };
+  const shopLabel = (id: string) =>
+    shops.find(x => String(x.id) === id)?.shop_name || "";
+  const stateLabel = (id: string) =>
+    states.find(x => String(x.id) === id)?.state_name || "";
 
-        {/* Search Bar */}
-        {(activeTab === "artists" ||
-          activeTab === "shops" ||
-          activeTab === "cities" ||
-          activeTab === "countries") &&
-          !loading && (
-            <div className={styles.searchContainer}>
-              <div className={styles.searchInputWrapper}>
-                <SearchIcon className={styles.searchIcon} aria-hidden />
-                <Input
-                  type="text"
-                  placeholder={
-                    activeTab === "artists"
-                      ? "Search artists by name, Instagram, location, shop, or ID..."
-                      : activeTab === "shops"
-                        ? "Search shops by name, Instagram, location, address, or ID..."
-                        : activeTab === "cities"
-                          ? "Search cities by name, state, or country..."
-                          : "Search countries by name or ID..."
-                  }
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className={styles.searchInput}
-                />
-              </div>
-              {searchQuery && (
-                <span className={styles.resultCount}>
-                  {activeTab === "artists"
-                    ? `${filteredAndSortedArtists.length} of ${artists.length} artists`
-                    : activeTab === "shops"
-                      ? `${filteredAndSortedShops.length} of ${allShops.length} shops`
-                      : activeTab === "cities"
-                        ? `${filteredAndSortedCities.length} of ${cities.length} cities`
-                        : `${filteredAndSortedCountries.length} of ${countries.length} countries`}
-                </span>
-              )}
-            </div>
-          )}
+  const viewRow = (label: string, value: string) => (
+    <div className={styles.viewRow}>
+      <span className={styles.viewLabel}>{label}</span>
+      <span className={styles.viewValue}>{value || "—"}</span>
+    </div>
+  );
 
-        {/* Content */}
-        <div className={styles.content}>
-          {error && (
-            <MessageWithRetry
-              type={error.type}
-              text={error.text}
-              onRetry={handleRetry}
-              retryLoading={loading}
-            />
-          )}
-
-          {activeTab === "artists" && (
-            <div className={styles.tableWrapper}>
-              {loading ? (
-                <div className={styles.loading}>Loading artists...</div>
-              ) : (
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("id")}
-                      >
-                        ID {getSortIcon("id")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("name")}
-                      >
-                        Name {getSortIcon("name")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("instagram_handle")}
-                      >
-                        Instagram {getSortIcon("instagram_handle")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("location")}
-                      >
-                        Location {getSortIcon("location")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("shop_name")}
-                      >
-                        Shop {getSortIcon("shop_name")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("is_traveling")}
-                      >
-                        Traveling {getSortIcon("is_traveling")}
-                      </th>
-                      <th className={styles.actionHeader} aria-label="Actions"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAndSortedArtists.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className={styles.emptyCell}>
-                          {searchQuery
-                            ? "No artists match your search"
-                            : "No artists found"}
-                        </td>
-                      </tr>
-                    ) : (
-                      pageSlice(filteredAndSortedArtists).map(artist => (
-                        <tr key={artist.id}>
-                          <td className={styles.idCell}>{artist.id}</td>
-                          <td className={styles.nameCell}>{artist.name}</td>
-                          <td className={styles.instagramCell}>
-                            {artist.instagram_handle ? (
-                              <a
-                                href={`https://instagram.com/${artist.instagram_handle.replace("@", "")}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={styles.link}
-                              >
-                                {artist.instagram_handle}
-                              </a>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                          <td className={styles.locationCell}>
-                            {formatLocation(artist)}
-                          </td>
-                          <td className={styles.shopCell}>
-                            {artist.shop_name || "—"}
-                          </td>
-                          <td className={styles.travelingCell}>
-                            {artist.is_traveling ? "✓" : "—"}
-                          </td>
-                          <td className={styles.actionCell}>
-                            <button
-                              className={styles.editButton}
-                              onClick={() => handleEditClick(artist.id)}
-                            >
-                              Edit
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-
-          {activeTab === "shops" && (
-            <div className={styles.tableWrapper}>
-              {loading ? (
-                <div className={styles.loading}>Loading shops...</div>
-              ) : (
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("id")}
-                      >
-                        ID {getSortIcon("id")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("shop_name")}
-                      >
-                        Shop Name {getSortIcon("shop_name")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("instagram_handle")}
-                      >
-                        Instagram {getSortIcon("instagram_handle")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("location")}
-                      >
-                        Location {getSortIcon("location")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("address")}
-                      >
-                        Address {getSortIcon("address")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("shop_artist_count")}
-                      >
-                        Artists {getSortIcon("shop_artist_count")}
-                      </th>
-                      <th className={styles.actionHeader} aria-label="Actions"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAndSortedShops.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className={styles.emptyCell}>
-                          {searchQuery
-                            ? "No shops match your search"
-                            : "No shops found"}
-                        </td>
-                      </tr>
-                    ) : (
-                      pageSlice(filteredAndSortedShops).map(shop => (
-                        <tr key={shop.id}>
-                          <td className={styles.idCell}>{shop.id}</td>
-                          <td className={styles.nameCell}>{shop.shop_name}</td>
-                          <td className={styles.instagramCell}>
-                            {shop.instagram_handle ? (
-                              <a
-                                href={`https://instagram.com/${shop.instagram_handle.replace("@", "")}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={styles.link}
-                              >
-                                {shop.instagram_handle}
-                              </a>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                          <td className={styles.locationCell}>
-                            {formatLocation(shop)}
-                          </td>
-                          <td className={styles.shopCell}>
-                            {shop.address || "—"}
-                          </td>
-                          <td className={styles.numCell}>
-                            {artistCountByShop.get(
-                              (shop.shop_name || "").trim().toLowerCase()
-                            ) || 0}
-                          </td>
-                          <td className={styles.actionCell}>
-                            <button
-                              className={styles.editButton}
-                              onClick={() => handleEditShopClick(shop.id)}
-                            >
-                              Edit
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-
-          {activeTab === "cities" && (
-            <div className={styles.tableWrapper}>
-              {dataLoading ? (
-                <div className={styles.loading}>Loading cities...</div>
-              ) : (
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("id")}
-                      >
-                        ID {getSortIcon("id")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("city_name")}
-                      >
-                        City {getSortIcon("city_name")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("state")}
-                      >
-                        State {getSortIcon("state")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("country")}
-                      >
-                        Country {getSortIcon("country")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("city_artist_count")}
-                      >
-                        Artists {getSortIcon("city_artist_count")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("city_shop_count")}
-                      >
-                        Shops {getSortIcon("city_shop_count")}
-                      </th>
-                      <th className={styles.actionHeader} aria-label="Actions"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAndSortedCities.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className={styles.emptyCell}>
-                          {searchQuery
-                            ? "No cities match your search"
-                            : "No cities found"}
-                        </td>
-                      </tr>
-                    ) : (
-                      pageSlice(filteredAndSortedCities).map(city => (
-                        <tr key={city.id}>
-                          <td className={styles.idCell}>{city.id}</td>
-                          <td className={styles.nameCell}>{city.city_name}</td>
-                          <td className={styles.locationCell}>
-                            {city.state_name || "—"}
-                          </td>
-                          <td className={styles.locationCell}>
-                            {city.country_name || "—"}
-                          </td>
-                          <td className={styles.numCell}>
-                            {artistCountByCity.get(
-                              cityCountKey(
-                                city.city_name,
-                                city.state_name,
-                                city.country_name
-                              )
-                            ) || 0}
-                          </td>
-                          <td className={styles.numCell}>
-                            {shopCountByCity.get(
-                              cityCountKey(
-                                city.city_name,
-                                city.state_name,
-                                city.country_name
-                              )
-                            ) || 0}
-                          </td>
-                          <td className={styles.actionCell}>
-                            <button
-                              type="button"
-                              className={styles.editButton}
-                              onClick={() => handleEditCityClick(city)}
-                            >
-                              Edit
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-
-          {activeTab === "countries" && (
-            <div className={styles.tableWrapper}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th
-                      className={styles.sortableHeader}
-                      onClick={() => handleSort("id")}
-                    >
-                      ID {getSortIcon("id")}
-                    </th>
-                    <th
-                      className={styles.sortableHeader}
-                      onClick={() => handleSort("country_name")}
-                    >
-                      Country {getSortIcon("country_name")}
-                    </th>
-                    <th
-                      className={styles.sortableHeader}
-                      onClick={() => handleSort("continent")}
-                    >
-                      Continent {getSortIcon("continent")}
-                    </th>
-                    <th
-                      className={styles.sortableHeader}
-                      onClick={() => handleSort("country_city_count")}
-                    >
-                      Cities {getSortIcon("country_city_count")}
-                    </th>
-                    <th
-                      className={styles.sortableHeader}
-                      onClick={() => handleSort("country_artist_count")}
-                    >
-                      Artists {getSortIcon("country_artist_count")}
-                    </th>
-                    <th
-                      className={styles.sortableHeader}
-                      onClick={() => handleSort("country_shop_count")}
-                    >
-                      Shops {getSortIcon("country_shop_count")}
-                    </th>
-                    <th className={styles.actionHeader} aria-label="Actions"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAndSortedCountries.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className={styles.emptyCell}>
-                        {searchQuery
-                          ? "No countries match your search"
-                          : "No countries found"}
-                      </td>
-                    </tr>
-                  ) : (
-                    pageSlice(filteredAndSortedCountries).map(country => (
-                      <tr key={country.id}>
-                        <td className={styles.idCell}>{country.id}</td>
-                        <td className={styles.nameCell}>
-                          {country.country_name}
-                        </td>
-                        <td className={styles.locationCell}>
-                          {country.continent || "—"}
-                        </td>
-                        <td className={styles.numCell}>
-                          {cityCountByCountry.get(
-                            countryCountKey(country.country_name)
-                          ) || 0}
-                        </td>
-                        <td className={styles.numCell}>
-                          {artistCountByCountry.get(
-                            countryCountKey(country.country_name)
-                          ) || 0}
-                        </td>
-                        <td className={styles.numCell}>
-                          {shopCountByCountry.get(
-                            countryCountKey(country.country_name)
-                          ) || 0}
-                        </td>
-                        <td className={styles.actionCell}>
-                          <button
-                            type="button"
-                            className={styles.editButton}
-                            onClick={() => handleEditCountryClick(country)}
-                          >
-                            Edit
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {PAGINATED_TABS.includes(activeTab) && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={Math.ceil(activeFilteredCount / PAGE_SIZE)}
-              onPageChange={setCurrentPage}
-            />
-          )}
-
-          {(activeTab === "new_artists" || activeTab === "bugs") && (
-            <div className={styles.tableWrapper}>
-              {loading ? (
-                <div className={styles.loading}>Loading submissions...</div>
-              ) : error ? (
-                <Message type="error" text={error.text} />
-              ) : visibleSubmissions.length === 0 ? (
-                <div className={styles.emptyCell}>
-                  No {activeTab === "new_artists" ? "new artist" : "bug"}{" "}
-                  submissions yet.
-                </div>
-              ) : (
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th className={styles.idCell}>ID</th>
-                      <th className={styles.nameCell}>Date</th>
-                      {activeTab === "new_artists" ? (
-                        <>
-                          <th>Name</th>
-                          <th>Instagram</th>
-                          <th>Location</th>
-                          <th>Email</th>
-                          <th>Status</th>
-                          <th className={styles.actionHeader} aria-label="Actions"></th>
-                        </>
-                      ) : (
-                        <>
-                          <th>Entity</th>
-                          <th>Changes</th>
-                          <th>Details</th>
-                          <th>Email</th>
-                          <th>Status</th>
-                          <th className={styles.actionHeader} aria-label="Actions"></th>
-                        </>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleSubmissions.map(submission => (
-                      <tr key={submission.id}>
-                        <td className={styles.idCell}>
-                          {submission.id.substring(0, 8)}...
-                        </td>
-                        <td className={styles.nameCell}>
-                          {new Date(submission.created_at).toLocaleDateString()}
-                        </td>
-                        {activeTab === "new_artists" ? (
-                          <>
-                            <td>{submission.artist_name || "—"}</td>
-                            <td>
-                              {submission.artist_instagram_handle ? (
-                                <a
-                                  href={`https://instagram.com/${submission.artist_instagram_handle}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className={styles.link}
-                                >
-                                  @{submission.artist_instagram_handle}
-                                </a>
-                              ) : (
-                                "—"
-                              )}
-                            </td>
-                            <td>
-                              {[
-                                submission.artist_city,
-                                submission.artist_state,
-                                submission.artist_country,
-                              ]
-                                .filter(Boolean)
-                                .join(", ") || "—"}
-                            </td>
-                            <td>{submission.reporter_email || "—"}</td>
-                            <td>
-                              <span
-                                className={styles.statusBadge}
-                                data-status={submission.status}
-                              >
-                                {formatSubmissionStatus(submission.status)}
-                              </span>
-                            </td>
-                            <td className={styles.actionCell}>
-                              <SubmissionActions
-                                submission={submission}
-                                updating={
-                                  updatingSubmissionId === submission.id
-                                }
-                                onUpdateStatus={handleUpdateSubmissionStatus}
-                              />
-                            </td>
-                          </>
-                        ) : (
-                          <>
-                            <td>
-                              {submission.entity_type} #{submission.entity_id}
-                            </td>
-                            <td className={styles.detailsCell}>
-                              {submission.details ? (
-                                <div className={styles.detailsPreview}>
-                                  {submission.details.substring(0, 100)}
-                                  {submission.details.length > 100 ? "..." : ""}
-                                </div>
-                              ) : (
-                                "—"
-                              )}
-                            </td>
-                            <td className={styles.detailsCell}>
-                              {submission.details || "—"}
-                            </td>
-                            <td>{submission.reporter_email || "—"}</td>
-                            <td>
-                              <span
-                                className={styles.statusBadge}
-                                data-status={submission.status}
-                              >
-                                {formatSubmissionStatus(submission.status)}
-                              </span>
-                            </td>
-                            <td className={styles.actionCell}>
-                              <SubmissionActions
-                                submission={submission}
-                                updating={
-                                  updatingSubmissionId === submission.id
-                                }
-                                onUpdateStatus={handleUpdateSubmissionStatus}
-                              />
-                            </td>
-                          </>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-
-          {activeTab === "broken_links" && (
-            <div className={styles.tableWrapper}>
-              {loading ? (
-                <div className={styles.loading}>Loading broken links...</div>
-              ) : brokenLinks.length === 0 ? (
-                <div className={styles.emptyCell}>No broken links found.</div>
-              ) : (
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>Type</th>
-                      <th>Name</th>
-                      <th>Instagram</th>
-                      <th>Status</th>
-                      <th>Error</th>
-                      <th>Last Checked</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {brokenLinks.map((link, idx) => (
-                      <tr key={`${link.entity_type}-${link.entity_id}-${idx}`}>
-                        <td className={styles.nameCell}>
-                          {link.entity_type === "artist" ? "Artist" : "Shop"}
-                        </td>
-                        <td className={styles.nameCell}>{link.entity_name}</td>
-                        <td className={styles.instagramCell}>
-                          <a
-                            href={`https://instagram.com/${link.instagram_handle.replace("@", "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.link}
-                          >
-                            @{link.instagram_handle.replace("@", "")}
-                          </a>
-                        </td>
-                        <td>
-                          <span
-                            className={styles.statusBadge}
-                            data-status="broken"
-                          >
-                            {link.status_code ?? "N/A"}
-                          </span>
-                        </td>
-                        <td className={styles.detailsCell}>
-                          {link.error_message || "—"}
-                        </td>
-                        <td>
-                          {new Date(link.checked_at).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-
-          {activeTab !== "artists" &&
-            activeTab !== "shops" &&
-            activeTab !== "cities" &&
-            activeTab !== "countries" &&
-            activeTab !== "new_artists" &&
-            activeTab !== "bugs" &&
-            activeTab !== "broken_links" && (
-              <div className={styles.comingSoon}>
-                <p>Coming soon: {activeTab} table view</p>
-              </div>
-            )}
+  const renderPanelView = () => {
+    if (editingArtistId && formData) {
+      const secondary = artistLocations
+        .filter(l => !l.is_primary)
+        .map(l => [l.city_name, l.state_name].filter(Boolean).join(", "))
+        .join(" · ");
+      return (
+        <div className={styles.viewList}>
+          {viewRow("Name", formData.name)}
+          {viewRow("Instagram", formData.instagram_handle)}
+          {viewRow("Gender", formData.gender)}
+          {viewRow("URL", formData.url)}
+          {viewRow("Contact", formData.contact)}
+          {viewRow("City", cityLabel(formData.city_id))}
+          {viewRow("Shop", shopLabel(formData.shop_id))}
+          {viewRow("Traveling", formData.is_traveling ? "Yes" : "No")}
+          {viewRow("Secondary locations", secondary)}
         </div>
-      </div>
+      );
+    }
+    if (editingShopId && shopFormData) {
+      return (
+        <div className={styles.viewList}>
+          {viewRow("Shop name", shopFormData.shop_name)}
+          {viewRow("Instagram", shopFormData.instagram_handle)}
+          {viewRow("Address", shopFormData.address)}
+          {viewRow("Contact", shopFormData.contact)}
+          {viewRow("Phone", shopFormData.phone_number)}
+          {viewRow("Website", shopFormData.website_url)}
+          {viewRow("City", cityLabel(shopFormData.city_id))}
+        </div>
+      );
+    }
+    if (editingCityId && cityFormData) {
+      return (
+        <div className={styles.viewList}>
+          {viewRow("City name", cityFormData.city_name)}
+          {viewRow("State", stateLabel(cityFormData.state_id))}
+        </div>
+      );
+    }
+    if (editingCountryId && countryFormData) {
+      return (
+        <div className={styles.viewList}>
+          {viewRow("Country name", countryFormData.country_name)}
+          {viewRow("Continent", countryFormData.continent)}
+        </div>
+      );
+    }
+    return null;
+  };
 
-      {/* Edit Modal - portaled to body so it appears on top and works from any tab */}
-      {isModalOpen &&
-        createPortal(
-          <div className={styles.modalOverlay} onClick={handleCloseModal}>
-            <div className={styles.modal} onClick={e => e.stopPropagation()}>
-              <div className={styles.modalHeader}>
-                <h2 className={styles.modalTitle}>
-                  {editingArtistId
-                    ? "Edit Artist"
-                    : editingShopId
-                      ? "Edit Shop"
-                      : editingCityId
-                        ? "Edit City"
-                        : editingCountryId
-                          ? "Edit Country"
-                          : "Edit"}
-                </h2>
-                <button
-                  className={styles.modalClose}
-                  onClick={handleCloseModal}
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className={styles.modalContent}>
+  const renderPanelBody = () => {
+    if (editingArtistId && loadingArtist) {
+      return <div className={styles.loading}>Loading artist data...</div>;
+    }
+    if (editingShopId && loadingShop) {
+      return <div className={styles.loading}>Loading shop data...</div>;
+    }
+    if (panelMode === "view") return renderPanelView();
+    return (
+      <div className={styles.editForms}>
                 {editingArtistId && loadingArtist ? (
                   <div className={styles.loading}>Loading artist data...</div>
                 ) : editingShopId && loadingShop ? (
@@ -2383,9 +1764,27 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                     </form>
                   </>
                 ) : null}
-              </div>
+      </div>
+    );
+  };
 
-              <div className={styles.modalFooter}>
+  const renderPanelFooter = () => {
+    if ((editingArtistId && loadingArtist) || (editingShopId && loadingShop)) {
+      return null;
+    }
+    if (panelMode === "view") {
+      return (
+        <button
+          type="button"
+          className={styles.saveButton}
+          onClick={() => setPanelMode("edit")}
+        >
+          Edit
+        </button>
+      );
+    }
+    return (
+      <div className={styles.panelFooterInner}>
                 <div className={styles.modalFooterLeft}>
                   {!confirmingDelete ? (
                     <button
@@ -2447,11 +1846,693 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                     </button>
                   )}
                 </div>
-              </div>
-            </div>
-          </div>,
-          document.body
+      </div>
+    );
+  };
+
+  return (
+    <div className={styles.pageContainer}>
+      <div className={styles.mainCol} ref={rootRef}>
+        <div className={styles.container}>
+        {embeddedTab && (
+          <h1 className={styles.title}>{EMBEDDED_TITLES[embeddedTab]}</h1>
         )}
+        {!embeddedTab && (
+          <>
+            <h1 className={styles.title}>ALL DATA</h1>
+
+            {/* Tabs */}
+            <Tabs
+              className={styles.dataTabs}
+              items={[
+                { id: "artists", label: "Artists" },
+                { id: "shops", label: "Shops" },
+                { id: "cities", label: "Cities" },
+                { id: "countries", label: "Countries" },
+              ]}
+              activeTab={activeTab}
+              onTabChange={tabId => handleTabChange(tabId as TabType)}
+            />
+          </>
+        )}
+
+        {/* Search Bar */}
+        {(activeTab === "artists" ||
+          activeTab === "shops" ||
+          activeTab === "cities" ||
+          activeTab === "countries") &&
+          !loading && (
+            <div className={styles.searchContainer}>
+              <div className={styles.searchInputWrapper}>
+                <SearchIcon className={styles.searchIcon} aria-hidden />
+                <Input
+                  type="text"
+                  placeholder={
+                    activeTab === "artists"
+                      ? "Search artists by name, Instagram, location, shop, or ID..."
+                      : activeTab === "shops"
+                        ? "Search shops by name, Instagram, location, address, or ID..."
+                        : activeTab === "cities"
+                          ? "Search cities by name, state, or country..."
+                          : "Search countries by name or ID..."
+                  }
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className={styles.searchInput}
+                />
+              </div>
+              {searchQuery && (
+                <span className={styles.resultCount}>
+                  {activeTab === "artists"
+                    ? `${filteredAndSortedArtists.length} of ${artists.length} artists`
+                    : activeTab === "shops"
+                      ? `${filteredAndSortedShops.length} of ${allShops.length} shops`
+                      : activeTab === "cities"
+                        ? `${filteredAndSortedCities.length} of ${cities.length} cities`
+                        : `${filteredAndSortedCountries.length} of ${countries.length} countries`}
+                </span>
+              )}
+            </div>
+          )}
+
+        {/* Content */}
+        <div className={styles.content}>
+          {error && (
+            <MessageWithRetry
+              type={error.type}
+              text={error.text}
+              onRetry={handleRetry}
+              retryLoading={loading}
+            />
+          )}
+
+          {activeTab === "artists" && (
+            <div className={styles.tableWrapper}>
+              {loading ? (
+                <div className={styles.loading}>Loading artists...</div>
+              ) : (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("id")}
+                      >
+                        ID {getSortIcon("id")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("name")}
+                      >
+                        Name {getSortIcon("name")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("instagram_handle")}
+                      >
+                        Instagram {getSortIcon("instagram_handle")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("location")}
+                      >
+                        Location {getSortIcon("location")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("shop_name")}
+                      >
+                        Shop {getSortIcon("shop_name")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("is_traveling")}
+                      >
+                        Traveling {getSortIcon("is_traveling")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAndSortedArtists.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className={styles.emptyCell}>
+                          {searchQuery
+                            ? "No artists match your search"
+                            : "No artists found"}
+                        </td>
+                      </tr>
+                    ) : (
+                      pageSlice(filteredAndSortedArtists).map(artist => (
+                        <tr
+                          key={artist.id}
+                          className={styles.clickableRow}
+                          onClick={() => handleEditClick(artist.id)}
+                        >
+                          <td className={styles.idCell}>{artist.id}</td>
+                          <td className={styles.nameCell}>{artist.name}</td>
+                          <td className={styles.instagramCell}>
+                            {artist.instagram_handle ? (
+                              <a
+                                href={`https://instagram.com/${artist.instagram_handle.replace("@", "")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={styles.link}
+                                onClick={e => e.stopPropagation()}
+                              >
+                                {artist.instagram_handle}
+                              </a>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td className={styles.locationCell}>
+                            {formatLocation(artist)}
+                          </td>
+                          <td className={styles.shopCell}>
+                            {artist.shop_name || "—"}
+                          </td>
+                          <td className={styles.travelingCell}>
+                            {artist.is_traveling ? "✓" : "—"}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {activeTab === "shops" && (
+            <div className={styles.tableWrapper}>
+              {loading ? (
+                <div className={styles.loading}>Loading shops...</div>
+              ) : (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("id")}
+                      >
+                        ID {getSortIcon("id")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("shop_name")}
+                      >
+                        Shop Name {getSortIcon("shop_name")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("instagram_handle")}
+                      >
+                        Instagram {getSortIcon("instagram_handle")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("location")}
+                      >
+                        Location {getSortIcon("location")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("address")}
+                      >
+                        Address {getSortIcon("address")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("shop_artist_count")}
+                      >
+                        Artists {getSortIcon("shop_artist_count")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAndSortedShops.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className={styles.emptyCell}>
+                          {searchQuery
+                            ? "No shops match your search"
+                            : "No shops found"}
+                        </td>
+                      </tr>
+                    ) : (
+                      pageSlice(filteredAndSortedShops).map(shop => (
+                        <tr
+                          key={shop.id}
+                          className={styles.clickableRow}
+                          onClick={() => handleEditShopClick(shop.id)}
+                        >
+                          <td className={styles.idCell}>{shop.id}</td>
+                          <td className={styles.nameCell}>{shop.shop_name}</td>
+                          <td className={styles.instagramCell}>
+                            {shop.instagram_handle ? (
+                              <a
+                                href={`https://instagram.com/${shop.instagram_handle.replace("@", "")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={styles.link}
+                                onClick={e => e.stopPropagation()}
+                              >
+                                {shop.instagram_handle}
+                              </a>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td className={styles.locationCell}>
+                            {formatLocation(shop)}
+                          </td>
+                          <td className={styles.shopCell}>
+                            {shop.address || "—"}
+                          </td>
+                          <td className={styles.numCell}>
+                            {artistCountByShop.get(
+                              (shop.shop_name || "").trim().toLowerCase()
+                            ) || 0}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {activeTab === "cities" && (
+            <div className={styles.tableWrapper}>
+              {dataLoading ? (
+                <div className={styles.loading}>Loading cities...</div>
+              ) : (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("id")}
+                      >
+                        ID {getSortIcon("id")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("city_name")}
+                      >
+                        City {getSortIcon("city_name")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("state")}
+                      >
+                        State {getSortIcon("state")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("country")}
+                      >
+                        Country {getSortIcon("country")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("city_artist_count")}
+                      >
+                        Artists {getSortIcon("city_artist_count")}
+                      </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("city_shop_count")}
+                      >
+                        Shops {getSortIcon("city_shop_count")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAndSortedCities.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className={styles.emptyCell}>
+                          {searchQuery
+                            ? "No cities match your search"
+                            : "No cities found"}
+                        </td>
+                      </tr>
+                    ) : (
+                      pageSlice(filteredAndSortedCities).map(city => (
+                        <tr
+                          key={city.id}
+                          className={styles.clickableRow}
+                          onClick={() => handleEditCityClick(city)}
+                        >
+                          <td className={styles.idCell}>{city.id}</td>
+                          <td className={styles.nameCell}>{city.city_name}</td>
+                          <td className={styles.locationCell}>
+                            {city.state_name || "—"}
+                          </td>
+                          <td className={styles.locationCell}>
+                            {city.country_name || "—"}
+                          </td>
+                          <td className={styles.numCell}>
+                            {artistCountByCity.get(
+                              cityCountKey(
+                                city.city_name,
+                                city.state_name,
+                                city.country_name
+                              )
+                            ) || 0}
+                          </td>
+                          <td className={styles.numCell}>
+                            {shopCountByCity.get(
+                              cityCountKey(
+                                city.city_name,
+                                city.state_name,
+                                city.country_name
+                              )
+                            ) || 0}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {activeTab === "countries" && (
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th
+                      className={styles.sortableHeader}
+                      onClick={() => handleSort("id")}
+                    >
+                      ID {getSortIcon("id")}
+                    </th>
+                    <th
+                      className={styles.sortableHeader}
+                      onClick={() => handleSort("country_name")}
+                    >
+                      Country {getSortIcon("country_name")}
+                    </th>
+                    <th
+                      className={styles.sortableHeader}
+                      onClick={() => handleSort("continent")}
+                    >
+                      Continent {getSortIcon("continent")}
+                    </th>
+                    <th
+                      className={styles.sortableHeader}
+                      onClick={() => handleSort("country_city_count")}
+                    >
+                      Cities {getSortIcon("country_city_count")}
+                    </th>
+                    <th
+                      className={styles.sortableHeader}
+                      onClick={() => handleSort("country_artist_count")}
+                    >
+                      Artists {getSortIcon("country_artist_count")}
+                    </th>
+                    <th
+                      className={styles.sortableHeader}
+                      onClick={() => handleSort("country_shop_count")}
+                    >
+                      Shops {getSortIcon("country_shop_count")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAndSortedCountries.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className={styles.emptyCell}>
+                        {searchQuery
+                          ? "No countries match your search"
+                          : "No countries found"}
+                      </td>
+                    </tr>
+                  ) : (
+                    pageSlice(filteredAndSortedCountries).map(country => (
+                      <tr
+                        key={country.id}
+                        className={styles.clickableRow}
+                        onClick={() => handleEditCountryClick(country)}
+                      >
+                        <td className={styles.idCell}>{country.id}</td>
+                        <td className={styles.nameCell}>
+                          {country.country_name}
+                        </td>
+                        <td className={styles.locationCell}>
+                          {country.continent || "—"}
+                        </td>
+                        <td className={styles.numCell}>
+                          {cityCountByCountry.get(
+                            countryCountKey(country.country_name)
+                          ) || 0}
+                        </td>
+                        <td className={styles.numCell}>
+                          {artistCountByCountry.get(
+                            countryCountKey(country.country_name)
+                          ) || 0}
+                        </td>
+                        <td className={styles.numCell}>
+                          {shopCountByCountry.get(
+                            countryCountKey(country.country_name)
+                          ) || 0}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {PAGINATED_TABS.includes(activeTab) && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(activeFilteredCount / PAGE_SIZE)}
+              onPageChange={setCurrentPage}
+            />
+          )}
+
+          {(activeTab === "new_artists" || activeTab === "bugs") && (
+            <div className={styles.tableWrapper}>
+              {loading ? (
+                <div className={styles.loading}>Loading submissions...</div>
+              ) : error ? (
+                <Message type="error" text={error.text} />
+              ) : visibleSubmissions.length === 0 ? (
+                <div className={styles.emptyCell}>
+                  No {activeTab === "new_artists" ? "new artist" : "bug"}{" "}
+                  submissions yet.
+                </div>
+              ) : (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th className={styles.idCell}>ID</th>
+                      <th className={styles.nameCell}>Date</th>
+                      {activeTab === "new_artists" ? (
+                        <>
+                          <th>Name</th>
+                          <th>Instagram</th>
+                          <th>Location</th>
+                          <th>Email</th>
+                          <th>Status</th>
+                          <th className={styles.actionHeader} aria-label="Actions"></th>
+                        </>
+                      ) : (
+                        <>
+                          <th>Entity</th>
+                          <th>Changes</th>
+                          <th>Details</th>
+                          <th>Email</th>
+                          <th>Status</th>
+                          <th className={styles.actionHeader} aria-label="Actions"></th>
+                        </>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleSubmissions.map(submission => (
+                      <tr key={submission.id}>
+                        <td className={styles.idCell}>
+                          {submission.id.substring(0, 8)}...
+                        </td>
+                        <td className={styles.nameCell}>
+                          {new Date(submission.created_at).toLocaleDateString()}
+                        </td>
+                        {activeTab === "new_artists" ? (
+                          <>
+                            <td>{submission.artist_name || "—"}</td>
+                            <td>
+                              {submission.artist_instagram_handle ? (
+                                <a
+                                  href={`https://instagram.com/${submission.artist_instagram_handle}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={styles.link}
+                                >
+                                  @{submission.artist_instagram_handle}
+                                </a>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td>
+                              {[
+                                submission.artist_city,
+                                submission.artist_state,
+                                submission.artist_country,
+                              ]
+                                .filter(Boolean)
+                                .join(", ") || "—"}
+                            </td>
+                            <td>{submission.reporter_email || "—"}</td>
+                            <td>
+                              <span
+                                className={styles.statusBadge}
+                                data-status={submission.status}
+                              >
+                                {formatSubmissionStatus(submission.status)}
+                              </span>
+                            </td>
+                            <td className={styles.actionCell}>
+                              <SubmissionActions
+                                submission={submission}
+                                updating={
+                                  updatingSubmissionId === submission.id
+                                }
+                                onUpdateStatus={handleUpdateSubmissionStatus}
+                              />
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td>
+                              {submission.entity_type} #{submission.entity_id}
+                            </td>
+                            <td className={styles.detailsCell}>
+                              {submission.details ? (
+                                <div className={styles.detailsPreview}>
+                                  {submission.details.substring(0, 100)}
+                                  {submission.details.length > 100 ? "..." : ""}
+                                </div>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td className={styles.detailsCell}>
+                              {submission.details || "—"}
+                            </td>
+                            <td>{submission.reporter_email || "—"}</td>
+                            <td>
+                              <span
+                                className={styles.statusBadge}
+                                data-status={submission.status}
+                              >
+                                {formatSubmissionStatus(submission.status)}
+                              </span>
+                            </td>
+                            <td className={styles.actionCell}>
+                              <SubmissionActions
+                                submission={submission}
+                                updating={
+                                  updatingSubmissionId === submission.id
+                                }
+                                onUpdateStatus={handleUpdateSubmissionStatus}
+                              />
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {activeTab === "broken_links" && (
+            <div className={styles.tableWrapper}>
+              {loading ? (
+                <div className={styles.loading}>Loading broken links...</div>
+              ) : brokenLinks.length === 0 ? (
+                <div className={styles.emptyCell}>No broken links found.</div>
+              ) : (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Name</th>
+                      <th>Instagram</th>
+                      <th>Status</th>
+                      <th>Error</th>
+                      <th>Last Checked</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {brokenLinks.map((link, idx) => (
+                      <tr key={`${link.entity_type}-${link.entity_id}-${idx}`}>
+                        <td className={styles.nameCell}>
+                          {link.entity_type === "artist" ? "Artist" : "Shop"}
+                        </td>
+                        <td className={styles.nameCell}>{link.entity_name}</td>
+                        <td className={styles.instagramCell}>
+                          <a
+                            href={`https://instagram.com/${link.instagram_handle.replace("@", "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.link}
+                          >
+                            @{link.instagram_handle.replace("@", "")}
+                          </a>
+                        </td>
+                        <td>
+                          <span
+                            className={styles.statusBadge}
+                            data-status="broken"
+                          >
+                            {link.status_code ?? "N/A"}
+                          </span>
+                        </td>
+                        <td className={styles.detailsCell}>
+                          {link.error_message || "—"}
+                        </td>
+                        <td>
+                          {new Date(link.checked_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {activeTab !== "artists" &&
+            activeTab !== "shops" &&
+            activeTab !== "cities" &&
+            activeTab !== "countries" &&
+            activeTab !== "new_artists" &&
+            activeTab !== "bugs" &&
+            activeTab !== "broken_links" && (
+              <div className={styles.comingSoon}>
+                <p>Coming soon: {activeTab} table view</p>
+              </div>
+            )}
+        </div>
+      </div>
+      </div>
+      <AdminDetailPanel
+        open={isModalOpen}
+        title={panelTitle}
+        onClose={handleCloseModal}
+        footer={renderPanelFooter()}
+      >
+        {renderPanelBody()}
+      </AdminDetailPanel>
     </div>
   );
 }
