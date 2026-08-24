@@ -42,7 +42,7 @@ function buildEntries(badges: {
   return [
     {
       to: "/admin/analytics",
-      label: "All Analytics",
+      label: "Analytics",
       icon: icon(
         <>
           <line x1="4" y1="16" x2="4" y2="10" />
