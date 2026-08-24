@@ -1261,6 +1261,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
 
             {/* Tabs */}
             <Tabs
+              className={styles.dataTabs}
               items={[
                 { id: "artists", label: "Artists" },
                 { id: "shops", label: "Shops" },
@@ -1367,7 +1368,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                       >
                         Traveling {getSortIcon("is_traveling")}
                       </th>
-                      <th className={styles.actionHeader}>Actions</th>
+                      <th className={styles.actionHeader} aria-label="Actions"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1468,7 +1469,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                       >
                         Artists {getSortIcon("shop_artist_count")}
                       </th>
-                      <th className={styles.actionHeader}>Actions</th>
+                      <th className={styles.actionHeader} aria-label="Actions"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1571,7 +1572,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                       >
                         Shops {getSortIcon("city_shop_count")}
                       </th>
-                      <th className={styles.actionHeader}>Actions</th>
+                      <th className={styles.actionHeader} aria-label="Actions"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1671,7 +1672,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                     >
                       Shops {getSortIcon("country_shop_count")}
                     </th>
-                    <th className={styles.actionHeader}>Actions</th>
+                    <th className={styles.actionHeader} aria-label="Actions"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1757,7 +1758,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                           <th>Location</th>
                           <th>Email</th>
                           <th>Status</th>
-                          <th className={styles.actionHeader}>Actions</th>
+                          <th className={styles.actionHeader} aria-label="Actions"></th>
                         </>
                       ) : (
                         <>
@@ -1766,7 +1767,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                           <th>Details</th>
                           <th>Email</th>
                           <th>Status</th>
-                          <th className={styles.actionHeader}>Actions</th>
+                          <th className={styles.actionHeader} aria-label="Actions"></th>
                         </>
                       )}
                     </tr>

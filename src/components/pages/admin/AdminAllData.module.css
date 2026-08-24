@@ -27,7 +27,7 @@
 
 .title {
   font-size: 2rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   color: var(--color-text-primary);
 }
 
@@ -130,8 +130,12 @@
   cursor: not-allowed;
 }
 
+.dataTabs {
+  margin-bottom: 0.75rem;
+}
+
 .searchContainer {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -212,7 +216,7 @@
 }
 
 .table th {
-  padding: 1rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   text-align: left;
   font-weight: 600;
   color: var(--color-text-primary);
@@ -251,22 +255,22 @@
 }
 
 .table td {
-  padding: 0.875rem 0.75rem;
+  padding: 0.4rem 0.75rem;
   color: var(--color-text-secondary);
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 .idCell {
   font-weight: 500;
   color: var(--color-text-tertiary);
   font-size: 0.85rem;
-  width: 60px;
+  width: 44px;
 }
 
 .nameCell {
   font-weight: 600;
   color: var(--color-text-primary);
-  min-width: 150px;
+  min-width: 120px;
 }
 
 .instagramCell {
@@ -303,33 +307,31 @@
 }
 
 .actionHeader {
-  width: 100px;
-  text-align: center;
+  width: 56px;
+  text-align: left;
 }
 
 .actionCell {
-  text-align: center;
-  width: 100px;
-  padding: 0.5rem;
+  text-align: left;
+  width: 56px;
+  padding: 0.4rem 0.75rem;
 }
 
 .editButton {
-  padding: 0.5rem 1rem;
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  color: var(--color-text-primary);
-  font-size: 0.85rem;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: inherit;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .editButton:hover {
-  background-color: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
+  background: none;
+  color: var(--color-primary);
+  text-decoration: underline;
 }
 
 .editButton:active {
@@ -783,7 +785,7 @@
 
   .table th,
   .table td {
-    padding: 0.75rem 0.5rem;
+    padding: 0.35rem 0.5rem;
   }
 }
 
