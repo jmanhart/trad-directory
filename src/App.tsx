@@ -41,6 +41,7 @@ import { ToastProvider } from "./components/common/Toast";
 import { usePageTracking } from "./hooks/usePageTracking";
 import ScatteredSvgBackground from "./components/ScatteredSvgBackground/ScatteredSvgBackground";
 import { AdminUiProvider } from "./components/pages/admin/AdminUiContext";
+import useIsMobile from "./hooks/useIsMobile";
 
 // Enhanced App component with Sentry error boundary
 const SentryApp = Sentry.withErrorBoundary(App, {
@@ -84,6 +85,7 @@ function AppContent() {
   const isAdminRoute = location.pathname.startsWith("/admin");
   const isAdminLayoutRoute =
     isAdminRoute && !LEGACY_ADMIN_PATHS.includes(location.pathname);
+  const isMobile = useIsMobile();
   const showFooter =
     !isAdminRoute && !PAGES_WITHOUT_FOOTER.includes(location.pathname);
   const [isAddArtistModalOpen, setIsAddArtistModalOpen] = useState(false);
@@ -95,7 +97,7 @@ function AppContent() {
     <div className={`${styles.appContainer} ${isAdminLayoutRoute ? styles.adminContainer : ""}`}>
       <ScatteredSvgBackground preset="default" intensity="subtle" />
       {isAdminRoute ? (
-        <AdminTopAppBar />
+        (isMobile || !isAdminLayoutRoute) && <AdminTopAppBar />
       ) : (
         <>
           {!isHomePage && !isMapPage && <TopAppBar />}
@@ -134,21 +136,22 @@ function AppContent() {
               element={<Navigate to="/admin/analytics" replace />}
             />
             <Route path="analytics" element={<AllAnalyticsPage />} />
+            <Route path="data" element={<AdminAllData />} />
             <Route
               path="artists"
-              element={<AdminAllData embeddedTab="artists" />}
+              element={<Navigate to="/admin/data?tab=artists" replace />}
             />
             <Route
               path="shops"
-              element={<AdminAllData embeddedTab="shops" />}
+              element={<Navigate to="/admin/data?tab=shops" replace />}
             />
             <Route
               path="cities"
-              element={<AdminAllData embeddedTab="cities" />}
+              element={<Navigate to="/admin/data?tab=cities" replace />}
             />
             <Route
               path="countries"
-              element={<AdminAllData embeddedTab="countries" />}
+              element={<Navigate to="/admin/data?tab=countries" replace />}
             />
             <Route
               path="submissions"

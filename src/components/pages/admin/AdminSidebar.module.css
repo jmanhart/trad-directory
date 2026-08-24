@@ -3,8 +3,9 @@
 .aside {
   flex-shrink: 0;
   height: 100%;
-  overflow-x: hidden;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
   background: var(--color-surface);
   border-right: 1px solid var(--color-border);
   transition: width 0.2s ease;
@@ -63,4 +64,78 @@
   font-size: 0.7rem;
   font-weight: 600;
   flex-shrink: 0;
+}
+
+.sideHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  height: 56px;
+  padding: 0 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.rail .sideHeader {
+  justify-content: center;
+  padding: 0;
+}
+
+.logoLink {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.logoImg {
+  height: 28px;
+  width: auto;
+  display: block;
+}
+
+.collapseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.collapseBtn:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
+}
+
+.collapseBtn svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.navScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.5rem 0;
+}
+
+.sideFooter {
+  padding: 0.75rem;
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.rail .sideFooter {
+  padding: 0.75rem 0.5rem;
 }

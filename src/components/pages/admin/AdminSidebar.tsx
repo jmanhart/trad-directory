@@ -1,8 +1,10 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import SideNav from "../../common/SideNav/SideNav";
 import { useAdminDataContext } from "./AdminDataProvider";
 import styles from "./AdminSidebar.module.css";
 import navStyles from "../../common/SideNav/SideNav.module.css";
+import { useAdminUi } from "./AdminUiContext";
+import AdminAddMenu from "./AdminAddMenu";
 
 interface AdminSidebarProps {
   isMobile: boolean;
@@ -40,7 +42,7 @@ function buildEntries(badges: {
   return [
     {
       to: "/admin/analytics",
-      label: "All Analytics",
+      label: "Analytics",
       icon: icon(
         <>
           <line x1="4" y1="16" x2="4" y2="10" />
@@ -50,42 +52,13 @@ function buildEntries(badges: {
       ),
     },
     {
-      to: "/admin/artists",
-      label: "All Artists",
+      to: "/admin/data",
+      label: "Data",
       icon: icon(
         <>
-          <circle cx="10" cy="7" r="3" />
-          <path d="M4 17c0-3 3-5 6-5s6 2 6 5" />
-        </>
-      ),
-    },
-    {
-      to: "/admin/shops",
-      label: "All Shops",
-      icon: icon(
-        <>
-          <path d="M3 8l1-4h12l1 4" />
-          <path d="M4 8v8h12V8" />
-        </>
-      ),
-    },
-    {
-      to: "/admin/cities",
-      label: "All Cities",
-      icon: icon(
-        <>
-          <rect x="4" y="8" width="4" height="9" />
-          <rect x="12" y="5" width="4" height="12" />
-        </>
-      ),
-    },
-    {
-      to: "/admin/countries",
-      label: "All Countries",
-      icon: icon(
-        <>
-          <circle cx="10" cy="10" r="7" />
-          <path d="M3 10h14M10 3a12 12 0 010 14M10 3a12 12 0 000 14" />
+          <rect x="3" y="4" width="14" height="12" rx="1" />
+          <line x1="3" y1="8" x2="17" y2="8" />
+          <line x1="9" y1="8" x2="9" y2="16" />
         </>
       ),
     },
@@ -153,6 +126,7 @@ function NavItems({
         <li key={entry.to}>
           <NavLink
             to={entry.to}
+            end
             onClick={onNavigate}
             title={showLabels ? undefined : entry.label}
             className={({ isActive }) =>
@@ -185,6 +159,7 @@ export default function AdminSidebar({
 }: AdminSidebarProps) {
   const { badges } = useAdminDataContext();
   const entries = buildEntries(badges);
+  const { toggleSidebar } = useAdminUi();
 
   // Mobile: reuse the shared overlay drawer (same pattern as /map).
   if (isMobile) {
@@ -200,7 +175,58 @@ export default function AdminSidebar({
     <aside
       className={`${styles.aside} ${open ? styles.expanded : styles.rail}`}
     >
-      <NavItems entries={entries} showLabels={open} />
+      <div className={styles.sideHeader}>
+        {open && (
+          <Link
+            to="/admin/analytics"
+            className={styles.logoLink}
+            aria-label="Trad Directory admin"
+          >
+            <img
+              src="/TRAD-NEW-SMALL.svg"
+              alt="Trad Directory"
+              className={styles.logoImg}
+            />
+          </Link>
+        )}
+        <button
+          type="button"
+          className={styles.collapseBtn}
+          onClick={toggleSidebar}
+          aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+          title={open ? "Collapse" : "Expand"}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {open ? (
+              <>
+                <polyline points="14 6 8 12 14 18" />
+                <line x1="8" y1="12" x2="20" y2="12" />
+              </>
+            ) : (
+              <>
+                <line x1="4" y1="7" x2="20" y2="7" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="17" x2="20" y2="17" />
+              </>
+            )}
+          </svg>
+        </button>
+      </div>
+      <div className={styles.navScroll}>
+        <NavItems entries={entries} showLabels={open} />
+      </div>
+      <div className={styles.sideFooter}>
+        <AdminAddMenu collapsed={!open} />
+      </div>
     </aside>
   );
 }
