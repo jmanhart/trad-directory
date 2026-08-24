@@ -889,8 +889,22 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     return sortDirection === "asc" ? "↑" : "↓";
   };
 
+  const clearPanelSelection = () => {
+    setEditingArtistId(null);
+    setEditingShopId(null);
+    setEditingCityId(null);
+    setEditingCountryId(null);
+    setFormData(null);
+    setShopFormData(null);
+    setCityFormData(null);
+    setCountryFormData(null);
+    setArtistLocations([]);
+    setConfirmingDelete(false);
+  };
+
   const handleEditCityClick = (city: City) => {
     setSaveError(null);
+    clearPanelSelection();
     const formData: CityFormData = {
       city_name: city.city_name,
       state_id: city.state_id?.toString() || "",
@@ -908,6 +922,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     continent: string | null;
   }) => {
     setSaveError(null);
+    clearPanelSelection();
     const formData: CountryFormData = {
       country_name: country.country_name,
       continent: country.continent || "",
@@ -988,11 +1003,14 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
   };
 
   const handleEditClick = async (artistId: number) => {
+    setSaveError(null);
+    clearPanelSelection();
+    setEditingArtistId(artistId);
+    setPanelMode("view");
+    setIsModalOpen(true);
+    setLoadingArtist(true);
     try {
-      setLoadingArtist(true);
-      setSaveError(null);
       const artist = await fetchArtistById(artistId);
-
       const formData: ArtistFormData = {
         name: artist.name || "",
         instagram_handle: artist.instagram_handle || "",
@@ -1003,13 +1021,9 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
         shop_id: artist.shop_id?.toString() || "",
         is_traveling: artist.is_traveling || false,
       };
-
       setFormData(formData);
       setOriginalFormData(JSON.parse(JSON.stringify(formData)));
       setArtistLocations(artist.locations || []);
-      setEditingArtistId(artistId);
-      setIsModalOpen(true);
-      setPanelMode("view");
     } catch (err) {
       setSaveError(
         err instanceof Error ? err.message : "Failed to load artist data"
@@ -1092,11 +1106,14 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
   ]);
 
   const handleEditShopClick = async (shopId: number) => {
+    setSaveError(null);
+    clearPanelSelection();
+    setEditingShopId(shopId);
+    setPanelMode("view");
+    setIsModalOpen(true);
+    setLoadingShop(true);
     try {
-      setLoadingShop(true);
-      setSaveError(null);
       const shop = await fetchShopById(shopId);
-
       const formData: ShopFormData = {
         shop_name: shop.shop_name || "",
         instagram_handle: shop.instagram_handle || "",
@@ -1106,12 +1123,8 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
         website_url: shop.website_url || "",
         city_id: shop.city_id?.toString() || "",
       };
-
       setShopFormData(formData);
       setOriginalShopFormData(JSON.parse(JSON.stringify(formData)));
-      setEditingShopId(shopId);
-      setIsModalOpen(true);
-      setPanelMode("view");
     } catch (err) {
       setSaveError(
         err instanceof Error ? err.message : "Failed to load shop data"
