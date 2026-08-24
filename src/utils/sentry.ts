@@ -38,6 +38,11 @@ export function initSentry() {
     // Optimize for free plan - keep more breadcrumbs
     maxBreadcrumbs: 100,
 
+    // Send console.log/warn/error to Sentry as structured logs. Production
+    // only, so local dev console noise never ships. Pairs with the
+    // consoleLoggingIntegration below.
+    enableLogs: import.meta.env.PROD,
+
     // Integrations for enhanced monitoring
     integrations: [
       // Browser tracing integration (required for profiling)
@@ -49,6 +54,8 @@ export function initSentry() {
         maskAllText: false,
         blockAllMedia: false,
       }),
+      // Forward console.log/warn/error to Sentry logs (needs enableLogs above)
+      Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }),
     ],
 
     // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
