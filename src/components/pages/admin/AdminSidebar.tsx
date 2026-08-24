@@ -126,6 +126,7 @@ function NavItems({
         <li key={entry.to}>
           <NavLink
             to={entry.to}
+            end
             onClick={onNavigate}
             title={showLabels ? undefined : entry.label}
             className={({ isActive }) =>

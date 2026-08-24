@@ -143,6 +143,15 @@ const NUMERIC_SORT_COLUMNS = new Set<SortColumn>([
   "country_shop_count",
 ]);
 
+// Each entity tab sorts by a sensible default; reset on tab switch so a sort
+// column from another entity doesn't linger and leave the table unsorted.
+const DEFAULT_SORT: Partial<Record<TabType, SortColumn>> = {
+  artists: "id",
+  shops: "id",
+  cities: "city_name",
+  countries: "country_name",
+};
+
 function formatSubmissionStatus(status: string | undefined): string {
   if (!status) return "—";
   const labels: Record<string, string> = {
@@ -253,6 +262,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
   useEffect(() => {
     if (embeddedTab) setActiveTab(embeddedTab);
     else if (isDataTab(urlTab)) setActiveTab(urlTab);
+    else setActiveTab("artists");
   }, [embeddedTab, urlTab]);
 
   // In the /admin/data view, reflect the active tab in the URL for deep links.
@@ -355,6 +365,11 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
   }, []);
 
   useEffect(() => {
+    const defaultSort = DEFAULT_SORT[activeTab];
+    if (defaultSort) {
+      setSortColumn(defaultSort);
+      setSortDirection("asc");
+    }
     // Reload data when switching tabs if needed
     if (activeTab === "artists" && artists.length === 0) {
       loadArtists();
