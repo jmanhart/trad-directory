@@ -10,7 +10,7 @@
 .container {
   width: 100%;
   margin: 0;
-  padding: 2rem;
+  padding: 0 2rem 2rem;
   box-sizing: border-box;
 }
 
@@ -80,8 +80,11 @@
 }
 
 .title {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  margin: 0 0 1rem;
   font-size: 2rem;
-  margin-bottom: 1rem;
   color: var(--color-text-primary);
 }
 
