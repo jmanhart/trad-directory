@@ -94,10 +94,11 @@ export default async function handler(
       process.env.SUPABASE_SERVICE_KEY
     );
 
-    // Clamp the window; the client only ever asks for up to 90.
+    // Clamp the window. The client fetches up to 400 days (the year view
+    // buckets ~13 months); cap defends against arbitrary query values.
     const rawDays = req.query?.days;
     const rawDay = Array.isArray(rawDays) ? rawDays[0] : rawDays;
-    const days = Math.min(Math.max(parseInt(rawDay ?? "", 10) || 90, 1), 365);
+    const days = Math.min(Math.max(parseInt(rawDay ?? "", 10) || 90, 1), 400);
     const cutoffIso = new Date(Date.now() - days * 86_400_000).toISOString();
 
     const keys = Object.keys(TABLES);

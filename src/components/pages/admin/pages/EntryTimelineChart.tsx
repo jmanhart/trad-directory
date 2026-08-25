@@ -6,6 +6,14 @@ import type { EntityKey, Range, Mode } from "./timelineControls";
 
 const baseUrl = import.meta.env.VITE_API_URL || "/api";
 
+const MONTH_ABBR = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+// Year view shows 12 whole months plus the current partial month -> 13 ticks.
+const YEAR_MONTHS = 13;
+
 const EMPTY_ENTRIES: Record<EntityKey, string[]> = {
   artists: [],
   shops: [],
@@ -62,7 +70,7 @@ function readTotals(data: unknown): Record<EntityKey, number> {
   return out;
 }
 
-/** Bucket ISO timestamps into per-day counts over the last `days`, local time. */
+/** Daily buckets over the last `days`, local time, labeled "MMM D". */
 function bucketDaily(
   isoDates: string[],
   days: number
@@ -84,7 +92,36 @@ function bucketDaily(
   for (let i = 0; i < days; i++) {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
-    labels[i] = `${d.getMonth() + 1}/${d.getDate()}`;
+    labels[i] = `${MONTH_ABBR[d.getMonth()]} ${d.getDate()}`;
+  }
+  return { labels, counts };
+}
+
+/** Monthly buckets over the last `months`, labeled "MMM 'YY" so the year
+ * view's axis reads month-based. */
+function bucketMonthly(
+  isoDates: string[],
+  months: number
+): { labels: string[]; counts: number[] } {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+
+  const counts = new Array<number>(months).fill(0);
+  for (const iso of isoDates) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) continue;
+    const idx =
+      (d.getFullYear() - start.getFullYear()) * 12 +
+      (d.getMonth() - start.getMonth());
+    if (idx >= 0 && idx < months) counts[idx] += 1;
+  }
+
+  const labels = new Array<string>(months);
+  for (let i = 0; i < months; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+    labels[i] = `${MONTH_ABBR[d.getMonth()]} '${String(d.getFullYear()).slice(
+      2
+    )}`;
   }
   return { labels, counts };
 }
@@ -111,41 +148,32 @@ export default function EntryTimelineChart({
   const [entries, setEntries] = useState<Record<EntityKey, string[]>>(
     EMPTY_ENTRIES
   );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [totals, setTotals] = useState<Record<EntityKey, number>>(EMPTY_TOTALS);
 
   const chartElRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ECharts | null>(null);
 
-  // Fetch the full 365-day (max) window on mount, then silently refresh when
-  // the tab regains focus. Refetching re-buckets against the current date, so
-  // counts stay current and a page left open across midnight rolls forward.
+  // Fetch a ~13-month window on mount (days=400 fully covers 12 months for the
+  // year view), then silently refresh when the tab regains focus. Refetching
+  // re-buckets against the current date so counts stay current across midnight.
   useEffect(() => {
     let cancelled = false;
-    const load = (silent = false) => {
-      if (!silent) setLoading(true);
-      fetch(`${baseUrl}/entryTimeline?days=365`)
+    const load = () => {
+      fetch(`${baseUrl}/entryTimeline?days=400`)
         .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
         .then((data: unknown) => {
           if (cancelled) return;
           setEntries(readEntries(data));
           setTotals(readTotals(data));
-          setError(null);
         })
         .catch((e: unknown) => {
-          // Keep the last good chart on a background refresh failure.
-          if (!cancelled && !silent) {
-            setError(e instanceof Error ? e.message : "load failed");
-          }
-        })
-        .finally(() => {
-          if (!cancelled && !silent) setLoading(false);
+          // Keep the last good chart on failure.
+          if (!cancelled) console.error("entryTimeline load failed", e);
         });
     };
     load();
     const onVisible = () => {
-      if (document.visibilityState === "visible") load(true);
+      if (document.visibilityState === "visible") load();
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => {
@@ -154,13 +182,16 @@ export default function EntryTimelineChart({
     };
   }, []);
 
-  const { labels, counts, cumulative, windowTotal, entityTotal } = useMemo(() => {
-    const { labels, counts } = bucketDaily(entries[entity], range);
+  const { labels, counts, cumulative } = useMemo(() => {
+    const { labels, counts } =
+      range === 365
+        ? bucketMonthly(entries[entity], YEAR_MONTHS)
+        : bucketDaily(entries[entity], range);
     const windowTotal = counts.reduce((a, b) => a + b, 0);
     const entityTotal = totals[entity] || windowTotal;
     // Cumulative "total to date": start from the count that existed before the
-    // window (entityTotal minus what was added within it) and add each day, so
-    // the line ends at the entity's true current total.
+    // window (entityTotal minus what was added within it) and add each bucket,
+    // so the line ends at the entity's true current total.
     const baseline = Math.max(entityTotal - windowTotal, 0);
     const cumulative: number[] = [];
     let running = baseline;
@@ -168,7 +199,7 @@ export default function EntryTimelineChart({
       running += c;
       cumulative.push(running);
     }
-    return { labels, counts, cumulative, windowTotal, entityTotal };
+    return { labels, counts, cumulative };
   }, [entries, totals, entity, range]);
 
   // Create the chart instance once, keep it sized to the container.
@@ -241,17 +272,8 @@ export default function EntryTimelineChart({
     chart.setOption(option, true);
   }, [labels, counts, cumulative, mode]);
 
-  const subtitle = loading
-    ? "Loading…"
-    : error
-      ? "Couldn't load the timeline"
-      : mode === "total"
-        ? `${entityTotal.toLocaleString()} ${entity} total`
-        : `${windowTotal.toLocaleString()} ${entity} added in the last ${range} days`;
-
   return (
     <div className={styles.chartWrap}>
-      <p className={styles.subtitle}>{subtitle}</p>
       <div className={styles.chart} ref={chartElRef} />
     </div>
   );
