@@ -60,6 +60,7 @@
   cursor: pointer;
   font-size: 0.8125rem;
   transition: background-color 0.15s ease, color 0.15s ease;
+  border-radius: 0;
 }
 
 .rangeBtn + .rangeBtn {
@@ -74,6 +75,22 @@
 .rangeActive:hover {
   background-color: var(--color-primary);
   color: #fff;
+}
+
+/* Kill the browser's default (blue) focus outline on click; the active state
+   already reads clearly. Keep an accessible ring for keyboard users only,
+   inset so it stays within the group's clipped corners. */
+.rangeBtn:focus {
+  outline: none;
+}
+
+.rangeBtn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.rangeActive:focus-visible {
+  outline-color: #fff;
 }
 
 .chart {
