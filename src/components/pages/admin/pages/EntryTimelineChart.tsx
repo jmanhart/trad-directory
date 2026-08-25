@@ -2,25 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts";
 import type { ECharts, EChartsOption } from "echarts";
 import styles from "./EntryTimelineChart.module.css";
-
-type EntityKey = "artists" | "shops" | "cities" | "countries";
-
-const ENTITIES: { key: EntityKey; label: string }[] = [
-  { key: "artists", label: "Artists" },
-  { key: "shops", label: "Shops" },
-  { key: "cities", label: "Cities" },
-  { key: "countries", label: "Countries" },
-];
-
-const RANGES = [7, 30, 90, 365] as const;
-type Range = (typeof RANGES)[number];
-
-const RANGE_LABELS: Record<Range, string> = {
-  7: "7d",
-  30: "30d",
-  90: "90d",
-  365: "1y",
-};
+import type { EntityKey, Range, Mode } from "./timelineControls";
 
 const baseUrl = import.meta.env.VITE_API_URL || "/api";
 
@@ -37,12 +19,6 @@ const EMPTY_TOTALS: Record<EntityKey, number> = {
   cities: 0,
   countries: 0,
 };
-
-type Mode = "new" | "total";
-const MODES: { key: Mode; label: string }[] = [
-  { key: "new", label: "New" },
-  { key: "total", label: "Total" },
-];
 
 /** Coerce an unknown value into a string[] (drops non-strings). */
 function stringArray(value: unknown): string[] {
@@ -121,16 +97,23 @@ function cssVar(name: string, fallback: string): string {
   return value || fallback;
 }
 
-export default function EntryTimelineChart() {
-  const [entity, setEntity] = useState<EntityKey>("artists");
-  const [range, setRange] = useState<Range>(30);
+interface EntryTimelineChartProps {
+  entity: EntityKey;
+  range: Range;
+  mode: Mode;
+}
+
+export default function EntryTimelineChart({
+  entity,
+  range,
+  mode,
+}: EntryTimelineChartProps) {
   const [entries, setEntries] = useState<Record<EntityKey, string[]>>(
     EMPTY_ENTRIES
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totals, setTotals] = useState<Record<EntityKey, number>>(EMPTY_TOTALS);
-  const [mode, setMode] = useState<Mode>("new");
 
   const chartElRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ECharts | null>(null);
@@ -202,7 +185,7 @@ export default function EntryTimelineChart() {
     };
   }, []);
 
-  // Push data/theme into the chart whenever the bars change.
+  // Push data/theme into the chart whenever the series changes.
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
@@ -267,56 +250,9 @@ export default function EntryTimelineChart() {
         : `${windowTotal.toLocaleString()} ${entity} added in the last ${range} days`;
 
   return (
-    <section className={styles.card}>
-      <header className={styles.header}>
-        <div>
-          <h2 className={styles.title}>Entries Over Time</h2>
-          <p className={styles.subtitle}>{subtitle}</p>
-        </div>
-        <div className={styles.controls}>
-          <select
-            className={styles.select}
-            value={entity}
-            onChange={e => setEntity(e.target.value as EntityKey)}
-            aria-label="Entity type"
-          >
-            {ENTITIES.map(o => (
-              <option key={o.key} value={o.key}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-          <div className={styles.ranges} role="group" aria-label="Time range">
-            {RANGES.map(r => (
-              <button
-                key={r}
-                type="button"
-                className={`${styles.rangeBtn} ${
-                  range === r ? styles.rangeActive : ""
-                }`}
-                onClick={() => setRange(r)}
-              >
-                {RANGE_LABELS[r]}
-              </button>
-            ))}
-          </div>
-          <div className={styles.ranges} role="group" aria-label="Series mode">
-            {MODES.map(m => (
-              <button
-                key={m.key}
-                type="button"
-                className={`${styles.rangeBtn} ${
-                  mode === m.key ? styles.rangeActive : ""
-                }`}
-                onClick={() => setMode(m.key)}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
+    <div className={styles.chartWrap}>
+      <p className={styles.subtitle}>{subtitle}</p>
       <div className={styles.chart} ref={chartElRef} />
-    </section>
+    </div>
   );
 }
