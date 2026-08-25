@@ -12,8 +12,15 @@ const ENTITIES: { key: EntityKey; label: string }[] = [
   { key: "countries", label: "Countries" },
 ];
 
-const RANGES = [7, 30, 90] as const;
+const RANGES = [7, 30, 90, 365] as const;
 type Range = (typeof RANGES)[number];
+
+const RANGE_LABELS: Record<Range, string> = {
+  7: "7d",
+  30: "30d",
+  90: "90d",
+  365: "1y",
+};
 
 const baseUrl = import.meta.env.VITE_API_URL || "/api";
 
@@ -96,14 +103,14 @@ export default function EntryTimelineChart() {
   const chartElRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ECharts | null>(null);
 
-  // Fetch the 90-day window on mount, then silently refresh when the tab
-  // regains focus. Refetching re-buckets against the current date, so counts
-  // stay current and a page left open across midnight rolls forward.
+  // Fetch the full 365-day (max) window on mount, then silently refresh when
+  // the tab regains focus. Refetching re-buckets against the current date, so
+  // counts stay current and a page left open across midnight rolls forward.
   useEffect(() => {
     let cancelled = false;
     const load = (silent = false) => {
       if (!silent) setLoading(true);
-      fetch(`${baseUrl}/entryTimeline?days=90`)
+      fetch(`${baseUrl}/entryTimeline?days=365`)
         .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
         .then((data: unknown) => {
           if (cancelled) return;
@@ -234,7 +241,7 @@ export default function EntryTimelineChart() {
                 }`}
                 onClick={() => setRange(r)}
               >
-                {r}d
+                {RANGE_LABELS[r]}
               </button>
             ))}
           </div>
