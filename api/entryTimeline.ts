@@ -51,6 +51,20 @@ async function collectCreatedAt(
   return out;
 }
 
+async function countAll(
+  supabase: SupabaseClient,
+  table: string
+): Promise<number> {
+  const { count, error } = await supabase
+    .from(table)
+    .select("*", { count: "exact", head: true });
+  if (error) {
+    console.error(`entryTimeline: ${table} count failed`, error.message);
+    return 0;
+  }
+  return count ?? 0;
+}
+
 export default async function handler(
   req: TimelineRequest,
   res: TimelineResponse
@@ -80,21 +94,27 @@ export default async function handler(
       process.env.SUPABASE_SERVICE_KEY
     );
 
-    // Clamp the window; the client only ever asks for up to 90.
+    // Clamp the window. The client fetches up to 400 days (the year view
+    // buckets ~13 months); cap defends against arbitrary query values.
     const rawDays = req.query?.days;
     const rawDay = Array.isArray(rawDays) ? rawDays[0] : rawDays;
-    const days = Math.min(Math.max(parseInt(rawDay ?? "", 10) || 90, 1), 365);
+    const days = Math.min(Math.max(parseInt(rawDay ?? "", 10) || 90, 1), 400);
     const cutoffIso = new Date(Date.now() - days * 86_400_000).toISOString();
 
     const keys = Object.keys(TABLES);
-    const lists = await Promise.all(
-      keys.map(k => collectCreatedAt(supabase, TABLES[k], cutoffIso))
-    );
+    const [lists, totalCounts] = await Promise.all([
+      Promise.all(keys.map(k => collectCreatedAt(supabase, TABLES[k], cutoffIso))),
+      Promise.all(keys.map(k => countAll(supabase, TABLES[k]))),
+    ]);
 
     const entries: Record<string, string[]> = {};
-    keys.forEach((k, i) => (entries[k] = lists[i]));
+    const totals: Record<string, number> = {};
+    keys.forEach((k, i) => {
+      entries[k] = lists[i];
+      totals[k] = totalCounts[i];
+    });
 
-    res.status(200).json({ days, entries });
+    res.status(200).json({ days, entries, totals });
   } catch (error) {
     console.error("Unexpected error:", error);
     res.status(500).json({ error: "Internal server error" });

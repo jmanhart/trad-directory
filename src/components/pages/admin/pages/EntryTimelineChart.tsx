@@ -2,26 +2,30 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts";
 import type { ECharts, EChartsOption } from "echarts";
 import styles from "./EntryTimelineChart.module.css";
-
-type EntityKey = "artists" | "shops" | "cities" | "countries";
-
-const ENTITIES: { key: EntityKey; label: string }[] = [
-  { key: "artists", label: "Artists" },
-  { key: "shops", label: "Shops" },
-  { key: "cities", label: "Cities" },
-  { key: "countries", label: "Countries" },
-];
-
-const RANGES = [7, 30, 90] as const;
-type Range = (typeof RANGES)[number];
+import type { EntityKey, Range, Mode } from "./timelineControls";
 
 const baseUrl = import.meta.env.VITE_API_URL || "/api";
+
+const MONTH_ABBR = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+// Year view shows 12 whole months plus the current partial month -> 13 ticks.
+const YEAR_MONTHS = 13;
 
 const EMPTY_ENTRIES: Record<EntityKey, string[]> = {
   artists: [],
   shops: [],
   cities: [],
   countries: [],
+};
+
+const EMPTY_TOTALS: Record<EntityKey, number> = {
+  artists: 0,
+  shops: 0,
+  cities: 0,
+  countries: 0,
 };
 
 /** Coerce an unknown value into a string[] (drops non-strings). */
@@ -49,7 +53,24 @@ function readEntries(data: unknown): Record<EntityKey, string[]> {
   return out;
 }
 
-/** Bucket ISO timestamps into per-day counts over the last `days`, local time. */
+/** Defensively read the { totals: { <entity>: number } } payload. */
+function readTotals(data: unknown): Record<EntityKey, number> {
+  const out: Record<EntityKey, number> = { ...EMPTY_TOTALS };
+  if (!data || typeof data !== "object" || !("totals" in data)) return out;
+  const totals = data.totals;
+  if (!totals || typeof totals !== "object") return out;
+  if ("artists" in totals && typeof totals.artists === "number")
+    out.artists = totals.artists;
+  if ("shops" in totals && typeof totals.shops === "number")
+    out.shops = totals.shops;
+  if ("cities" in totals && typeof totals.cities === "number")
+    out.cities = totals.cities;
+  if ("countries" in totals && typeof totals.countries === "number")
+    out.countries = totals.countries;
+  return out;
+}
+
+/** Daily buckets over the last `days`, local time, labeled "MMM D". */
 function bucketDaily(
   isoDates: string[],
   days: number
@@ -71,7 +92,36 @@ function bucketDaily(
   for (let i = 0; i < days; i++) {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
-    labels[i] = `${d.getMonth() + 1}/${d.getDate()}`;
+    labels[i] = `${MONTH_ABBR[d.getMonth()]} ${d.getDate()}`;
+  }
+  return { labels, counts };
+}
+
+/** Monthly buckets over the last `months`, labeled "MMM 'YY" so the year
+ * view's axis reads month-based. */
+function bucketMonthly(
+  isoDates: string[],
+  months: number
+): { labels: string[]; counts: number[] } {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+
+  const counts = new Array<number>(months).fill(0);
+  for (const iso of isoDates) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) continue;
+    const idx =
+      (d.getFullYear() - start.getFullYear()) * 12 +
+      (d.getMonth() - start.getMonth());
+    if (idx >= 0 && idx < months) counts[idx] += 1;
+  }
+
+  const labels = new Array<string>(months);
+  for (let i = 0; i < months; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+    labels[i] = `${MONTH_ABBR[d.getMonth()]} '${String(d.getFullYear()).slice(
+      2
+    )}`;
   }
   return { labels, counts };
 }
@@ -84,45 +134,46 @@ function cssVar(name: string, fallback: string): string {
   return value || fallback;
 }
 
-export default function EntryTimelineChart() {
-  const [entity, setEntity] = useState<EntityKey>("artists");
-  const [range, setRange] = useState<Range>(30);
+interface EntryTimelineChartProps {
+  entity: EntityKey;
+  range: Range;
+  mode: Mode;
+}
+
+export default function EntryTimelineChart({
+  entity,
+  range,
+  mode,
+}: EntryTimelineChartProps) {
   const [entries, setEntries] = useState<Record<EntityKey, string[]>>(
     EMPTY_ENTRIES
   );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [totals, setTotals] = useState<Record<EntityKey, number>>(EMPTY_TOTALS);
 
   const chartElRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ECharts | null>(null);
 
-  // Fetch the 90-day window on mount, then silently refresh when the tab
-  // regains focus. Refetching re-buckets against the current date, so counts
-  // stay current and a page left open across midnight rolls forward.
+  // Fetch a ~13-month window on mount (days=400 fully covers 12 months for the
+  // year view), then silently refresh when the tab regains focus. Refetching
+  // re-buckets against the current date so counts stay current across midnight.
   useEffect(() => {
     let cancelled = false;
-    const load = (silent = false) => {
-      if (!silent) setLoading(true);
-      fetch(`${baseUrl}/entryTimeline?days=90`)
+    const load = () => {
+      fetch(`${baseUrl}/entryTimeline?days=400`)
         .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
         .then((data: unknown) => {
           if (cancelled) return;
           setEntries(readEntries(data));
-          setError(null);
+          setTotals(readTotals(data));
         })
         .catch((e: unknown) => {
-          // Keep the last good chart on a background refresh failure.
-          if (!cancelled && !silent) {
-            setError(e instanceof Error ? e.message : "load failed");
-          }
-        })
-        .finally(() => {
-          if (!cancelled && !silent) setLoading(false);
+          // Keep the last good chart on failure.
+          if (!cancelled) console.error("entryTimeline load failed", e);
         });
     };
     load();
     const onVisible = () => {
-      if (document.visibilityState === "visible") load(true);
+      if (document.visibilityState === "visible") load();
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => {
@@ -131,13 +182,25 @@ export default function EntryTimelineChart() {
     };
   }, []);
 
-  const { labels, counts, total } = useMemo(() => {
-    const bucketed = bucketDaily(entries[entity], range);
-    return {
-      ...bucketed,
-      total: bucketed.counts.reduce((a, b) => a + b, 0),
-    };
-  }, [entries, entity, range]);
+  const { labels, counts, cumulative } = useMemo(() => {
+    const { labels, counts } =
+      range === 365
+        ? bucketMonthly(entries[entity], YEAR_MONTHS)
+        : bucketDaily(entries[entity], range);
+    const windowTotal = counts.reduce((a, b) => a + b, 0);
+    const entityTotal = totals[entity] || windowTotal;
+    // Cumulative "total to date": start from the count that existed before the
+    // window (entityTotal minus what was added within it) and add each bucket,
+    // so the line ends at the entity's true current total.
+    const baseline = Math.max(entityTotal - windowTotal, 0);
+    const cumulative: number[] = [];
+    let running = baseline;
+    for (const c of counts) {
+      running += c;
+      cumulative.push(running);
+    }
+    return { labels, counts, cumulative };
+  }, [entries, totals, entity, range]);
 
   // Create the chart instance once, keep it sized to the container.
   useEffect(() => {
@@ -153,7 +216,7 @@ export default function EntryTimelineChart() {
     };
   }, []);
 
-  // Push data/theme into the chart whenever the bars change.
+  // Push data/theme into the chart whenever the series changes.
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
@@ -163,11 +226,12 @@ export default function EntryTimelineChart() {
     const surface = cssVar("--color-surface", "#ffffff");
     const textPrimary = cssVar("--color-text-primary", "#141414");
 
+    const isTotal = mode === "total";
     const option: EChartsOption = {
       grid: { top: 12, right: 12, bottom: 24, left: 8, containLabel: true },
       tooltip: {
         trigger: "axis",
-        axisPointer: { type: "shadow" },
+        axisPointer: { type: isTotal ? "line" : "shadow" },
         backgroundColor: surface,
         borderColor: border,
         textStyle: { color: textPrimary },
@@ -186,61 +250,31 @@ export default function EntryTimelineChart() {
         axisLabel: { color: textSecondary, fontSize: 11 },
       },
       series: [
-        {
-          type: "bar",
-          name: "Entries",
-          data: counts,
-          itemStyle: { color: primary, borderRadius: [3, 3, 0, 0] },
-          barMaxWidth: 22,
-        },
+        isTotal
+          ? {
+              type: "line",
+              name: "Total",
+              data: cumulative,
+              smooth: true,
+              showSymbol: false,
+              lineStyle: { color: primary, width: 2 },
+              areaStyle: { color: primary, opacity: 0.1 },
+            }
+          : {
+              type: "bar",
+              name: "Entries",
+              data: counts,
+              itemStyle: { color: primary, borderRadius: [3, 3, 0, 0] },
+              barMaxWidth: 22,
+            },
       ],
     };
     chart.setOption(option, true);
-  }, [labels, counts]);
-
-  const subtitle = loading
-    ? "Loading…"
-    : error
-      ? "Couldn't load the timeline"
-      : `${total.toLocaleString()} ${entity} added in the last ${range} days`;
+  }, [labels, counts, cumulative, mode]);
 
   return (
-    <section className={styles.card}>
-      <header className={styles.header}>
-        <div>
-          <h2 className={styles.title}>Entries Over Time</h2>
-          <p className={styles.subtitle}>{subtitle}</p>
-        </div>
-        <div className={styles.controls}>
-          <select
-            className={styles.select}
-            value={entity}
-            onChange={e => setEntity(e.target.value as EntityKey)}
-            aria-label="Entity type"
-          >
-            {ENTITIES.map(o => (
-              <option key={o.key} value={o.key}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-          <div className={styles.ranges} role="group" aria-label="Time range">
-            {RANGES.map(r => (
-              <button
-                key={r}
-                type="button"
-                className={`${styles.rangeBtn} ${
-                  range === r ? styles.rangeActive : ""
-                }`}
-                onClick={() => setRange(r)}
-              >
-                {r}d
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
+    <div className={styles.chartWrap}>
       <div className={styles.chart} ref={chartElRef} />
-    </section>
+    </div>
   );
 }
