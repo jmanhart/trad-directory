@@ -51,6 +51,20 @@ async function collectCreatedAt(
   return out;
 }
 
+async function countAll(
+  supabase: SupabaseClient,
+  table: string
+): Promise<number> {
+  const { count, error } = await supabase
+    .from(table)
+    .select("*", { count: "exact", head: true });
+  if (error) {
+    console.error(`entryTimeline: ${table} count failed`, error.message);
+    return 0;
+  }
+  return count ?? 0;
+}
+
 export default async function handler(
   req: TimelineRequest,
   res: TimelineResponse
@@ -87,14 +101,19 @@ export default async function handler(
     const cutoffIso = new Date(Date.now() - days * 86_400_000).toISOString();
 
     const keys = Object.keys(TABLES);
-    const lists = await Promise.all(
-      keys.map(k => collectCreatedAt(supabase, TABLES[k], cutoffIso))
-    );
+    const [lists, totalCounts] = await Promise.all([
+      Promise.all(keys.map(k => collectCreatedAt(supabase, TABLES[k], cutoffIso))),
+      Promise.all(keys.map(k => countAll(supabase, TABLES[k]))),
+    ]);
 
     const entries: Record<string, string[]> = {};
-    keys.forEach((k, i) => (entries[k] = lists[i]));
+    const totals: Record<string, number> = {};
+    keys.forEach((k, i) => {
+      entries[k] = lists[i];
+      totals[k] = totalCounts[i];
+    });
 
-    res.status(200).json({ days, entries });
+    res.status(200).json({ days, entries, totals });
   } catch (error) {
     console.error("Unexpected error:", error);
     res.status(500).json({ error: "Internal server error" });

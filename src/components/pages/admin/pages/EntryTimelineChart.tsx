@@ -31,6 +31,19 @@ const EMPTY_ENTRIES: Record<EntityKey, string[]> = {
   countries: [],
 };
 
+const EMPTY_TOTALS: Record<EntityKey, number> = {
+  artists: 0,
+  shops: 0,
+  cities: 0,
+  countries: 0,
+};
+
+type Mode = "new" | "total";
+const MODES: { key: Mode; label: string }[] = [
+  { key: "new", label: "New" },
+  { key: "total", label: "Total" },
+];
+
 /** Coerce an unknown value into a string[] (drops non-strings). */
 function stringArray(value: unknown): string[] {
   return Array.isArray(value)
@@ -53,6 +66,23 @@ function readEntries(data: unknown): Record<EntityKey, string[]> {
   if ("shops" in entries) out.shops = stringArray(entries.shops);
   if ("cities" in entries) out.cities = stringArray(entries.cities);
   if ("countries" in entries) out.countries = stringArray(entries.countries);
+  return out;
+}
+
+/** Defensively read the { totals: { <entity>: number } } payload. */
+function readTotals(data: unknown): Record<EntityKey, number> {
+  const out: Record<EntityKey, number> = { ...EMPTY_TOTALS };
+  if (!data || typeof data !== "object" || !("totals" in data)) return out;
+  const totals = data.totals;
+  if (!totals || typeof totals !== "object") return out;
+  if ("artists" in totals && typeof totals.artists === "number")
+    out.artists = totals.artists;
+  if ("shops" in totals && typeof totals.shops === "number")
+    out.shops = totals.shops;
+  if ("cities" in totals && typeof totals.cities === "number")
+    out.cities = totals.cities;
+  if ("countries" in totals && typeof totals.countries === "number")
+    out.countries = totals.countries;
   return out;
 }
 
@@ -99,6 +129,8 @@ export default function EntryTimelineChart() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [totals, setTotals] = useState<Record<EntityKey, number>>(EMPTY_TOTALS);
+  const [mode, setMode] = useState<Mode>("new");
 
   const chartElRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ECharts | null>(null);
@@ -115,6 +147,7 @@ export default function EntryTimelineChart() {
         .then((data: unknown) => {
           if (cancelled) return;
           setEntries(readEntries(data));
+          setTotals(readTotals(data));
           setError(null);
         })
         .catch((e: unknown) => {
@@ -138,13 +171,22 @@ export default function EntryTimelineChart() {
     };
   }, []);
 
-  const { labels, counts, total } = useMemo(() => {
-    const bucketed = bucketDaily(entries[entity], range);
-    return {
-      ...bucketed,
-      total: bucketed.counts.reduce((a, b) => a + b, 0),
-    };
-  }, [entries, entity, range]);
+  const { labels, counts, cumulative, windowTotal, entityTotal } = useMemo(() => {
+    const { labels, counts } = bucketDaily(entries[entity], range);
+    const windowTotal = counts.reduce((a, b) => a + b, 0);
+    const entityTotal = totals[entity] || windowTotal;
+    // Cumulative "total to date": start from the count that existed before the
+    // window (entityTotal minus what was added within it) and add each day, so
+    // the line ends at the entity's true current total.
+    const baseline = Math.max(entityTotal - windowTotal, 0);
+    const cumulative: number[] = [];
+    let running = baseline;
+    for (const c of counts) {
+      running += c;
+      cumulative.push(running);
+    }
+    return { labels, counts, cumulative, windowTotal, entityTotal };
+  }, [entries, totals, entity, range]);
 
   // Create the chart instance once, keep it sized to the container.
   useEffect(() => {
@@ -170,11 +212,12 @@ export default function EntryTimelineChart() {
     const surface = cssVar("--color-surface", "#ffffff");
     const textPrimary = cssVar("--color-text-primary", "#141414");
 
+    const isTotal = mode === "total";
     const option: EChartsOption = {
       grid: { top: 12, right: 12, bottom: 24, left: 8, containLabel: true },
       tooltip: {
         trigger: "axis",
-        axisPointer: { type: "shadow" },
+        axisPointer: { type: isTotal ? "line" : "shadow" },
         backgroundColor: surface,
         borderColor: border,
         textStyle: { color: textPrimary },
@@ -193,23 +236,35 @@ export default function EntryTimelineChart() {
         axisLabel: { color: textSecondary, fontSize: 11 },
       },
       series: [
-        {
-          type: "bar",
-          name: "Entries",
-          data: counts,
-          itemStyle: { color: primary, borderRadius: [3, 3, 0, 0] },
-          barMaxWidth: 22,
-        },
+        isTotal
+          ? {
+              type: "line",
+              name: "Total",
+              data: cumulative,
+              smooth: true,
+              showSymbol: false,
+              lineStyle: { color: primary, width: 2 },
+              areaStyle: { color: primary, opacity: 0.1 },
+            }
+          : {
+              type: "bar",
+              name: "Entries",
+              data: counts,
+              itemStyle: { color: primary, borderRadius: [3, 3, 0, 0] },
+              barMaxWidth: 22,
+            },
       ],
     };
     chart.setOption(option, true);
-  }, [labels, counts]);
+  }, [labels, counts, cumulative, mode]);
 
   const subtitle = loading
     ? "Loading…"
     : error
       ? "Couldn't load the timeline"
-      : `${total.toLocaleString()} ${entity} added in the last ${range} days`;
+      : mode === "total"
+        ? `${entityTotal.toLocaleString()} ${entity} total`
+        : `${windowTotal.toLocaleString()} ${entity} added in the last ${range} days`;
 
   return (
     <section className={styles.card}>
@@ -242,6 +297,20 @@ export default function EntryTimelineChart() {
                 onClick={() => setRange(r)}
               >
                 {RANGE_LABELS[r]}
+              </button>
+            ))}
+          </div>
+          <div className={styles.ranges} role="group" aria-label="Series mode">
+            {MODES.map(m => (
+              <button
+                key={m.key}
+                type="button"
+                className={`${styles.rangeBtn} ${
+                  mode === m.key ? styles.rangeActive : ""
+                }`}
+                onClick={() => setMode(m.key)}
+              >
+                {m.label}
               </button>
             ))}
           </div>
