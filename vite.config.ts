@@ -8,6 +8,12 @@ import path from "path";
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Isolate the optimize-deps cache per instance. `npm run dev:admin` runs two
+  // Vite servers (app on 5173, plus the one vercel dev spawns on 3001); sharing
+  // one cache makes each see the other's fingerprint as "config changed" and
+  // re-optimize in a loop -> 504 Outdated Optimize Dep. The API server sets
+  // VITE_CACHE_DIR to a separate path so the two never fight.
+  cacheDir: process.env.VITE_CACHE_DIR || "node_modules/.vite",
   plugins: [
     react(),
     svgr(),
