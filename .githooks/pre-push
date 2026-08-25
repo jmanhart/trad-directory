@@ -1,0 +1,22 @@
+#!/bin/sh
+# Cross-repo API-sync gate (API-owner side).
+#
+# This repo OWNS the /api handlers; renaming, removing, or changing the method
+# of one can silently 404 the Trad Directory Chrome extension. Run the
+# extension's poison-pill check before every push. Skips cleanly when the
+# extension repo isn't checked out next to this one (e.g. CI, or a Vercel build).
+#
+# Enabled per-clone with:  git config core.hooksPath .githooks
+
+root="$(git rev-parse --show-toplevel)"
+check="$root/../td-chrome-ext/scripts/check-api-sync.js"
+
+if [ ! -f "$check" ]; then
+  echo "api-sync: sibling ../td-chrome-ext not found — skipping check." >&2
+  exit 0
+fi
+
+if ! node "$check"; then
+  echo "api-sync: check failed — an /api change broke the extension client. Push blocked." >&2
+  exit 1
+fi

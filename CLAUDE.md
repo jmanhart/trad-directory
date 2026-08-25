@@ -88,6 +88,15 @@ scripts/                 # Maintenance scripts (link checker, release)
 - Supabase Service Role Key for server-side elevated access
 - Error responses: `{ error: string }` with appropriate status codes
 
+## Downstream Clients
+
+`../td-chrome-ext` (the Trad Directory Chrome extension) is a client of this
+`/api` — no build step, no shared types, calls endpoints by URL from
+`lib/directory.js`. Renaming, removing, or changing the method/shape of any
+`api/*.ts` handler is a CROSS-REPO change. See `.omp/rules/api-sync.md`; the
+`.githooks/pre-push` gate runs `check-api-sync.js` on every push and blocks
+one that breaks the extension (missing handler or rejected method).
+
 ## Database
 
 **Main tables:** artists, tattoo_shops, cities, states, countries, artist_location (many-to-many), submissions, profiles, saved_artists, link_check_results
