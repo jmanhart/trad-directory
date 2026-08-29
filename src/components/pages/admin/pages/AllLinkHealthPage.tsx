@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import RecordEditor, { type EditorTarget } from "../RecordEditor";
 import {
   fetchLinkHealth,
   checkLink,
@@ -18,9 +18,6 @@ const FILTERS: Filter[] = [
   { key: "flagged", label: "Flagged", status: "dead,suspect" },
   { key: "dead", label: "Dead", status: "dead" },
   { key: "suspect", label: "Suspect", status: "suspect" },
-  { key: "unknown", label: "Unknown", status: "unknown" },
-  { key: "unchecked", label: "Unchecked", status: "unchecked" },
-  { key: "all", label: "All", status: "all" },
 ];
 
 const STATUS_LABEL: Record<string, string> = {
@@ -46,7 +43,7 @@ export default function AllLinkHealthPage() {
   const [justChecked, setJustChecked] = useState<Record<string, CheckLinkResult>>(
     {}
   );
-  const navigate = useNavigate();
+  const [editorTarget, setEditorTarget] = useState<EditorTarget | null>(null);
 
   const load = useCallback((f: Filter) => {
     setLoading(true);
@@ -165,9 +162,10 @@ export default function AllLinkHealthPage() {
                       <button
                         type="button"
                         onClick={() =>
-                          navigate(
-                            `/admin/data?tab=${r.entity_type === "artist" ? "artists" : "shops"}&edit=${r.entity_id}`
-                          )
+                          setEditorTarget({
+                            type: r.entity_type,
+                            id: r.entity_id,
+                          })
                         }
                       >
                         Edit
@@ -184,6 +182,12 @@ export default function AllLinkHealthPage() {
       {!loading && !error && rows.length === 0 && (
         <p className={styles.empty}>Nothing here — all clear.</p>
       )}
+      <RecordEditor
+        target={editorTarget}
+        onClose={() => setEditorTarget(null)}
+        onMutated={() => load(filter)}
+        overlay
+      />
     </div>
   );
 }

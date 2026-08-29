@@ -98,3 +98,23 @@
     z-index: 49;
   }
 }
+
+/* Forced overlay (opt-in via `overlay` prop) — used on pages without the
+   data-browser flex-row layout, e.g. the broken-links page. */
+.panelOverlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100dvh;
+  width: min(420px, 92vw);
+  z-index: 50;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.14);
+}
+
+.backdropOverlay {
+  display: block;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 49;
+}
