@@ -14,6 +14,13 @@ From the next tagged release onward this file is maintained automatically by
 [Conventional Commits](https://www.conventionalcommits.org/) — do not hand-edit
 released sections.
 
+## [0.3.1](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.3.0...tattoo-directory-v0.3.1) (2026-08-29)
+
+
+### Fixed
+
+* **api:** replace Promise.withResolvers with plain Promise for Node 20 ([#44](https://github.com/jmanhart/trad-directory/issues/44)) ([fb9aa5d](https://github.com/jmanhart/trad-directory/commit/fb9aa5df8242d7d1b910c328f11d6d6fda484a9c))
+
 ## [0.3.0](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.2.0...tattoo-directory-v0.3.0) (2026-08-29)
 
 
