@@ -246,8 +246,67 @@
   white-space: nowrap;
 }
 
+/* Consolidated ALL DATA view: sticky top bar holding the tabs (left) and a
+   compact search (right). Its single bottom border is the only divider and
+   lands at y=56 to align with the sidebar .sideHeader bottom border. */
+.dataHeaderBar {
+  box-sizing: border-box;
+  /* Full-bleed: cancel .container's 2rem side padding so the bar spans edge
+     to edge (no app-bg gap beside the white); re-inset content to align with
+     the table below. */
+  margin: 0 -2rem;
+  padding: 0 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Neutralize the shared Tabs' own border/margin so the bar owns the divider.
+   Bottom-align the tab row so the active-tab underline rides the bar edge. */
+.dataHeaderBar .dataTabs {
+  height: 100%;
+  margin-bottom: 0;
+  border-bottom: none;
+  align-items: flex-end;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Compact search that lives inside the bar on the right. */
+.searchContainerCompact {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.searchContainerCompact .searchInputWrapper {
+  flex: none;
+  width: 320px;
+  max-width: 320px;
+  padding: 0.4rem 0.9rem;
+}
+
+.searchContainerCompact .searchInput {
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
+}
+
 .content {
   width: 100%;
+}
+
+/* Comfortable breathing room between the sticky bar and the table. */
+.consolidated .content {
+  padding-top: 1.25rem;
 }
 
 .tableWrapper {
@@ -267,9 +326,30 @@
 
 .table thead {
   background-color: var(--color-background);
+}
+
+/* Column-header row sticks; box-shadow draws the divider reliably under
+   border-collapse (a plain border scrolls away on sticky cells). */
+.table thead th {
   position: sticky;
   top: 0;
   z-index: 10;
+  background: var(--color-surface);
+  box-shadow: inset 0 -2px 0 var(--color-border);
+}
+
+/* Consolidated view: pin the header row directly beneath the 56px header bar. */
+.consolidated .table thead th {
+  top: 56px;
+}
+
+/* .tableWrapper's overflow-x:auto forces overflow-y to a scroll context,
+   which would trap the sticky header inside the wrapper. In the consolidated
+   view let overflow resolve to .mainCol (the scroller) so the header pins.
+   The design collapses columns to avoid horizontal overflow, so dropping the
+   wrapper's own scroll is safe; wide tables fall back to .mainCol scrolling. */
+.consolidated .tableWrapper {
+  overflow: visible;
 }
 
 .table th {
