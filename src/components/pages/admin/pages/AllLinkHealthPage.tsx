@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   fetchLinkHealth,
   checkLink,
@@ -45,6 +46,7 @@ export default function AllLinkHealthPage() {
   const [justChecked, setJustChecked] = useState<Record<string, CheckLinkResult>>(
     {}
   );
+  const navigate = useNavigate();
 
   const load = useCallback((f: Filter) => {
     setLoading(true);
@@ -110,7 +112,6 @@ export default function AllLinkHealthPage() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Name</th>
                 <th>Instagram</th>
                 <th>Status</th>
                 <th>Last alive</th>
@@ -134,7 +135,6 @@ export default function AllLinkHealthPage() {
                     (r.status_code != null ? `HTTP ${r.status_code}` : "—");
                 return (
                   <tr key={key}>
-                    <td>{r.entity_name}</td>
                     <td>
                       <a
                         href={`https://www.instagram.com/${handle}/`}
@@ -155,8 +155,22 @@ export default function AllLinkHealthPage() {
                     <td>{fmtDate(checkedAt)}</td>
                     <td className={styles.detail}>{detail}</td>
                     <td className={styles.actions}>
-                      <button type="button" disabled={busy} onClick={() => runCheck(r)}>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => runCheck(r)}
+                      >
                         {busy ? "Checking…" : "Check Link"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            `/admin/data?tab=${r.entity_type === "artist" ? "artists" : "shops"}&edit=${r.entity_id}`
+                          )
+                        }
+                      >
+                        Edit
                       </button>
                     </td>
                   </tr>

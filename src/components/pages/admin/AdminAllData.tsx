@@ -1149,6 +1149,21 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     }
   };
 
+  // Deep-link from Link Health (/admin/data?tab=artists&edit=<id>): open that
+  // record's edit panel, then drop the param so it doesn't reopen on close.
+  useEffect(() => {
+    const editId = searchParams.get("edit");
+    if (!editId) return;
+    const id = parseInt(editId, 10);
+    const next = new URLSearchParams(searchParams);
+    next.delete("edit");
+    setSearchParams(next, { replace: true });
+    if (Number.isNaN(id)) return;
+    if (activeTab === "artists") handleEditClick(id);
+    else if (activeTab === "shops") handleEditShopClick(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, activeTab]);
+
   // Short cascade-impact hint shown in the delete confirmation.
   const deleteImpact = editingArtistId
     ? "Removes the artist and unlinks it from shops, locations, and saved lists."
