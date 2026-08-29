@@ -30,6 +30,7 @@ import AdminAddCountry from "./components/pages/admin/AdminAddCountry";
 import AdminAddArtistShopLink from "./components/pages/admin/AdminAddArtistShopLink";
 import AdminLayout from "./components/pages/admin/AdminLayout";
 import AllAnalyticsPage from "./components/pages/admin/pages/AllAnalyticsPage";
+import AllLinkHealthPage from "./components/pages/admin/pages/AllLinkHealthPage";
 import AdminNewAdding from "./components/pages/admin/AdminNewAdding";
 import AdminAllData from "./components/pages/admin/AdminAllData";
 import AdminDataBuilder from "./components/pages/admin/AdminDataBuilder";
@@ -158,10 +159,7 @@ function AppContent() {
               element={<AdminAllData embeddedTab="new_artists" />}
             />
             <Route path="bugs" element={<AdminAllData embeddedTab="bugs" />} />
-            <Route
-              path="broken-links"
-              element={<AdminAllData embeddedTab="broken_links" />}
-            />
+            <Route path="broken-links" element={<AllLinkHealthPage />} />
             <Route path="data-builder" element={<AdminDataBuilder />} />
           </Route>
           <Route

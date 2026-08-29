@@ -35,7 +35,7 @@
   "crons": [
     {
       "path": "/api/checkInstagramLinks",
-      "schedule": "*/15 2-6 * * *"
+      "schedule": "0 2-5 * * *"
     },
     {
       "path": "/api/backup",

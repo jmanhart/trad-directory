@@ -336,6 +336,33 @@ export default async function handler(req: any, res: any) {
       }
     }
 
+    // Seed link health as "unchecked" but not due for ~45 days: a hand-added
+    // handle was just eyeballed, so the checker shouldn't prioritise it — but
+    // we don't claim a verdict it never actually probed.
+    if (artistData.instagram_handle) {
+      const recheckIso = new Date(
+        Date.now() + 45 * 24 * 60 * 60 * 1000
+      ).toISOString();
+      const { error: healthError } = await supabase
+        .from("link_check_results")
+        .upsert(
+          {
+            entity_type: "artist",
+            entity_id: newArtist.id,
+            entity_name: data.name,
+            instagram_handle: artistData.instagram_handle,
+            status: "unchecked",
+            fail_streak: 0,
+            last_alive_at: null,
+            next_check_at: recheckIso,
+            is_broken: false,
+            checked_at: null,
+          },
+          { onConflict: "entity_type,entity_id" }
+        );
+      if (healthError) console.error("Link health seed error:", healthError);
+    }
+
     res.status(200).json({
       success: true,
       artist_id: newArtist.id,

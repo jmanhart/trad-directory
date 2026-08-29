@@ -25,10 +25,14 @@ import {
   deleteArtistLocation,
   deleteArtist,
   deleteShop,
+  fetchLinkStatuses,
+  checkLink,
   deleteCity,
   deleteCountry,
   type SubmissionStatus,
   type BrokenLinkResult,
+  type LinkStatusMaps,
+  type LinkStatusRec,
 } from "../../../services/adminApi";
 import { useAdminData } from "./useAdminData";
 import type { City } from "./adminTypes";
@@ -36,6 +40,109 @@ import { getCityDisplayName } from "./adminUtils";
 import SearchIcon from "../../../assets/icons/searchIcon";
 import styles from "./AdminAllData.module.css";
 import AdminDetailPanel from "./AdminDetailPanel";
+
+const STATUS_PILL_LABEL: Record<string, string> = {
+  unchecked: "Unchecked",
+  alive: "Alive",
+  suspect: "Suspect",
+  dead: "Dead",
+  unknown: "Unknown",
+};
+
+function StatusPill({
+  status,
+  onClick,
+  busy,
+}: {
+  status?: string;
+  onClick?: () => void;
+  busy?: boolean;
+}) {
+  const tone = status
+    ? styles[`statusPill_${status}`]
+    : styles.statusPill_unchecked;
+  const label = busy
+    ? "Checking…"
+    : status
+      ? STATUS_PILL_LABEL[status] ?? status
+      : "—";
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className={`${styles.statusPill} ${tone} ${styles.statusPillButton}`}
+        disabled={busy}
+        title="Run a live check"
+        onClick={e => {
+          e.stopPropagation();
+          onClick();
+        }}
+      >
+        {label}
+      </button>
+    );
+  }
+  if (!status) return <span className={styles.statusMuted}>—</span>;
+  return (
+    <span className={`${styles.statusPill} ${tone}`}>
+      {STATUS_PILL_LABEL[status] ?? status}
+    </span>
+  );
+}
+
+function fmtHealthDate(iso: string | null | undefined): string {
+  if (!iso) return "Never";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "Never" : d.toLocaleDateString();
+}
+
+// Compact location for the dense table view: city in full, state + country
+// abbreviated when known (e.g. "Seattle, WA, US"); unknown names fall back to
+// full text so nothing is lost. The detail flyout keeps the full names.
+const STATE_ABBR: Record<string, string> = {
+  // United States
+  Alabama: "AL", Alaska: "AK", Arizona: "AZ", Arkansas: "AR", California: "CA",
+  Colorado: "CO", Connecticut: "CT", Delaware: "DE", Florida: "FL", Georgia: "GA",
+  Hawaii: "HI", Idaho: "ID", Illinois: "IL", Indiana: "IN", Iowa: "IA",
+  Kansas: "KS", Kentucky: "KY", Louisiana: "LA", Maine: "ME", Maryland: "MD",
+  Massachusetts: "MA", Michigan: "MI", Minnesota: "MN", Mississippi: "MS",
+  Missouri: "MO", Montana: "MT", Nebraska: "NE", Nevada: "NV",
+  "New Hampshire": "NH", "New Jersey": "NJ", "New Mexico": "NM", "New York": "NY",
+  "North Carolina": "NC", "North Dakota": "ND", Ohio: "OH", Oklahoma: "OK",
+  Oregon: "OR", Pennsylvania: "PA", "Rhode Island": "RI", "South Carolina": "SC",
+  "South Dakota": "SD", Tennessee: "TN", Texas: "TX", Utah: "UT", Vermont: "VT",
+  Virginia: "VA", Washington: "WA", "West Virginia": "WV", Wisconsin: "WI",
+  Wyoming: "WY", "District of Columbia": "DC",
+  // Canada
+  Alberta: "AB", "British Columbia": "BC", Manitoba: "MB", "New Brunswick": "NB",
+  "Newfoundland and Labrador": "NL", "Northwest Territories": "NT",
+  "Nova Scotia": "NS", Nunavut: "NU", Ontario: "ON", "Prince Edward Island": "PE",
+  Quebec: "QC", Saskatchewan: "SK", Yukon: "YT",
+  // Australia
+  "New South Wales": "NSW", Victoria: "VIC", Queensland: "QLD",
+  "Western Australia": "WA", "South Australia": "SA", Tasmania: "TAS",
+  "Australian Capital Territory": "ACT", "Northern Territory": "NT",
+};
+
+const COUNTRY_ABBR: Record<string, string> = {
+  "United States": "US", "United Kingdom": "UK", Canada: "CA", Australia: "AU",
+  Germany: "DE", France: "FR", Netherlands: "NL", Spain: "ES", Italy: "IT",
+  Ireland: "IE", "New Zealand": "NZ", Sweden: "SE", Norway: "NO", Denmark: "DK",
+  Finland: "FI", Japan: "JP", Brazil: "BR", Mexico: "MX", Portugal: "PT",
+  Belgium: "BE", Austria: "AT", Switzerland: "CH", Poland: "PL",
+};
+
+function shortLocation(
+  city?: string | null,
+  state?: string | null,
+  country?: string | null
+): string {
+  const parts: string[] = [];
+  if (city) parts.push(city);
+  if (state) parts.push(STATE_ABBR[state] ?? state);
+  if (country) parts.push(COUNTRY_ABBR[country] ?? country);
+  return parts.length > 0 ? parts.join(", ") : "—";
+}
 
 interface Artist {
   id: number;
@@ -357,11 +464,43 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     loadStates: true,
   });
 
+  const [linkStatuses, setLinkStatuses] = useState<LinkStatusMaps>({
+    artists: {},
+    shops: {},
+  });
+
+  const [checkingLink, setCheckingLink] = useState<Record<string, boolean>>({});
+
+  const runLinkCheck = async (entityType: "artist" | "shop", id: number) => {
+    const key = `${entityType}:${id}`;
+    setCheckingLink(c => ({ ...c, [key]: true }));
+    try {
+      const res = await checkLink(entityType, id);
+      const rec: LinkStatusRec = {
+        status: res.status,
+        last_alive_at: res.last_alive_at,
+        checked_at: res.checked_at,
+        status_code: res.probe.statusCode,
+        error_message: res.probe.result === "unknown" ? res.probe.detail : null,
+      };
+      setLinkStatuses(prev =>
+        entityType === "artist"
+          ? { ...prev, artists: { ...prev.artists, [id]: rec } }
+          : { ...prev, shops: { ...prev.shops, [id]: rec } }
+      );
+    } catch (e) {
+      console.error("link check failed", e);
+    } finally {
+      setCheckingLink(c => ({ ...c, [key]: false }));
+    }
+  };
+
   useEffect(() => {
     // Load stats and initial data on mount
     loadStats();
     loadArtists();
     loadShops(false); // Load shops silently for stats
+    fetchLinkStatuses().then(setLinkStatuses).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -1149,6 +1288,21 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     }
   };
 
+  // Deep-link from Link Health (/admin/data?tab=artists&edit=<id>): open that
+  // record's edit panel, then drop the param so it doesn't reopen on close.
+  useEffect(() => {
+    const editId = searchParams.get("edit");
+    if (!editId) return;
+    const id = parseInt(editId, 10);
+    const next = new URLSearchParams(searchParams);
+    next.delete("edit");
+    setSearchParams(next, { replace: true });
+    if (Number.isNaN(id)) return;
+    if (activeTab === "artists") handleEditClick(id);
+    else if (activeTab === "shops") handleEditShopClick(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, activeTab]);
+
   // Short cascade-impact hint shown in the delete confirmation.
   const deleteImpact = editingArtistId
     ? "Removes the artist and unlinks it from shops, locations, and saved lists."
@@ -1316,6 +1470,19 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     </div>
   );
 
+  const renderLinkHealth = (rec?: LinkStatusMaps["artists"][number]) => (
+    <>
+      <div className={styles.viewRow}>
+        <span className={styles.viewLabel}>Link status</span>
+        <span className={styles.viewValue}>
+          <StatusPill status={rec?.status} />
+        </span>
+      </div>
+      {viewRow("Last alive", fmtHealthDate(rec?.last_alive_at))}
+      {viewRow("Last checked", fmtHealthDate(rec?.checked_at))}
+    </>
+  );
+
   const renderPanelView = () => {
     if (editingArtistId && formData) {
       const secondary = artistLocations
@@ -1333,6 +1500,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
           {viewRow("Shop", shopLabel(formData.shop_id))}
           {viewRow("Traveling", formData.is_traveling ? "Yes" : "No")}
           {viewRow("Secondary locations", secondary)}
+          {renderLinkHealth(linkStatuses.artists[editingArtistId])}
         </div>
       );
     }
@@ -1346,6 +1514,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
           {viewRow("Phone", shopFormData.phone_number)}
           {viewRow("Website", shopFormData.website_url)}
           {viewRow("City", cityLabel(shopFormData.city_id))}
+          {renderLinkHealth(linkStatuses.shops[editingShopId])}
         </div>
       );
     }
@@ -1980,6 +2149,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                       >
                         Instagram {getSortIcon("instagram_handle")}
                       </th>
+                      <th>Status</th>
                       <th
                         className={styles.sortableHeader}
                         onClick={() => handleSort("location")}
@@ -2033,11 +2203,26 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                               "—"
                             )}
                           </td>
+                          <td className={styles.statusCell}>
+                            <StatusPill
+                              status={linkStatuses.artists[artist.id]?.status}
+                              busy={checkingLink[`artist:${artist.id}`]}
+                              onClick={() => runLinkCheck("artist", artist.id)}
+                            />
+                          </td>
                           <td className={styles.locationCell}>
-                            {formatLocation(artist)}
+                            <span className={styles.ellipsisCell}>
+                              {shortLocation(
+                                artist.city_name,
+                                artist.state_name,
+                                artist.country_name
+                              )}
+                            </span>
                           </td>
                           <td className={styles.shopCell}>
-                            {artist.shop_name || "—"}
+                            <span className={styles.shopEllipsis}>
+                              {artist.shop_name || "—"}
+                            </span>
                           </td>
                           <td className={styles.travelingCell}>
                             {artist.is_traveling ? "✓" : "—"}
@@ -2077,17 +2262,12 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                       >
                         Instagram {getSortIcon("instagram_handle")}
                       </th>
+                      <th>Status</th>
                       <th
                         className={styles.sortableHeader}
                         onClick={() => handleSort("location")}
                       >
                         Location {getSortIcon("location")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
-                        onClick={() => handleSort("address")}
-                      >
-                        Address {getSortIcon("address")}
                       </th>
                       <th
                         className={styles.sortableHeader}
@@ -2130,11 +2310,21 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                               "—"
                             )}
                           </td>
-                          <td className={styles.locationCell}>
-                            {formatLocation(shop)}
+                          <td className={styles.statusCell}>
+                            <StatusPill
+                              status={linkStatuses.shops[shop.id]?.status}
+                              busy={checkingLink[`shop:${shop.id}`]}
+                              onClick={() => runLinkCheck("shop", shop.id)}
+                            />
                           </td>
-                          <td className={styles.shopCell}>
-                            {shop.address || "—"}
+                          <td className={styles.locationCell}>
+                            <span className={styles.ellipsisCell}>
+                              {shortLocation(
+                                shop.city_name,
+                                shop.state_name,
+                                shop.country_name
+                              )}
+                            </span>
                           </td>
                           <td className={styles.numCell}>
                             {artistCountByShop.get(

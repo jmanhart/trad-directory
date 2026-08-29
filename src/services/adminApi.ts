@@ -560,40 +560,89 @@ export async function fetchBrokenLinks(): Promise<BrokenLinkResult[]> {
   }
 }
 
-interface BrokenLink {
-  url: string;
-  handle: string;
-  type: "artist" | "shop";
-  id: number;
-  name: string;
-  status: number | null;
-  error: string | null;
+export interface LinkHealthRow {
+  entity_type: "artist" | "shop";
+  entity_id: number;
+  entity_name: string;
+  instagram_handle: string;
+  status: "unchecked" | "alive" | "suspect" | "dead" | "unknown";
+  fail_streak: number;
+  status_code: number | null;
+  error_message: string | null;
+  last_alive_at: string | null;
+  next_check_at: string;
+  checked_at: string | null;
 }
 
-interface CheckLinksResponse {
-  brokenLinks: BrokenLink[];
-  totalChecked: number;
-  brokenCount: number;
-}
-
-/**
- * Check Instagram links and return only broken ones (not status 200)
- */
-export async function checkInstagramLinks(): Promise<CheckLinksResponse> {
-  try {
-    const apiUrl = import.meta.env.VITE_API_URL || "/api/checkInstagramLinks";
-    const response = await fetch(apiUrl);
-
-    if (!response.ok) {
-      throw new Error(`Failed to check links: ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error("Error checking Instagram links:", error);
-    throw error;
+export async function fetchLinkHealth(
+  status = "dead,suspect"
+): Promise<LinkHealthRow[]> {
+  const base = import.meta.env.VITE_API_URL || "/api/listLinkHealth";
+  const url = `${base}${base.includes("?") ? "&" : "?"}status=${encodeURIComponent(status)}`;
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${ADMIN_API_KEY}` },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch link health: ${response.status}`);
   }
+  const result = await response.json();
+  return result.rows || [];
+}
+
+export interface CheckLinkResult {
+  status: "unchecked" | "alive" | "suspect" | "dead" | "unknown";
+  probe: {
+    result: "alive" | "dead" | "unknown";
+    statusCode: number | null;
+    detail: string;
+  };
+  checked_at: string;
+  last_alive_at: string | null;
+}
+
+// On-demand live probe of one link (the "Check Link" action). Returns the new
+// stored status plus the raw probe result so the UI can show what IG said.
+export async function checkLink(
+  entity_type: "artist" | "shop",
+  entity_id: number
+): Promise<CheckLinkResult> {
+  const apiUrl = import.meta.env.VITE_API_URL || "/api/checkLink";
+  const response = await fetch(apiUrl, {
+    method: "PUT",
+    headers: adminHeaders(),
+    body: JSON.stringify({ entity_type, entity_id }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
+export interface LinkStatusRec {
+  status: "unchecked" | "alive" | "suspect" | "dead" | "unknown";
+  last_alive_at: string | null;
+  checked_at: string | null;
+  status_code: number | null;
+  error_message: string | null;
+}
+
+export interface LinkStatusMaps {
+  artists: Record<number, LinkStatusRec>;
+  shops: Record<number, LinkStatusRec>;
+}
+
+// Bulk link-health for the data browser (one call, cap-safe on the server).
+export async function fetchLinkStatuses(): Promise<LinkStatusMaps> {
+  const apiUrl = import.meta.env.VITE_API_URL || "/api/listLinkStatuses";
+  const response = await fetch(apiUrl, {
+    headers: { Authorization: `Bearer ${ADMIN_API_KEY}` },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch link statuses: ${response.status}`);
+  }
+  const result = await response.json();
+  return { artists: result.artists || {}, shops: result.shops || {} };
 }
 
 export async function addArtistLocation(

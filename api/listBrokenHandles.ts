@@ -30,7 +30,7 @@ export default async function handler(req: any, res: any) {
     const { data, error } = await supabase
       .from("link_check_results")
       .select("instagram_handle")
-      .eq("is_broken", true);
+      .eq("status", "dead");
 
     if (error) {
       console.error("Supabase error:", error);

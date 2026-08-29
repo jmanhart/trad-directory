@@ -1,17 +1,33 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import * as Sentry from "@sentry/node";
+import { probeInstagram } from "./_utils/instagramProbe";
+import { nextState, type LinkStatus } from "./_utils/linkHealth";
 
 export const config = { maxDuration: 300 };
 
-const BATCH_SIZE = 50;
+// Pulse tuning. Small waves + jitter keep per-IP volume low; IG rate-limits the
+// probe endpoint hard, so we abort a wave and let the next tick retry rather
+// than hammer through blocks.
+const WAVE_SIZE = 12; // handles probed per cron tick (kept under IG's per-IP throttle)
 const MIN_DELAY_MS = 3000;
-const MAX_DELAY_MS = 5000;
-const FETCH_TIMEOUT_MS = 10000;
+const MAX_DELAY_MS = 6000;
+const PROBE_TIMEOUT_MS = 10000;
+const RATE_LIMIT_ABORT = 3; // consecutive rate-limit/timeout unknowns -> stop wave
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment: process.env.NODE_ENV || "production",
 });
+
+// Minimal Vercel serverless request/response surface we actually use.
+interface CronRequest {
+  method?: string;
+  headers: Record<string, string | string[] | undefined>;
+}
+interface CronResponse {
+  status(code: number): CronResponse;
+  json(body: unknown): void;
+}
 
 interface HandleRow {
   entity_type: "artist" | "shop";
@@ -20,258 +36,206 @@ interface HandleRow {
   instagram_handle: string;
 }
 
+interface HealthRow {
+  entity_type: string;
+  entity_id: number;
+  status: LinkStatus;
+  fail_streak: number;
+  next_check_at: string;
+  last_alive_at: string | null;
+  ignored: boolean;
+}
+
 function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  const { promise, resolve } = Promise.withResolvers<void>();
+  setTimeout(resolve, ms);
+  return promise;
 }
 
-function randomDelay(): number {
-  return MIN_DELAY_MS + Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS);
-}
-
-export default async function handler(req: any, res: any) {
-  // Only allow GET requests
+export default async function handler(req: CronRequest, res: CronResponse) {
   if (req.method !== "GET") {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
 
-  // Verify CRON_SECRET auth
-  const authHeader = req.headers["authorization"];
   const cronSecret = process.env.CRON_SECRET;
-
   if (!cronSecret) {
-    console.error("CRON_SECRET env var not set");
     res.status(500).json({ error: "Server configuration error" });
     return;
   }
-
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  if (req.headers["authorization"] !== `Bearer ${cronSecret}`) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
 
-  const checkInId = Sentry.captureCheckIn(
-    { monitorSlug: "instagram-link-checker", status: "in_progress" },
-    {
-      schedule: { type: "crontab", value: "*/15 2-6 * * *" },
-      checkinMargin: 5,
-      maxRuntime: 10,
-      timezone: "Etc/UTC",
-    }
-  );
+  const checkInId = Sentry.captureCheckIn({
+    monitorSlug: "instagram-link-checker",
+    status: "in_progress",
+  });
 
   try {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
-      console.error("Missing Supabase environment variables");
       res.status(500).json({ error: "Server configuration error" });
       return;
     }
-
-    const supabase = createClient(
+    const supabase: SupabaseClient = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_SERVICE_KEY
     );
 
-    // Read current cursor offset
-    const { data: cursorData, error: cursorError } = await supabase
-      .from("link_check_cursor")
-      .select("current_offset")
-      .eq("id", 1)
-      .single();
+    // All handles across both entity types.
+    const [artistsQ, shopsQ] = await Promise.all([
+      supabase
+        .from("artists")
+        .select("id, name, instagram_handle")
+        .not("instagram_handle", "is", null),
+      supabase
+        .from("tattoo_shops")
+        .select("id, shop_name, instagram_handle")
+        .not("instagram_handle", "is", null),
+    ]);
+    if (artistsQ.error) throw artistsQ.error;
+    if (shopsQ.error) throw shopsQ.error;
 
-    if (cursorError) {
-      console.error("Error reading cursor:", cursorError);
-      res.status(500).json({ error: "Failed to read cursor" });
-      return;
-    }
-
-    const currentOffset = cursorData?.current_offset ?? 0;
-
-    // Fetch all handles as a combined ordered list: artists first, then shops
-    const { data: artistData, error: artistError } = await supabase
-      .from("artists")
-      .select("id, name, instagram_handle")
-      .not("instagram_handle", "is", null)
-      .order("id", { ascending: true });
-
-    if (artistError) {
-      console.error("Error fetching artists:", artistError);
-      res.status(500).json({ error: "Failed to fetch artists" });
-      return;
-    }
-
-    const { data: shopData, error: shopError } = await supabase
-      .from("tattoo_shops")
-      .select("id, shop_name, instagram_handle")
-      .not("instagram_handle", "is", null)
-      .order("id", { ascending: true });
-
-    if (shopError) {
-      console.error("Error fetching shops:", shopError);
-      res.status(500).json({ error: "Failed to fetch shops" });
-      return;
-    }
-
-    // Build unified ordered list
-    const allHandles: HandleRow[] = [];
-
-    for (const artist of artistData || []) {
-      allHandles.push({
+    const handles: HandleRow[] = [];
+    for (const a of artistsQ.data ?? []) {
+      handles.push({
         entity_type: "artist",
-        entity_id: artist.id,
-        entity_name: artist.name,
-        instagram_handle: artist.instagram_handle,
+        entity_id: a.id,
+        entity_name: a.name,
+        instagram_handle: a.instagram_handle,
       });
     }
-
-    for (const shop of shopData || []) {
-      allHandles.push({
+    for (const s of shopsQ.data ?? []) {
+      handles.push({
         entity_type: "shop",
-        entity_id: shop.id,
-        entity_name: shop.shop_name,
-        instagram_handle: shop.instagram_handle,
+        entity_id: s.id,
+        entity_name: s.shop_name,
+        instagram_handle: s.instagram_handle,
       });
     }
 
-    const totalHandles = allHandles.length;
-
-    // If no handles exist, nothing to do
-    if (totalHandles === 0) {
-      res.status(200).json({
-        checked: 0,
-        broken: 0,
-        nextOffset: 0,
-        cycleComplete: true,
-      });
-      return;
+    // Existing health rows, keyed by "type:id".
+    const { data: healthData, error: healthError } = await supabase
+      .from("link_check_results")
+      .select(
+        "entity_type, entity_id, status, fail_streak, next_check_at, last_alive_at, ignored"
+      );
+    if (healthError) throw healthError;
+    // Query columns are fixed above, so the row shape is known.
+    const healthRows = (healthData ?? []) as HealthRow[];
+    const healthByKey: Record<string, HealthRow> = {};
+    for (const r of healthRows) {
+      healthByKey[`${r.entity_type}:${r.entity_id}`] = r;
     }
 
-    // Determine the batch slice
-    const effectiveOffset = currentOffset >= totalHandles ? 0 : currentOffset;
-    const batch = allHandles.slice(
-      effectiveOffset,
-      effectiveOffset + BATCH_SIZE
-    );
-    const cycleComplete = effectiveOffset + batch.length >= totalHandles;
-    const nextOffset = cycleComplete ? 0 : effectiveOffset + batch.length;
-
-    let brokenCount = 0;
-
-    // Check each handle in the batch
-    for (const handle of batch) {
-      const url = `https://www.instagram.com/${handle.instagram_handle}`;
-
-      let statusCode: number | null = null;
-      let errorMessage: string | null = null;
-      let isBroken = false;
-
-      try {
-        await delay(randomDelay());
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(
-          () => controller.abort(),
-          FETCH_TIMEOUT_MS
-        );
-
-        const response = await fetch(url, {
-          method: "GET",
-          signal: controller.signal,
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          },
-          redirect: "manual",
-        });
-
-        clearTimeout(timeoutId);
-        statusCode = response.status;
-
-        // Instagram redirects all unauthenticated profile views to /accounts/login/
-        // A 302 redirect means Instagram recognizes the URL — the profile likely exists.
-        // Only a 404 reliably indicates the profile doesn't exist / handle changed.
-        // A 429 is rate limiting, not a broken link.
-        if (response.status === 404) {
-          isBroken = true;
-        }
-      } catch (error: any) {
-        isBroken = true;
-        errorMessage = error.message || "Unreachable";
+    // Build the due queue: never-checked first, then the most-overdue. Ignored
+    // rows are skipped entirely.
+    const now = Date.now();
+    const nowIso = new Date(now).toISOString();
+    const neverChecked: HandleRow[] = [];
+    const due: { row: HandleRow; dueAt: number }[] = [];
+    for (const h of handles) {
+      const prev = healthByKey[`${h.entity_type}:${h.entity_id}`];
+      if (!prev) {
+        neverChecked.push(h);
+        continue;
       }
+      if (prev.ignored) continue;
+      const dueAt = new Date(prev.next_check_at).getTime();
+      if (dueAt <= now) due.push({ row: h, dueAt });
+    }
+    due.sort((a, b) => a.dueAt - b.dueAt);
+    const wave = [...neverChecked, ...due.map(d => d.row)].slice(0, WAVE_SIZE);
 
-      // Upsert result into link_check_results
+    let alive = 0;
+    let dead = 0;
+    let unknown = 0;
+    let confirmedDead = 0;
+    let rateLimitStreak = 0;
+    let aborted = false;
+
+    for (const h of wave) {
+      await delay(MIN_DELAY_MS + Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS));
+
+      const probe = await probeInstagram(h.instagram_handle, PROBE_TIMEOUT_MS);
+      const prev = healthByKey[`${h.entity_type}:${h.entity_id}`];
+      const state = nextState(prev, probe.result, nowIso, now);
+
+      if (probe.result === "alive") alive++;
+      else if (probe.result === "dead") dead++;
+      else unknown++;
+
+      const newlyDead = state.status === "dead" && prev?.status !== "dead";
+      if (newlyDead) confirmedDead++;
+
       const { error: upsertError } = await supabase
         .from("link_check_results")
         .upsert(
           {
-            entity_type: handle.entity_type,
-            entity_id: handle.entity_id,
-            entity_name: handle.entity_name,
-            instagram_handle: handle.instagram_handle,
-            status_code: statusCode,
-            error_message: errorMessage,
-            is_broken: isBroken,
-            checked_at: new Date().toISOString(),
+            entity_type: h.entity_type,
+            entity_id: h.entity_id,
+            entity_name: h.entity_name,
+            instagram_handle: h.instagram_handle,
+            status: state.status,
+            fail_streak: state.fail_streak,
+            last_alive_at: state.last_alive_at,
+            next_check_at: state.next_check_at,
+            status_code: probe.statusCode,
+            error_message: probe.result === "unknown" ? probe.detail : null,
+            is_broken: state.status === "dead", // mirror for legacy readers
+            checked_at: nowIso,
           },
           { onConflict: "entity_type,entity_id" }
         );
+      if (upsertError) console.error("Upsert error:", upsertError);
 
-      if (upsertError) {
-        console.error("Upsert error:", upsertError);
-      }
-
-      if (isBroken) {
-        brokenCount++;
+      if (newlyDead) {
         Sentry.captureMessage(
-          `Broken Instagram link: @${handle.instagram_handle} (${handle.entity_type}: ${handle.entity_name})`,
-          {
-            level: "warning",
-            tags: {
-              entity_type: handle.entity_type,
-              entity_id: String(handle.entity_id),
-              instagram_handle: handle.instagram_handle,
-            },
-            extra: {
-              entity_name: handle.entity_name,
-              status_code: statusCode,
-              error_message: errorMessage,
-              url,
-            },
-          }
+          `Instagram link confirmed dead: @${h.instagram_handle} (${h.entity_type}: ${h.entity_name})`,
+          { level: "warning" }
         );
       }
+
+      // Circuit breaker: consecutive rate-limit / timeout signals -> back off.
+      const rateLimited =
+        probe.result === "unknown" &&
+        (probe.statusCode === 429 ||
+          probe.statusCode === 400 ||
+          probe.statusCode === null);
+      rateLimitStreak = rateLimited ? rateLimitStreak + 1 : 0;
+      if (rateLimitStreak >= RATE_LIMIT_ABORT) {
+        aborted = true;
+        break;
+      }
     }
 
-    // Update cursor
-    const { error: updateCursorError } = await supabase
-      .from("link_check_cursor")
-      .update({
-        current_offset: nextOffset,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", 1);
-
-    if (updateCursorError) {
-      console.error("Error updating cursor:", updateCursorError);
-    }
-
-    Sentry.captureCheckIn({ checkInId, monitorSlug: "instagram-link-checker", status: "ok" });
+    Sentry.captureCheckIn({
+      checkInId,
+      monitorSlug: "instagram-link-checker",
+      status: "ok",
+    });
     await Sentry.flush(5000);
 
     res.status(200).json({
-      checked: batch.length,
-      broken: brokenCount,
-      nextOffset,
-      cycleComplete,
-      totalHandles,
+      waveSize: wave.length,
+      alive,
+      dead,
+      unknown,
+      confirmedDead,
+      aborted,
+      dueRemaining: Math.max(neverChecked.length + due.length - wave.length, 0),
+      totalHandles: handles.length,
     });
-  } catch (error: any) {
-    Sentry.captureCheckIn({ checkInId, monitorSlug: "instagram-link-checker", status: "error" });
+  } catch (error: unknown) {
+    Sentry.captureCheckIn({
+      checkInId,
+      monitorSlug: "instagram-link-checker",
+      status: "error",
+    });
     Sentry.captureException(error);
     await Sentry.flush(5000);
     console.error("Error in checkInstagramLinks:", error);
-    res.status(500).json({
-      error: "Failed to check links",
-    });
+    res.status(500).json({ error: "Failed to check links" });
   }
 }

@@ -342,6 +342,23 @@
   font-size: 0.9rem;
 }
 
+/* Table cells that must stay on one line; ellipsis if they still overflow. */
+.ellipsisCell {
+  display: block;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shopEllipsis {
+  display: block;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Integer columns (counts): shrink to ~label width, never wrap. The 1% width
    is the standard trick to make an auto-layout column collapse to its content
    so the text columns absorb the remaining space (no horizontal scroll). */
@@ -353,7 +370,7 @@
 }
 
 .shopCell {
-  min-width: 150px;
+  min-width: 200px;
 }
 
 .travelingCell {
@@ -860,4 +877,74 @@
   .modalFooter {
     padding: 1rem;
   }
+}
+
+/* Link-health status pill (data browser table + detail flyout) */
+.statusCell {
+  white-space: nowrap;
+}
+
+.statusPill {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.statusMuted {
+  color: var(--color-text-tertiary);
+}
+
+.statusPill_dead {
+  background-color: rgba(192, 57, 43, 0.12);
+  color: #c0392b;
+}
+
+.statusPill_suspect {
+  background-color: rgba(185, 119, 14, 0.14);
+  color: #b9770e;
+}
+
+.statusPill_unknown {
+  background-color: rgba(108, 117, 125, 0.14);
+  color: #6c757d;
+}
+
+.statusPill_alive {
+  background-color: rgba(46, 125, 50, 0.12);
+  color: #2e7d32;
+}
+
+.statusPill_unchecked {
+  background-color: rgba(120, 120, 120, 0.1);
+  color: var(--color-text-secondary);
+}
+
+.statusPillButton {
+  cursor: pointer;
+  border: 1px solid transparent;
+  font-family: inherit;
+  transition: filter 0.12s ease;
+}
+
+.statusPillButton:hover:not(:disabled) {
+  border-color: transparent;
+  filter: brightness(0.94);
+}
+
+.statusPillButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.statusPillButton:focus {
+  outline: none;
+}
+
+.statusPillButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
 }
