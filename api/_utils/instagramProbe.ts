@@ -159,7 +159,11 @@ async function doProbe(
   }
 }
 
-function recordProbeMetrics(outcome: ProbeOutcome, latencyMs: number): void {
+function recordProbe(
+  handle: string,
+  outcome: ProbeOutcome,
+  latencyMs: number
+): void {
   const status =
     outcome.statusCode == null ? "none" : String(outcome.statusCode);
   Sentry.metrics.distribution("ig.probe.latency_ms", latencyMs, {
@@ -178,6 +182,35 @@ function recordProbeMetrics(outcome: ProbeOutcome, latencyMs: number): void {
       outcome.statusCode === null);
   if (throttled) {
     Sentry.metrics.count("ig.throttle", 1, { attributes: { status } });
+  }
+
+  // Per-probe log, visible in both environments: structured logs ship to
+  // Sentry in production (enableLogs), and console mirrors the interesting
+  // cases to the dev terminal + Vercel function logs. "unknown" (rate-limit /
+  // block / timeout) is the signal worth flagging; alive/dead log at info for
+  // a full trail without console noise.
+  const attrs = {
+    handle,
+    result: outcome.result,
+    statusCode: outcome.statusCode,
+    detail: outcome.detail,
+    latencyMs,
+  };
+  if (outcome.result === "unknown") {
+    Sentry.logger.warn(
+      Sentry.logger
+        .fmt`ig.probe @${handle} → unknown (${status}: ${outcome.detail}) ${latencyMs}ms`,
+      attrs
+    );
+    console.warn(
+      `[ig.probe] @${handle} → unknown (${status}: ${outcome.detail}) ${latencyMs}ms`
+    );
+  } else {
+    Sentry.logger.info(
+      Sentry.logger
+        .fmt`ig.probe @${handle} → ${outcome.result} (${status}) ${latencyMs}ms`,
+      attrs
+    );
   }
 }
 
@@ -198,7 +231,7 @@ function probeOnce(handle: string, timeoutMs: number): Promise<ProbeOutcome> {
       span.setAttribute("ig.result", outcome.result);
       span.setAttribute("http.response.status_code", outcome.statusCode ?? 0);
       span.setAttribute("ig.latency_ms", latencyMs);
-      recordProbeMetrics(outcome, latencyMs);
+      recordProbe(handle, outcome, latencyMs);
       return outcome;
     }
   );
