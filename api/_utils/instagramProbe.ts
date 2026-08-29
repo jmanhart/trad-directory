@@ -24,6 +24,8 @@
 // gives transient `unknown` results (throttle/timeout) another attempt — used
 // by the on-demand Check Link, not the bulk cron.
 
+import { Sentry } from "./sentry";
+
 export type ProbeResult = "alive" | "dead" | "unknown";
 
 export interface ProbeOutcome {
@@ -58,7 +60,10 @@ function isFailEnvelope(body: unknown): boolean {
   return body.status === "fail";
 }
 
-async function probeOnce(handle: string, timeoutMs: number): Promise<ProbeOutcome> {
+async function doProbe(
+  handle: string,
+  timeoutMs: number
+): Promise<ProbeOutcome> {
   const url =
     "https://www.instagram.com/api/v1/users/web_profile_info/?username=" +
     encodeURIComponent(handle);
@@ -97,13 +102,21 @@ async function probeOnce(handle: string, timeoutMs: number): Promise<ProbeOutcom
 
     if (status === 200) {
       if (!isJson) {
-        return { result: "unknown", statusCode: 200, detail: "non-json (login wall)" };
+        return {
+          result: "unknown",
+          statusCode: 200,
+          detail: "non-json (login wall)",
+        };
       }
       const body: unknown = await res.json().catch(() => null);
       if (hasUser(body)) {
         return { result: "alive", statusCode: 200, detail: "profile ok" };
       }
-      return { result: "unknown", statusCode: 200, detail: "json without user" };
+      return {
+        result: "unknown",
+        statusCode: 200,
+        detail: "json without user",
+      };
     }
 
     if (status === 400) {
@@ -121,10 +134,18 @@ async function probeOnce(handle: string, timeoutMs: number): Promise<ProbeOutcom
         }
         return { result: "unknown", statusCode: 400, detail: "json 400" };
       }
-      return { result: "unknown", statusCode: 400, detail: "request rejected (400)" };
+      return {
+        result: "unknown",
+        statusCode: 400,
+        detail: "request rejected (400)",
+      };
     }
 
-    return { result: "unknown", statusCode: status, detail: `unexpected ${status}` };
+    return {
+      result: "unknown",
+      statusCode: status,
+      detail: `unexpected ${status}`,
+    };
   } catch (e: unknown) {
     clearTimeout(timer);
     const name = e instanceof Error ? e.name : "";
@@ -138,17 +159,67 @@ async function probeOnce(handle: string, timeoutMs: number): Promise<ProbeOutcom
   }
 }
 
+function recordProbeMetrics(outcome: ProbeOutcome, latencyMs: number): void {
+  const status =
+    outcome.statusCode == null ? "none" : String(outcome.statusCode);
+  Sentry.metrics.distribution("ig.probe.latency_ms", latencyMs, {
+    unit: "millisecond",
+    attributes: { result: outcome.result },
+  });
+  Sentry.metrics.count("ig.probe", 1, {
+    attributes: { result: outcome.result, status },
+  });
+  // Throttle / rejection signals (429, SecFetch 400, network/timeout) — the
+  // thing that silently degrades the whole pulse. Alertable on its own.
+  const throttled =
+    outcome.result === "unknown" &&
+    (outcome.statusCode === 429 ||
+      outcome.statusCode === 400 ||
+      outcome.statusCode === null);
+  if (throttled) {
+    Sentry.metrics.count("ig.throttle", 1, { attributes: { status } });
+  }
+}
+
+// Span + metrics wrapper around a single probe: each Instagram request becomes
+// a trace span with its latency and result, and feeds the probe/throttle
+// metrics. When tracing is disabled the span is a safe no-op.
+function probeOnce(handle: string, timeoutMs: number): Promise<ProbeOutcome> {
+  return Sentry.startSpan(
+    {
+      name: "ig.probe",
+      op: "http.client",
+      attributes: { "ig.handle": handle },
+    },
+    async span => {
+      const started = Date.now();
+      const outcome = await doProbe(handle, timeoutMs);
+      const latencyMs = Date.now() - started;
+      span.setAttribute("ig.result", outcome.result);
+      span.setAttribute("http.response.status_code", outcome.statusCode ?? 0);
+      span.setAttribute("ig.latency_ms", latencyMs);
+      recordProbeMetrics(outcome, latencyMs);
+      return outcome;
+    }
+  );
+}
+
 export async function probeInstagram(
   handle: string,
   timeoutMs = 10000,
   retries = 0
 ): Promise<ProbeOutcome> {
   const h = handle.replace(/^@/, "").trim();
-  if (!h) return { result: "unknown", statusCode: null, detail: "empty handle" };
+  if (!h)
+    return { result: "unknown", statusCode: null, detail: "empty handle" };
 
   let outcome = await probeOnce(h, timeoutMs);
   // Retry only transient "unknown" (throttle/timeout); alive/dead are final.
-  for (let attempt = 0; attempt < retries && outcome.result === "unknown"; attempt++) {
+  for (
+    let attempt = 0;
+    attempt < retries && outcome.result === "unknown";
+    attempt++
+  ) {
     await delay(1500 + Math.random() * 1500);
     outcome = await probeOnce(h, timeoutMs);
   }
