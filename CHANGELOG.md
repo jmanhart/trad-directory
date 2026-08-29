@@ -14,6 +14,18 @@ From the next tagged release onward this file is maintained automatically by
 [Conventional Commits](https://www.conventionalcommits.org/) — do not hand-edit
 released sections.
 
+## [0.4.0](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.3.1...tattoo-directory-v0.4.0) (2026-08-29)
+
+
+### Added
+
+* **api:** accept secondary_city_id and country_id on update ([17b5af1](https://github.com/jmanhart/trad-directory/commit/17b5af1209f9df3a64f15c96bce9ceba8eba9cf1))
+
+
+### Changed
+
+* **admin:** extract shared RecordEditor; scope Link Health edit in-place ([#48](https://github.com/jmanhart/trad-directory/issues/48)) ([a262436](https://github.com/jmanhart/trad-directory/commit/a2624368355e88ea0f15e2bf62380a9affd28841))
+
 ## [0.3.1](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.3.0...tattoo-directory-v0.3.1) (2026-08-29)
 
 
