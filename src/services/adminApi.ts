@@ -616,7 +616,18 @@ export async function checkLink(
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
   }
-  return response.json();
+  const result: CheckLinkResult = await response.json();
+  const p = result.probe;
+  const probeInfo = `${p.result}${p.statusCode ? " " + p.statusCode : ""}${
+    p.detail ? " · " + p.detail : ""
+  }`;
+  // Visible in devtools during development; console.warn/log are forwarded to
+  // Sentry logs in production via consoleLoggingIntegration. Covers every
+  // Check Link UI (data browser + Link Health page) from one place.
+  const line = `[link-check] ${entity_type} ${entity_id} → ${result.status} (probe: ${probeInfo})`;
+  if (p.result === "unknown") console.warn(line);
+  else console.log(line);
+  return result;
 }
 
 export interface LinkStatusRec {
