@@ -861,3 +861,47 @@
     padding: 1rem;
   }
 }
+
+/* Link-health status pill (data browser table + detail flyout) */
+.statusCell {
+  white-space: nowrap;
+}
+
+.statusPill {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.statusMuted {
+  color: var(--color-text-tertiary);
+}
+
+.statusPill_dead {
+  background-color: rgba(192, 57, 43, 0.12);
+  color: #c0392b;
+}
+
+.statusPill_suspect {
+  background-color: rgba(185, 119, 14, 0.14);
+  color: #b9770e;
+}
+
+.statusPill_unknown {
+  background-color: rgba(108, 117, 125, 0.14);
+  color: #6c757d;
+}
+
+.statusPill_alive {
+  background-color: rgba(46, 125, 50, 0.12);
+  color: #2e7d32;
+}
+
+.statusPill_unchecked {
+  background-color: rgba(120, 120, 120, 0.1);
+  color: var(--color-text-secondary);
+}

@@ -25,10 +25,12 @@ import {
   deleteArtistLocation,
   deleteArtist,
   deleteShop,
+  fetchLinkStatuses,
   deleteCity,
   deleteCountry,
   type SubmissionStatus,
   type BrokenLinkResult,
+  type LinkStatusMaps,
 } from "../../../services/adminApi";
 import { useAdminData } from "./useAdminData";
 import type { City } from "./adminTypes";
@@ -36,6 +38,29 @@ import { getCityDisplayName } from "./adminUtils";
 import SearchIcon from "../../../assets/icons/searchIcon";
 import styles from "./AdminAllData.module.css";
 import AdminDetailPanel from "./AdminDetailPanel";
+
+const STATUS_PILL_LABEL: Record<string, string> = {
+  unchecked: "Unchecked",
+  alive: "Alive",
+  suspect: "Suspect",
+  dead: "Dead",
+  unknown: "Unknown",
+};
+
+function StatusPill({ status }: { status?: string }) {
+  if (!status) return <span className={styles.statusMuted}>—</span>;
+  return (
+    <span className={`${styles.statusPill} ${styles[`statusPill_${status}`]}`}>
+      {STATUS_PILL_LABEL[status] ?? status}
+    </span>
+  );
+}
+
+function fmtHealthDate(iso: string | null | undefined): string {
+  if (!iso) return "Never";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "Never" : d.toLocaleDateString();
+}
 
 interface Artist {
   id: number;
@@ -357,11 +382,17 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     loadStates: true,
   });
 
+  const [linkStatuses, setLinkStatuses] = useState<LinkStatusMaps>({
+    artists: {},
+    shops: {},
+  });
+
   useEffect(() => {
     // Load stats and initial data on mount
     loadStats();
     loadArtists();
     loadShops(false); // Load shops silently for stats
+    fetchLinkStatuses().then(setLinkStatuses).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -1331,6 +1362,19 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     </div>
   );
 
+  const renderLinkHealth = (rec?: LinkStatusMaps["artists"][number]) => (
+    <>
+      <div className={styles.viewRow}>
+        <span className={styles.viewLabel}>Link status</span>
+        <span className={styles.viewValue}>
+          <StatusPill status={rec?.status} />
+        </span>
+      </div>
+      {viewRow("Last alive", fmtHealthDate(rec?.last_alive_at))}
+      {viewRow("Last checked", fmtHealthDate(rec?.checked_at))}
+    </>
+  );
+
   const renderPanelView = () => {
     if (editingArtistId && formData) {
       const secondary = artistLocations
@@ -1348,6 +1392,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
           {viewRow("Shop", shopLabel(formData.shop_id))}
           {viewRow("Traveling", formData.is_traveling ? "Yes" : "No")}
           {viewRow("Secondary locations", secondary)}
+          {renderLinkHealth(linkStatuses.artists[editingArtistId])}
         </div>
       );
     }
@@ -1361,6 +1406,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
           {viewRow("Phone", shopFormData.phone_number)}
           {viewRow("Website", shopFormData.website_url)}
           {viewRow("City", cityLabel(shopFormData.city_id))}
+          {renderLinkHealth(linkStatuses.shops[editingShopId])}
         </div>
       );
     }
@@ -1995,6 +2041,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                       >
                         Instagram {getSortIcon("instagram_handle")}
                       </th>
+                      <th>Status</th>
                       <th
                         className={styles.sortableHeader}
                         onClick={() => handleSort("location")}
@@ -2048,6 +2095,11 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                               "—"
                             )}
                           </td>
+                          <td className={styles.statusCell}>
+                            <StatusPill
+                              status={linkStatuses.artists[artist.id]?.status}
+                            />
+                          </td>
                           <td className={styles.locationCell}>
                             {formatLocation(artist)}
                           </td>
@@ -2092,6 +2144,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                       >
                         Instagram {getSortIcon("instagram_handle")}
                       </th>
+                      <th>Status</th>
                       <th
                         className={styles.sortableHeader}
                         onClick={() => handleSort("location")}
@@ -2144,6 +2197,11 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                             ) : (
                               "—"
                             )}
+                          </td>
+                          <td className={styles.statusCell}>
+                            <StatusPill
+                              status={linkStatuses.shops[shop.id]?.status}
+                            />
                           </td>
                           <td className={styles.locationCell}>
                             {formatLocation(shop)}

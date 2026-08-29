@@ -619,6 +619,32 @@ export async function checkLink(
   return response.json();
 }
 
+export interface LinkStatusRec {
+  status: "unchecked" | "alive" | "suspect" | "dead" | "unknown";
+  last_alive_at: string | null;
+  checked_at: string | null;
+  status_code: number | null;
+  error_message: string | null;
+}
+
+export interface LinkStatusMaps {
+  artists: Record<number, LinkStatusRec>;
+  shops: Record<number, LinkStatusRec>;
+}
+
+// Bulk link-health for the data browser (one call, cap-safe on the server).
+export async function fetchLinkStatuses(): Promise<LinkStatusMaps> {
+  const apiUrl = import.meta.env.VITE_API_URL || "/api/listLinkStatuses";
+  const response = await fetch(apiUrl, {
+    headers: { Authorization: `Bearer ${ADMIN_API_KEY}` },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch link statuses: ${response.status}`);
+  }
+  const result = await response.json();
+  return { artists: result.artists || {}, shops: result.shops || {} };
+}
+
 export async function addArtistLocation(
   artistId: number,
   cityId: number,
