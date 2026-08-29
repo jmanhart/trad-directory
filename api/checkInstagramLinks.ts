@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import * as Sentry from "@sentry/node";
+import { Sentry } from "./_utils/sentry";
 import { probeInstagram } from "./_utils/instagramProbe";
 import { nextState, type LinkStatus } from "./_utils/linkHealth";
 
@@ -13,11 +13,6 @@ const MIN_DELAY_MS = 3000;
 const MAX_DELAY_MS = 6000;
 const PROBE_TIMEOUT_MS = 10000;
 const RATE_LIMIT_ABORT = 3; // consecutive rate-limit/timeout unknowns -> stop wave
-
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  environment: process.env.NODE_ENV || "production",
-});
 
 // Minimal Vercel serverless request/response surface we actually use.
 interface CronRequest {
@@ -155,60 +150,121 @@ export default async function handler(req: CronRequest, res: CronResponse) {
     let rateLimitStreak = 0;
     let aborted = false;
 
-    for (const h of wave) {
-      await delay(MIN_DELAY_MS + Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS));
+    await Sentry.startSpan(
+      {
+        name: "instagram-link-check-wave",
+        op: "cron",
+        attributes: { "wave.size": wave.length },
+      },
+      async span => {
+        for (const h of wave) {
+          await delay(
+            MIN_DELAY_MS + Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS)
+          );
 
-      const probe = await probeInstagram(h.instagram_handle, PROBE_TIMEOUT_MS);
-      const prev = healthByKey[`${h.entity_type}:${h.entity_id}`];
-      const state = nextState(prev, probe.result, nowIso, now);
+          const probe = await probeInstagram(
+            h.instagram_handle,
+            PROBE_TIMEOUT_MS
+          );
+          const prev = healthByKey[`${h.entity_type}:${h.entity_id}`];
+          const state = nextState(prev, probe.result, nowIso, now);
+          if (state.status !== (prev?.status ?? "unchecked")) {
+            const from = prev?.status ?? "unchecked";
+            Sentry.logger.warn(
+              Sentry.logger
+                .fmt`link ${from} → ${state.status}: @${h.instagram_handle}`,
+              {
+                handle: h.instagram_handle,
+                entity_type: h.entity_type,
+                entity_id: h.entity_id,
+                from,
+                to: state.status,
+                fail_streak: state.fail_streak,
+                status_code: probe.statusCode,
+              }
+            );
+            Sentry.metrics.count("link.transition", 1, {
+              attributes: { from, to: state.status },
+            });
+          }
 
-      if (probe.result === "alive") alive++;
-      else if (probe.result === "dead") dead++;
-      else unknown++;
+          if (probe.result === "alive") alive++;
+          else if (probe.result === "dead") dead++;
+          else unknown++;
 
-      const newlyDead = state.status === "dead" && prev?.status !== "dead";
-      if (newlyDead) confirmedDead++;
+          const newlyDead = state.status === "dead" && prev?.status !== "dead";
+          if (newlyDead) confirmedDead++;
 
-      const { error: upsertError } = await supabase
-        .from("link_check_results")
-        .upsert(
-          {
-            entity_type: h.entity_type,
-            entity_id: h.entity_id,
-            entity_name: h.entity_name,
-            instagram_handle: h.instagram_handle,
-            status: state.status,
-            fail_streak: state.fail_streak,
-            last_alive_at: state.last_alive_at,
-            next_check_at: state.next_check_at,
-            status_code: probe.statusCode,
-            error_message: probe.result === "unknown" ? probe.detail : null,
-            is_broken: state.status === "dead", // mirror for legacy readers
-            checked_at: nowIso,
-          },
-          { onConflict: "entity_type,entity_id" }
-        );
-      if (upsertError) console.error("Upsert error:", upsertError);
+          const { error: upsertError } = await supabase
+            .from("link_check_results")
+            .upsert(
+              {
+                entity_type: h.entity_type,
+                entity_id: h.entity_id,
+                entity_name: h.entity_name,
+                instagram_handle: h.instagram_handle,
+                status: state.status,
+                fail_streak: state.fail_streak,
+                last_alive_at: state.last_alive_at,
+                next_check_at: state.next_check_at,
+                status_code: probe.statusCode,
+                error_message: probe.result === "unknown" ? probe.detail : null,
+                is_broken: state.status === "dead", // mirror for legacy readers
+                checked_at: nowIso,
+              },
+              { onConflict: "entity_type,entity_id" }
+            );
+          if (upsertError) console.error("Upsert error:", upsertError);
 
-      if (newlyDead) {
-        Sentry.captureMessage(
-          `Instagram link confirmed dead: @${h.instagram_handle} (${h.entity_type}: ${h.entity_name})`,
-          { level: "warning" }
-        );
+          if (newlyDead) {
+            Sentry.captureMessage(
+              `Instagram link confirmed dead: @${h.instagram_handle} (${h.entity_type}: ${h.entity_name})`,
+              { level: "warning" }
+            );
+          }
+
+          // Circuit breaker: consecutive rate-limit / timeout signals -> back off.
+          const rateLimited =
+            probe.result === "unknown" &&
+            (probe.statusCode === 429 ||
+              probe.statusCode === 400 ||
+              probe.statusCode === null);
+          rateLimitStreak = rateLimited ? rateLimitStreak + 1 : 0;
+          if (rateLimitStreak >= RATE_LIMIT_ABORT) {
+            aborted = true;
+            break;
+          }
+        }
+        span.setAttribute("wave.alive", alive);
+        span.setAttribute("wave.dead", dead);
+        span.setAttribute("wave.unknown", unknown);
+        span.setAttribute("wave.confirmed_dead", confirmedDead);
+        span.setAttribute("wave.aborted", aborted);
       }
+    );
 
-      // Circuit breaker: consecutive rate-limit / timeout signals -> back off.
-      const rateLimited =
-        probe.result === "unknown" &&
-        (probe.statusCode === 429 ||
-          probe.statusCode === 400 ||
-          probe.statusCode === null);
-      rateLimitStreak = rateLimited ? rateLimitStreak + 1 : 0;
-      if (rateLimitStreak >= RATE_LIMIT_ABORT) {
-        aborted = true;
-        break;
+    const dueRemaining = Math.max(
+      neverChecked.length + due.length - wave.length,
+      0
+    );
+    Sentry.metrics.gauge("link_health.due_remaining", dueRemaining);
+    Sentry.metrics.count("link_health.wave", 1, {
+      attributes: { aborted: String(aborted) },
+    });
+    Sentry.logger.info(
+      Sentry.logger
+        .fmt`link-check wave: ${wave.length} probed — ${alive} alive, ${dead} dead, ${unknown} unknown, ${confirmedDead} newly dead${aborted ? " (aborted: rate-limit)" : ""}`,
+      {
+        waveSize: wave.length,
+        alive,
+        dead,
+        unknown,
+        confirmedDead,
+        aborted,
+        dueRemaining,
+        totalHandles: handles.length,
       }
-    }
+    );
 
     Sentry.captureCheckIn({
       checkInId,
@@ -224,7 +280,7 @@ export default async function handler(req: CronRequest, res: CronResponse) {
       unknown,
       confirmedDead,
       aborted,
-      dueRemaining: Math.max(neverChecked.length + due.length - wave.length, 0),
+      dueRemaining,
       totalHandles: handles.length,
     });
   } catch (error: unknown) {

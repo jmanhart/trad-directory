@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { requireAdminAuth } from "./_middleware/auth";
+import { Sentry } from "./_utils/sentry";
 import { probeInstagram } from "./_utils/instagramProbe";
 import { nextState, type LinkStatus } from "./_utils/linkHealth";
 import type { ApiRequest, ApiResponse } from "./_utils/http";
@@ -19,7 +20,10 @@ interface Parsed {
 function parseBody(body: unknown): Parsed {
   const out: Parsed = {};
   if (!body || typeof body !== "object") return out;
-  if ("entity_type" in body && (body.entity_type === "artist" || body.entity_type === "shop"))
+  if (
+    "entity_type" in body &&
+    (body.entity_type === "artist" || body.entity_type === "shop")
+  )
     out.entity_type = body.entity_type;
   if ("entity_id" in body && typeof body.entity_id === "number")
     out.entity_id = body.entity_id;
@@ -49,7 +53,12 @@ function readPrev(rows: unknown): PrevRow | undefined {
     "entity_name" in r && typeof r.entity_name === "string"
       ? r.entity_name
       : null;
-  return { status: status as LinkStatus, fail_streak, last_alive_at, entity_name };
+  return {
+    status: status as LinkStatus,
+    fail_streak,
+    last_alive_at,
+    entity_name,
+  };
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
@@ -117,42 +126,80 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const prev = readPrev(prevRows);
 
     // Live probe + transition.
-    const probe = await probeInstagram(handle, 10000, 2);
-    const now = Date.now();
-    const nowIso = new Date(now).toISOString();
-    const state = nextState(prev, probe.result, nowIso, now);
+    const { probe, state, nowIso } = await Sentry.startSpan(
+      {
+        name: "link.check.ondemand",
+        op: "function",
+        attributes: { entity_type, entity_id, "ig.handle": handle },
+      },
+      async () => {
+        const probe = await probeInstagram(handle, 10000, 2);
+        const now = Date.now();
+        const nowIso = new Date(now).toISOString();
+        const state = nextState(prev, probe.result, nowIso, now);
 
-    const { error: upsertError } = await supabase
-      .from("link_check_results")
-      .upsert(
+        const { error: upsertError } = await supabase
+          .from("link_check_results")
+          .upsert(
+            {
+              entity_type,
+              entity_id,
+              entity_name:
+                (typeof nameFromEntity === "string" ? nameFromEntity : null) ??
+                prev?.entity_name ??
+                null,
+              instagram_handle: handle,
+              status: state.status,
+              fail_streak: state.fail_streak,
+              last_alive_at: state.last_alive_at,
+              next_check_at: state.next_check_at,
+              status_code: probe.statusCode,
+              error_message: probe.result === "unknown" ? probe.detail : null,
+              is_broken: state.status === "dead",
+              checked_at: nowIso,
+            },
+            { onConflict: "entity_type,entity_id" }
+          );
+        if (upsertError) throw upsertError;
+        return { probe, state, nowIso };
+      }
+    );
+
+    if (state.status !== (prev?.status ?? "unchecked")) {
+      const from = prev?.status ?? "unchecked";
+      Sentry.logger.info(
+        Sentry.logger.fmt`check-link ${from} → ${state.status}: @${handle}`,
         {
+          handle,
           entity_type,
           entity_id,
-          entity_name:
-            (typeof nameFromEntity === "string" ? nameFromEntity : null) ??
-            prev?.entity_name ??
-            null,
-          instagram_handle: handle,
-          status: state.status,
-          fail_streak: state.fail_streak,
-          last_alive_at: state.last_alive_at,
-          next_check_at: state.next_check_at,
+          from,
+          to: state.status,
           status_code: probe.statusCode,
-          error_message: probe.result === "unknown" ? probe.detail : null,
-          is_broken: state.status === "dead",
-          checked_at: nowIso,
-        },
-        { onConflict: "entity_type,entity_id" }
+        }
       );
-    if (upsertError) throw upsertError;
+    }
+    Sentry.metrics.count("link.check.ondemand", 1, {
+      attributes: { result: probe.result, status: state.status },
+    });
+    await Sentry.flush(2000);
 
     res.status(200).json({
       status: state.status,
-      probe: { result: probe.result, statusCode: probe.statusCode, detail: probe.detail },
+      probe: {
+        result: probe.result,
+        statusCode: probe.statusCode,
+        detail: probe.detail,
+      },
       checked_at: nowIso,
       last_alive_at: state.last_alive_at,
     });
   } catch (error) {
+    Sentry.captureException(error, {
+      tags: { endpoint: "checkLink" },
+      extra: { entity_type, entity_id },
+    });
+    await Sentry.flush(2000);
     console.error("checkLink error:", error);
     res.status(500).json({ error: "Check failed" });
   }
