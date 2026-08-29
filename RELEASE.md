@@ -1,97 +1,104 @@
-# Release Management
+# Release & Versioning
 
-This project uses semantic versioning (SemVer) for releases, which automatically integrates with Sentry for error tracking and performance monitoring.
+This project uses [Semantic Versioning](https://semver.org/) and, going
+forward, [Conventional Commits](https://www.conventionalcommits.org/) to drive
+an automated changelog and release flow. Every release is tracked in
+[CHANGELOG.md](./CHANGELOG.md) and mirrored as a release in Sentry so errors and
+performance data tie back to a specific version.
 
-## Version Format
+## Version policy
 
-Releases follow the format: `MAJOR.MINOR.PATCH`
+Versions are `MAJOR.MINOR.PATCH`. We are **pre-1.0** (currently `0.2.0`), so:
 
-- **PATCH** (0.1.0 → 0.1.1): Bug fixes and minor improvements
-- **MINOR** (0.1.0 → 0.2.0): New features, backward compatible
-- **MAJOR** (0.1.0 → 1.0.0): Breaking changes
+| Bump              | When                                                                                   | Examples                                                                           |
+| ----------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| **PATCH** `0.2.x` | Bug fixes, copy, styling, performance, instrumentation — no new user-facing capability | the Sentry observability work; the 400-serializer probe fix; table/ellipsis tweaks |
+| **MINOR** `0.x.0` | New backward-compatible capability                                                     | Link Health, admin data tools, new API endpoints                                   |
+| **MAJOR** `1.0.0` | **Public launch of the site — the map going GA**                                       | reserved; the milestone we're building toward                                      |
 
-## Quick Release Commands
+Rule of thumb until launch: **minor = feature, patch = fix.** `1.0.0` is the
+line we cross when the map is ready and the site is public.
 
-### Using the release script (Recommended)
+## Conventional Commits
 
-```bash
-# Create a patch release (0.1.0 → 0.1.1)
-npm run release patch
+Commit messages drive the version bump and the changelog. Use:
 
-# Create a minor release (0.1.0 → 0.2.0)
-npm run release minor
-
-# Create a major release (0.1.0 → 1.0.0)
-npm run release major
+```
+<type>(<optional scope>): <summary>
 ```
 
-### Using npm scripts
+| Type                                            | Bumps | Changelog section |
+| ----------------------------------------------- | ----- | ----------------- |
+| `feat`                                          | MINOR | Added             |
+| `fix`                                           | PATCH | Fixed             |
+| `perf`                                          | PATCH | Changed           |
+| `refactor`                                      | PATCH | Changed           |
+| `docs`, `chore`, `test`, `build`, `ci`          | none  | (omitted)         |
+| `feat!` / `fix!` or a `BREAKING CHANGE:` footer | MAJOR | Breaking          |
+
+Existing scopes in this repo (`health`, `obs`, …) are fine as the `(scope)`.
+A breaking change before 1.0.0 still bumps MINOR (0.x semantics), not MAJOR —
+we intentionally hold 1.0.0 for launch.
+
+## How a release works (planned automation)
+
+Releases are **PR-gated** — nothing is published by pushing to `main` directly.
+
+1. You merge normal PRs into `main` with Conventional Commit messages.
+2. **release-please** (a GitHub Action) reads those commits and keeps a standing
+   **"Release PR"** open that bumps `package.json` and updates `CHANGELOG.md`.
+3. Merging that Release PR creates the git tag `vX.Y.Z` and a GitHub Release.
+4. A tag-triggered workflow builds with the version as `SENTRY_RELEASE`,
+   creates + finalizes the Sentry release (sourcemaps + associated commits for
+   suspect-commit detection), then deploys to Vercel.
+
+> **Status:** the versioning policy, changelog, and Sentry release wiring are in
+> place now. The release-please Action and the tag → Sentry/deploy workflow land
+> in a follow-up "release automation" change. Until then, use the manual process
+> below.
+
+### Manual process (until automation lands)
 
 ```bash
-# Update version and build
-npm run release:patch    # 0.1.0 → 0.1.1
-npm run release:minor    # 0.1.0 → 0.2.0
-npm run release:major    # 0.1.0 → 1.0.0
-
-# Update version only
-npm run version:patch
-npm run version:minor
-npm run version:major
+npm run version:minor   # or version:patch / version:major (edits package.json only)
+# commit the bump in a PR, merge, then tag:
+git tag -a v0.3.0 -m "Release 0.3.0" && git push origin v0.3.0
 ```
 
-## What Happens During Release
+`scripts/release.js` (`npm run release`) still exists but pushes straight to
+`main`; it will be retired when release-please lands. Prefer the PR flow.
 
-1. **Version Update**: Package.json version is automatically incremented
-2. **Build**: Project is built with the new version
-3. **Git Commit**: Changes are committed with a descriptive message
-4. **Git Tag**: A version tag is created (e.g., `v0.1.1`)
-5. **Sentry Integration**: The new version is automatically sent to Sentry
+## Sentry release wiring
 
-## Sentry Release Tracking
+The release name is **`[email protected]`** everywhere, derived from
+`package.json`:
 
-Each release automatically:
+- **Frontend** — `src/utils/sentry.ts` uses the Vite-injected `__SENTRY_RELEASE__`
+  (`vite.config.ts` `define`), and `@sentry/vite-plugin` uploads a release of
+  the same name with sourcemaps.
+- **Backend** — `api/_utils/sentry.ts` sets `release: \`tattoo-directory@${version}\``
+  so serverless spans/logs/metrics attach to the version too.
 
-- Creates a new release in Sentry
-- Associates errors and performance data with the specific version
-- Enables better debugging by correlating issues with releases
-- Provides release-specific analytics and monitoring
+### Dashboard hygiene (to verify in Sentry / Vercel)
 
-## Manual Release Process
+The Releases list currently shows **per-commit SHA** releases
+(`3071efec…`). Those are created by the **Vercel↔Sentry integration**, which
+stamps `SENTRY_RELEASE=<git sha>` per deploy and competes with the semver name.
+To make releases read as versions:
 
-If you prefer to manage releases manually:
+- [ ] In the Sentry (or Vercel) integration settings, disable the automatic
+      commit-SHA release, or set the release to the app version.
+- [ ] Confirm `@sentry/vite-plugin`'s `project` (currently `javascript-react`,
+      `vite.config.ts`) matches the project the runtime **DSN** reports to
+      (the `trad-directory` project in the Releases screenshot). If they differ,
+      sourcemaps are uploading to the wrong project — align them.
+- [ ] After the next tagged deploy, confirm a single `[email protected]`
+      release appears with events, sourcemaps, and associated commits.
 
-1. Update version in `package.json`
-2. Build the project: `npm run build`
-3. Commit changes: `git add . && git commit -m "chore: release version X.Y.Z"`
-4. Create tag: `git tag -a vX.Y.Z -m "Release version X.Y.Z"`
-5. Push changes: `git push origin main && git push origin vX.Y.Z`
+## Alerts to set up (once releases are clean)
 
-## Environment Variables
-
-The following environment variables are automatically injected during build:
-
-- `__SENTRY_RELEASE__`: Current package version (e.g., "0.1.0")
-- `__APP_VERSION__`: Current package version for general use
-- `__SENTRY_ENVIRONMENT__`: Build environment (development/production)
-
-## Best Practices
-
-1. **Use semantic versioning** - increment the appropriate version number based on changes
-2. **Create releases frequently** - smaller, more frequent releases are easier to debug
-3. **Test before release** - ensure the build works before creating a release
-4. **Document changes** - update changelog or commit messages with meaningful descriptions
-5. **Deploy after release** - deploy the new version to production after creating the release
-
-## Troubleshooting
-
-### Version not updating in Sentry
-
-- Ensure the build completed successfully
-- Check that `__SENTRY_RELEASE__` is properly injected
-- Verify Sentry DSN is correct
-
-### Build errors during release
-
-- Check for TypeScript/ESLint errors
-- Ensure all dependencies are installed
-- Verify build configuration is correct
+- Cron monitor miss (`instagram-link-checker` check-in) — already wired.
+- `ig.throttle` spike — Instagram rate-limiting our IP.
+- Dead-rate spike via `link.transition{to:dead}`.
+- Probe p95 latency regression (`ig.probe.latency_ms`).
+- On-demand `checkLink` error rate.
