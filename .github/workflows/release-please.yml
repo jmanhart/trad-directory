@@ -1,0 +1,36 @@
+# Automated releases via release-please.
+#
+# On every push to main this reads the Conventional Commits since the last
+# release and maintains a standing "Release PR" that bumps package.json and
+# updates CHANGELOG.md. Merging that PR tags vX.Y.Z and cuts a GitHub Release;
+# Vercel then auto-deploys main and the @sentry/vite-plugin creates the matching
+# "tattoo-directory@X.Y.Z" Sentry release with sourcemaps.
+#
+# Bump policy (pre-1.0):
+#   fix / perf / refactor  -> PATCH   (the default as we work)
+#   feat                   -> MINOR   (a new feature)
+#   feat! / BREAKING CHANGE -> MINOR  (held below 1.0 by bump-minor-pre-major)
+#   1.0.0                  -> MANUAL  (commit footer "Release-As: 1.0.0" when the
+#                                      map ships and the site goes public)
+#
+# Uses the built-in GITHUB_TOKEN — no extra secrets required.
+
+name: release-please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

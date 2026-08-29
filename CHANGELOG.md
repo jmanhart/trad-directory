@@ -28,9 +28,10 @@ released sections.
   on-demand Check Link is spanned, logged, and flushed.
 - **Semantic-versioned Sentry releases** (`[email protected]`) across the
   frontend and backend, replacing the per-commit SHA release names.
-- **Release workflow bones** — this changelog and a rewritten `RELEASE.md`
-  documenting the SemVer policy, Conventional Commits, and the planned
-  release-please automation.
+- **Automated releases** — a `release-please` GitHub Action maintains a Release
+  PR that bumps the version + updates this changelog from Conventional Commits
+  (`fix`/`perf`/`refactor` → patch, `feat` → minor; `1.0.0` held for the map
+  launch). Documented in a rewritten `RELEASE.md`.
 
 ## [0.2.0]
 

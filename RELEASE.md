@@ -40,24 +40,27 @@ Existing scopes in this repo (`health`, `obs`, …) are fine as the `(scope)`.
 A breaking change before 1.0.0 still bumps MINOR (0.x semantics), not MAJOR —
 we intentionally hold 1.0.0 for launch.
 
-## How a release works (planned automation)
+## How a release works
 
 Releases are **PR-gated** — nothing is published by pushing to `main` directly.
 
-1. You merge normal PRs into `main` with Conventional Commit messages.
-2. **release-please** (a GitHub Action) reads those commits and keeps a standing
-   **"Release PR"** open that bumps `package.json` and updates `CHANGELOG.md`.
-3. Merging that Release PR creates the git tag `vX.Y.Z` and a GitHub Release.
-4. A tag-triggered workflow builds with the version as `SENTRY_RELEASE`,
-   creates + finalizes the Sentry release (sourcemaps + associated commits for
-   suspect-commit detection), then deploys to Vercel.
+1. Merge normal PRs into `main` with Conventional Commit messages.
+2. **release-please** (`.github/workflows/release-please.yml`) reads the commits
+   since the last release and keeps a standing **"Release PR"** open that bumps
+   `package.json` and updates `CHANGELOG.md`. `fix` / `perf` / `refactor` roll a
+   PATCH; a `feat` makes it a MINOR.
+3. Merge that Release PR when you want to cut the release — it creates the git
+   tag `vX.Y.Z` and a GitHub Release.
+4. Vercel auto-deploys `main`, and `@sentry/vite-plugin` creates the matching
+   `tattoo-directory@X.Y.Z` Sentry release (sourcemaps + commits) on that build.
+   No separate deploy workflow is needed.
 
-> **Status:** the versioning policy, changelog, and Sentry release wiring are in
-> place now. The release-please Action and the tag → Sentry/deploy workflow land
-> in a follow-up "release automation" change. Until then, use the manual process
-> below.
+> **Reaching 1.0.0:** release-please holds the version below 1.0 automatically
+> (`bump-minor-pre-major`), so it never jumps to 1.0 on its own. When the map
+> ships and the site goes public, add a `Release-As: 1.0.0` footer to a commit
+> to cut `1.0.0`.
 
-### Manual process (until automation lands)
+### Manual process (fallback)
 
 ```bash
 npm run version:minor   # or version:patch / version:major (edits package.json only)
