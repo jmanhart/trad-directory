@@ -342,10 +342,18 @@
   font-size: 0.9rem;
 }
 
-/* Table location: one line, ellipsis if it still overflows after abbreviation. */
-.locationEllipsis {
+/* Table cells that must stay on one line; ellipsis if they still overflow. */
+.ellipsisCell {
   display: block;
   max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shopEllipsis {
+  display: block;
+  max-width: 260px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -362,7 +370,7 @@
 }
 
 .shopCell {
-  min-width: 150px;
+  min-width: 200px;
 }
 
 .travelingCell {

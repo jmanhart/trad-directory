@@ -2211,7 +2211,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                             />
                           </td>
                           <td className={styles.locationCell}>
-                            <span className={styles.locationEllipsis}>
+                            <span className={styles.ellipsisCell}>
                               {shortLocation(
                                 artist.city_name,
                                 artist.state_name,
@@ -2220,7 +2220,9 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                             </span>
                           </td>
                           <td className={styles.shopCell}>
-                            {artist.shop_name || "—"}
+                            <span className={styles.shopEllipsis}>
+                              {artist.shop_name || "—"}
+                            </span>
                           </td>
                           <td className={styles.travelingCell}>
                             {artist.is_traveling ? "✓" : "—"}
@@ -2316,7 +2318,7 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                             />
                           </td>
                           <td className={styles.locationCell}>
-                            <span className={styles.locationEllipsis}>
+                            <span className={styles.ellipsisCell}>
                               {shortLocation(
                                 shop.city_name,
                                 shop.state_name,
