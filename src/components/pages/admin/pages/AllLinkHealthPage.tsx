@@ -127,6 +127,7 @@ export default function AllLinkHealthPage() {
                 const jc = justChecked[key];
                 const status = jc?.status ?? r.status;
                 const checkedAt = jc?.checked_at ?? r.checked_at;
+                const lastAlive = jc ? jc.last_alive_at : r.last_alive_at;
                 const detail = jc
                   ? `${jc.probe.result} · ${jc.probe.detail}`
                   : r.error_message ??
@@ -150,7 +151,7 @@ export default function AllLinkHealthPage() {
                         {STATUS_LABEL[status] ?? status}
                       </span>
                     </td>
-                    <td>{fmtDate(r.last_alive_at)}</td>
+                    <td>{fmtDate(lastAlive)}</td>
                     <td>{fmtDate(checkedAt)}</td>
                     <td className={styles.detail}>{detail}</td>
                     <td className={styles.actions}>

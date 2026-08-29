@@ -597,6 +597,7 @@ export interface CheckLinkResult {
     detail: string;
   };
   checked_at: string;
+  last_alive_at: string | null;
 }
 
 // On-demand live probe of one link (the "Check Link" action). Returns the new

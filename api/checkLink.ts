@@ -150,6 +150,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       status: state.status,
       probe: { result: probe.result, statusCode: probe.statusCode, detail: probe.detail },
       checked_at: nowIso,
+      last_alive_at: state.last_alive_at,
     });
   } catch (error) {
     console.error("checkLink error:", error);
