@@ -26,11 +26,13 @@ import {
   deleteArtist,
   deleteShop,
   fetchLinkStatuses,
+  checkLink,
   deleteCity,
   deleteCountry,
   type SubmissionStatus,
   type BrokenLinkResult,
   type LinkStatusMaps,
+  type LinkStatusRec,
 } from "../../../services/adminApi";
 import { useAdminData } from "./useAdminData";
 import type { City } from "./adminTypes";
@@ -47,10 +49,42 @@ const STATUS_PILL_LABEL: Record<string, string> = {
   unknown: "Unknown",
 };
 
-function StatusPill({ status }: { status?: string }) {
+function StatusPill({
+  status,
+  onClick,
+  busy,
+}: {
+  status?: string;
+  onClick?: () => void;
+  busy?: boolean;
+}) {
+  const tone = status
+    ? styles[`statusPill_${status}`]
+    : styles.statusPill_unchecked;
+  const label = busy
+    ? "Checking…"
+    : status
+      ? STATUS_PILL_LABEL[status] ?? status
+      : "—";
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className={`${styles.statusPill} ${tone} ${styles.statusPillButton}`}
+        disabled={busy}
+        title="Run a live check"
+        onClick={e => {
+          e.stopPropagation();
+          onClick();
+        }}
+      >
+        {label}
+      </button>
+    );
+  }
   if (!status) return <span className={styles.statusMuted}>—</span>;
   return (
-    <span className={`${styles.statusPill} ${styles[`statusPill_${status}`]}`}>
+    <span className={`${styles.statusPill} ${tone}`}>
       {STATUS_PILL_LABEL[status] ?? status}
     </span>
   );
@@ -60,6 +94,44 @@ function fmtHealthDate(iso: string | null | undefined): string {
   if (!iso) return "Never";
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? "Never" : d.toLocaleDateString();
+}
+
+// Compact location for the dense table view: city in full, state + country
+// abbreviated when known (e.g. "Seattle, WA, US"); unknown names fall back to
+// full text so nothing is lost. The detail flyout keeps the full names.
+const US_STATE_ABBR: Record<string, string> = {
+  Alabama: "AL", Alaska: "AK", Arizona: "AZ", Arkansas: "AR", California: "CA",
+  Colorado: "CO", Connecticut: "CT", Delaware: "DE", Florida: "FL", Georgia: "GA",
+  Hawaii: "HI", Idaho: "ID", Illinois: "IL", Indiana: "IN", Iowa: "IA",
+  Kansas: "KS", Kentucky: "KY", Louisiana: "LA", Maine: "ME", Maryland: "MD",
+  Massachusetts: "MA", Michigan: "MI", Minnesota: "MN", Mississippi: "MS",
+  Missouri: "MO", Montana: "MT", Nebraska: "NE", Nevada: "NV",
+  "New Hampshire": "NH", "New Jersey": "NJ", "New Mexico": "NM", "New York": "NY",
+  "North Carolina": "NC", "North Dakota": "ND", Ohio: "OH", Oklahoma: "OK",
+  Oregon: "OR", Pennsylvania: "PA", "Rhode Island": "RI", "South Carolina": "SC",
+  "South Dakota": "SD", Tennessee: "TN", Texas: "TX", Utah: "UT", Vermont: "VT",
+  Virginia: "VA", Washington: "WA", "West Virginia": "WV", Wisconsin: "WI",
+  Wyoming: "WY", "District of Columbia": "DC",
+};
+
+const COUNTRY_ABBR: Record<string, string> = {
+  "United States": "US", "United Kingdom": "UK", Canada: "CA", Australia: "AU",
+  Germany: "DE", France: "FR", Netherlands: "NL", Spain: "ES", Italy: "IT",
+  Ireland: "IE", "New Zealand": "NZ", Sweden: "SE", Norway: "NO", Denmark: "DK",
+  Finland: "FI", Japan: "JP", Brazil: "BR", Mexico: "MX", Portugal: "PT",
+  Belgium: "BE", Austria: "AT", Switzerland: "CH", Poland: "PL",
+};
+
+function shortLocation(
+  city?: string | null,
+  state?: string | null,
+  country?: string | null
+): string {
+  const parts: string[] = [];
+  if (city) parts.push(city);
+  if (state) parts.push(US_STATE_ABBR[state] ?? state);
+  if (country) parts.push(COUNTRY_ABBR[country] ?? country);
+  return parts.length > 0 ? parts.join(", ") : "—";
 }
 
 interface Artist {
@@ -386,6 +458,32 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     artists: {},
     shops: {},
   });
+
+  const [checkingLink, setCheckingLink] = useState<Record<string, boolean>>({});
+
+  const runLinkCheck = async (entityType: "artist" | "shop", id: number) => {
+    const key = `${entityType}:${id}`;
+    setCheckingLink(c => ({ ...c, [key]: true }));
+    try {
+      const res = await checkLink(entityType, id);
+      const rec: LinkStatusRec = {
+        status: res.status,
+        last_alive_at: res.last_alive_at,
+        checked_at: res.checked_at,
+        status_code: res.probe.statusCode,
+        error_message: res.probe.result === "unknown" ? res.probe.detail : null,
+      };
+      setLinkStatuses(prev =>
+        entityType === "artist"
+          ? { ...prev, artists: { ...prev.artists, [id]: rec } }
+          : { ...prev, shops: { ...prev.shops, [id]: rec } }
+      );
+    } catch (e) {
+      console.error("link check failed", e);
+    } finally {
+      setCheckingLink(c => ({ ...c, [key]: false }));
+    }
+  };
 
   useEffect(() => {
     // Load stats and initial data on mount
@@ -2098,10 +2196,16 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                           <td className={styles.statusCell}>
                             <StatusPill
                               status={linkStatuses.artists[artist.id]?.status}
+                              busy={checkingLink[`artist:${artist.id}`]}
+                              onClick={() => runLinkCheck("artist", artist.id)}
                             />
                           </td>
                           <td className={styles.locationCell}>
-                            {formatLocation(artist)}
+                            {shortLocation(
+                              artist.city_name,
+                              artist.state_name,
+                              artist.country_name
+                            )}
                           </td>
                           <td className={styles.shopCell}>
                             {artist.shop_name || "—"}
@@ -2201,10 +2305,16 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                           <td className={styles.statusCell}>
                             <StatusPill
                               status={linkStatuses.shops[shop.id]?.status}
+                              busy={checkingLink[`shop:${shop.id}`]}
+                              onClick={() => runLinkCheck("shop", shop.id)}
                             />
                           </td>
                           <td className={styles.locationCell}>
-                            {formatLocation(shop)}
+                            {shortLocation(
+                              shop.city_name,
+                              shop.state_name,
+                              shop.country_name
+                            )}
                           </td>
                           <td className={styles.shopCell}>
                             {shop.address || "—"}

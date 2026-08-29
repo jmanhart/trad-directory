@@ -905,3 +905,29 @@
   background-color: rgba(120, 120, 120, 0.1);
   color: var(--color-text-secondary);
 }
+
+.statusPillButton {
+  cursor: pointer;
+  border: 1px solid transparent;
+  font-family: inherit;
+  transition: filter 0.12s ease;
+}
+
+.statusPillButton:hover:not(:disabled) {
+  border-color: transparent;
+  filter: brightness(0.94);
+}
+
+.statusPillButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.statusPillButton:focus {
+  outline: none;
+}
+
+.statusPillButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
