@@ -7,7 +7,7 @@ export const config = { maxDuration: 300 };
 // Pulse tuning. Small waves + jitter keep per-IP volume low; IG rate-limits the
 // probe endpoint hard, so we abort a wave and let the next tick retry rather
 // than hammer through blocks.
-const WAVE_SIZE = 20; // handles probed per cron tick
+const WAVE_SIZE = 12; // handles probed per cron tick (kept under IG's per-IP throttle)
 const CONFIRM_DEAD_AFTER = 3; // consecutive dead probes before status flips to dead
 const MIN_DELAY_MS = 3000;
 const MAX_DELAY_MS = 6000;
@@ -21,9 +21,9 @@ type Status = "alive" | "suspect" | "dead" | "unknown";
 
 // How long until a row of each status is due for another probe.
 const RECHECK_MS: Record<Status, number> = {
-  alive: 30 * DAY,
-  suspect: 2 * DAY,
-  dead: 14 * DAY,
+  alive: 45 * DAY,
+  suspect: 3 * DAY,
+  dead: 21 * DAY,
   unknown: 6 * HOUR,
 };
 

@@ -124,6 +124,33 @@ export default async function handler(req: any, res: any) {
       // Don't throw - the shop was created successfully, just the slug failed
     }
 
+    // Seed link health as verified-now so the wave checker doesn't prioritise a
+    // freshly hand-added handle — you just confirmed it from a live profile.
+    if (shopData.instagram_handle) {
+      const nowIso = new Date().toISOString();
+      const recheckIso = new Date(
+        Date.now() + 45 * 24 * 60 * 60 * 1000
+      ).toISOString();
+      const { error: healthError } = await supabase
+        .from("link_check_results")
+        .upsert(
+          {
+            entity_type: "shop",
+            entity_id: newShop.id,
+            entity_name: data.shop_name,
+            instagram_handle: shopData.instagram_handle,
+            status: "alive",
+            fail_streak: 0,
+            last_alive_at: nowIso,
+            next_check_at: recheckIso,
+            is_broken: false,
+            checked_at: nowIso,
+          },
+          { onConflict: "entity_type,entity_id" }
+        );
+      if (healthError) console.error("Link health seed error:", healthError);
+    }
+
     res.status(200).json({
       success: true,
       shop_id: newShop.id,
