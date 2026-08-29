@@ -4,8 +4,9 @@ import type { ApiRequest, ApiResponse } from "./_utils/http";
 
 // Admin read endpoint for the Link Health view. Returns link_check_results
 // rows filtered by status. ?status=dead,suspect (default) | all | any subset of
-// alive|suspect|dead|unknown. Ignored rows are excluded.
+// unchecked|alive|suspect|dead|unknown. Ignored rows are excluded.
 const ALLOWED_STATUS: Record<string, true> = {
+  unchecked: true,
   alive: true,
   suspect: true,
   dead: true,
@@ -41,7 +42,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const param = Array.isArray(rawStatus) ? rawStatus[0] : rawStatus;
     let statuses: string[];
     if (!param || param === "default") statuses = ["dead", "suspect"];
-    else if (param === "all") statuses = ["alive", "suspect", "dead", "unknown"];
+    else if (param === "all")
+      statuses = ["unchecked", "alive", "suspect", "dead", "unknown"];
     else statuses = param.split(",").filter(s => ALLOWED_STATUS[s]);
     if (statuses.length === 0) statuses = ["dead", "suspect"];
 
