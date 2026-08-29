@@ -9,6 +9,8 @@ interface AdminDetailPanelProps {
   children: ReactNode;
   /** Sticky action bar at the bottom (Edit, or Delete/Cancel/Save). */
   footer?: ReactNode;
+  /** Force the fixed right-side overlay (with backdrop) regardless of viewport. */
+  overlay?: boolean;
 }
 
 /**
@@ -21,12 +23,19 @@ export default function AdminDetailPanel({
   onClose,
   children,
   footer,
+  overlay = false,
 }: AdminDetailPanelProps) {
   if (!open) return null;
   return (
     <>
-      <div className={styles.backdrop} onClick={onClose} />
-      <aside className={styles.panel} aria-label={title}>
+      <div
+        className={`${styles.backdrop} ${overlay ? styles.backdropOverlay : ""}`}
+        onClick={onClose}
+      />
+      <aside
+        className={`${styles.panel} ${overlay ? styles.panelOverlay : ""}`}
+        aria-label={title}
+      >
         <div className={styles.header}>
           <h2 className={styles.title}>{title}</h2>
           <button
