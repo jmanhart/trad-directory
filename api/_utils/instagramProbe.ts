@@ -1,20 +1,28 @@
 // Unauthenticated Instagram existence probe.
 //
-// IG's public profile HTML (instagram.com/<handle>/) is now a client-rendered
+// IG's public profile HTML (instagram.com/<handle>/) is a client-rendered
 // shell that returns 200 for BOTH real and nonexistent handles, so it carries
-// no live/dead signal. The one unauthenticated endpoint that still does is the
-// internal web_profile_info JSON API — but only when called with browser-like
-// Fetch-Metadata headers (x-ig-app-id + Sec-Fetch-* + a same-origin Referer);
-// without them IG replies 400 "SecFetch Policy violation".
+// no live/dead signal. The one unauthenticated endpoint that does is the
+// internal web_profile_info JSON API — called with browser-like Fetch-Metadata
+// headers (x-ig-app-id + Sec-Fetch-* + a same-origin Referer); without them IG
+// replies 400 "SecFetch Policy violation".
 //
-// Empirically verified (2026):
-//   existing handle     -> 200 application/json with data.user
-//   freed/renamed handle -> 404
-//   everything else (400 / 429 / 5xx / non-json / timeout) is AMBIGUOUS and
-//   MUST map to "unknown" — a health check never flags a link dead on doubt.
+// Response mapping (empirically verified, 2026):
+//   200 + data.user                     -> alive
+//   404                                  -> dead  (freed/renamed username)
+//   400 JSON {status:"fail"}             -> alive: IG *found* the profile but
+//                                          couldn't serialize it (a server-side
+//                                          bug for some business-category
+//                                          accounts). A nonexistent handle
+//                                          returns 404, never this — so a JSON
+//                                          fail envelope means the profile
+//                                          exists.
+//   400 non-JSON (SecFetch) / 429 / 5xx  -> unknown (request rejected /
+//   / timeout / anything else              throttled): NEVER flags a link.
 //
-// IG rate-limits this endpoint hard per IP, so callers must probe in small,
-// jittered waves and back off on 429/400 (see the wave scheduler).
+// IG rate-limits per IP, so callers probe in small jittered waves. `retries`
+// gives transient `unknown` results (throttle/timeout) another attempt — used
+// by the on-demand Check Link, not the bulk cron.
 
 export type ProbeResult = "alive" | "dead" | "unknown";
 
@@ -24,11 +32,16 @@ export interface ProbeOutcome {
   detail: string;
 }
 
-// Public IG web app id + a realistic desktop UA.
 const IG_APP_ID = "936619743392459";
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+function delay(ms: number): Promise<void> {
+  const { promise, resolve } = Promise.withResolvers<void>();
+  setTimeout(resolve, ms);
+  return promise;
+}
 
 /** True only when the JSON body clearly contains a populated user object. */
 function hasUser(body: unknown): boolean {
@@ -38,16 +51,17 @@ function hasUser(body: unknown): boolean {
   return data.user != null;
 }
 
-export async function probeInstagram(
-  handle: string,
-  timeoutMs = 10000
-): Promise<ProbeOutcome> {
-  const h = handle.replace(/^@/, "").trim();
-  if (!h) return { result: "unknown", statusCode: null, detail: "empty handle" };
+/** IG's structured error envelope ({status:"fail", ...}) — the request reached
+ *  profile serialization, which only happens for a profile that exists. */
+function isFailEnvelope(body: unknown): boolean {
+  if (!body || typeof body !== "object" || !("status" in body)) return false;
+  return body.status === "fail";
+}
 
+async function probeOnce(handle: string, timeoutMs: number): Promise<ProbeOutcome> {
   const url =
     "https://www.instagram.com/api/v1/users/web_profile_info/?username=" +
-    encodeURIComponent(h);
+    encodeURIComponent(handle);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -61,7 +75,7 @@ export async function probeInstagram(
         "X-Requested-With": "XMLHttpRequest",
         Accept: "*/*",
         "Accept-Language": "en-US,en;q=0.9",
-        Referer: `https://www.instagram.com/${h}/`,
+        Referer: `https://www.instagram.com/${handle}/`,
         Origin: "https://www.instagram.com",
         "Sec-Fetch-Site": "same-origin",
         "Sec-Fetch-Mode": "cors",
@@ -77,9 +91,12 @@ export async function probeInstagram(
     if (status === 429) {
       return { result: "unknown", statusCode: 429, detail: "rate limited" };
     }
+
+    const contentType = res.headers.get("content-type") || "";
+    const isJson = contentType.includes("json");
+
     if (status === 200) {
-      const contentType = res.headers.get("content-type") || "";
-      if (!contentType.includes("json")) {
+      if (!isJson) {
         return { result: "unknown", statusCode: 200, detail: "non-json (login wall)" };
       }
       const body: unknown = await res.json().catch(() => null);
@@ -88,7 +105,25 @@ export async function probeInstagram(
       }
       return { result: "unknown", statusCode: 200, detail: "json without user" };
     }
-    // 400 SecFetch rejection, 401/403 auth wall, 5xx: ambiguous, do not flag.
+
+    if (status === 400) {
+      // A JSON fail envelope means IG found the profile but its serializer
+      // errored (business-category bug) -> the profile exists -> alive. A
+      // non-JSON 400 is the SecFetch request rejection -> unknown.
+      if (isJson) {
+        const body: unknown = await res.json().catch(() => null);
+        if (isFailEnvelope(body)) {
+          return {
+            result: "alive",
+            statusCode: 400,
+            detail: "profile exists (IG serializer error)",
+          };
+        }
+        return { result: "unknown", statusCode: 400, detail: "json 400" };
+      }
+      return { result: "unknown", statusCode: 400, detail: "request rejected (400)" };
+    }
+
     return { result: "unknown", statusCode: status, detail: `unexpected ${status}` };
   } catch (e: unknown) {
     clearTimeout(timer);
@@ -101,4 +136,21 @@ export async function probeInstagram(
           : "network error";
     return { result: "unknown", statusCode: null, detail };
   }
+}
+
+export async function probeInstagram(
+  handle: string,
+  timeoutMs = 10000,
+  retries = 0
+): Promise<ProbeOutcome> {
+  const h = handle.replace(/^@/, "").trim();
+  if (!h) return { result: "unknown", statusCode: null, detail: "empty handle" };
+
+  let outcome = await probeOnce(h, timeoutMs);
+  // Retry only transient "unknown" (throttle/timeout); alive/dead are final.
+  for (let attempt = 0; attempt < retries && outcome.result === "unknown"; attempt++) {
+    await delay(1500 + Math.random() * 1500);
+    outcome = await probeOnce(h, timeoutMs);
+  }
+  return outcome;
 }

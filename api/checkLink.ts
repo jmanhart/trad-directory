@@ -117,7 +117,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const prev = readPrev(prevRows);
 
     // Live probe + transition.
-    const probe = await probeInstagram(handle);
+    const probe = await probeInstagram(handle, 10000, 2);
     const now = Date.now();
     const nowIso = new Date(now).toISOString();
     const state = nextState(prev, probe.result, nowIso, now);
