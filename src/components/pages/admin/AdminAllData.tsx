@@ -923,18 +923,74 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, activeTab]);
 
+  // Search controls shared by the consolidated bar (compact) and the embedded
+  // pages (full-width). Same value/onChange wiring; only placeholder length,
+  // count string, and container class differ.
+  const renderSearchControls = (compact: boolean) => {
+    const searchable =
+      activeTab === "artists" ||
+      activeTab === "shops" ||
+      activeTab === "cities" ||
+      activeTab === "countries";
+    if (!searchable || loading) return null;
+
+    const placeholder = compact
+      ? activeTab === "artists"
+        ? "Search artists…"
+        : activeTab === "shops"
+          ? "Search shops…"
+          : activeTab === "cities"
+            ? "Search cities…"
+            : "Search countries…"
+      : activeTab === "artists"
+        ? "Search artists by name, Instagram, location, shop, or ID..."
+        : activeTab === "shops"
+          ? "Search shops by name, Instagram, location, address, or ID..."
+          : activeTab === "cities"
+            ? "Search cities by name, state, or country..."
+            : "Search countries by name or ID...";
+
+    const count =
+      activeTab === "artists"
+        ? `${filteredAndSortedArtists.length} of ${artists.length} artists`
+        : activeTab === "shops"
+          ? `${filteredAndSortedShops.length} of ${allShops.length} shops`
+          : activeTab === "cities"
+            ? `${filteredAndSortedCities.length} of ${cities.length} cities`
+            : `${filteredAndSortedCountries.length} of ${countries.length} countries`;
+
+    return (
+      <div
+        className={
+          compact ? styles.searchContainerCompact : styles.searchContainer
+        }
+      >
+        <div className={styles.searchInputWrapper}>
+          <SearchIcon className={styles.searchIcon} aria-hidden />
+          <Input
+            type="text"
+            placeholder={placeholder}
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className={styles.searchInput}
+          />
+        </div>
+        {searchQuery && <span className={styles.resultCount}>{count}</span>}
+      </div>
+    );
+  };
+
   return (
-    <div className={styles.pageContainer}>
+    <div
+      className={`${styles.pageContainer} ${!embeddedTab ? styles.consolidated : ""}`}
+    >
       <div className={styles.mainCol} ref={rootRef}>
         <div className={styles.container}>
         {embeddedTab && (
           <h1 className={styles.title}>{EMBEDDED_TITLES[embeddedTab]}</h1>
         )}
         {!embeddedTab && (
-          <>
-            <h1 className={styles.title}>ALL DATA</h1>
-
-            {/* Tabs */}
+          <div className={styles.dataHeaderBar}>
             <Tabs
               className={styles.dataTabs}
               items={[
@@ -946,47 +1002,12 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
               activeTab={activeTab}
               onTabChange={tabId => handleTabChange(tabId as TabType)}
             />
-          </>
+            {renderSearchControls(true)}
+          </div>
         )}
 
-        {/* Search Bar */}
-        {(activeTab === "artists" ||
-          activeTab === "shops" ||
-          activeTab === "cities" ||
-          activeTab === "countries") &&
-          !loading && (
-            <div className={styles.searchContainer}>
-              <div className={styles.searchInputWrapper}>
-                <SearchIcon className={styles.searchIcon} aria-hidden />
-                <Input
-                  type="text"
-                  placeholder={
-                    activeTab === "artists"
-                      ? "Search artists by name, Instagram, location, shop, or ID..."
-                      : activeTab === "shops"
-                        ? "Search shops by name, Instagram, location, address, or ID..."
-                        : activeTab === "cities"
-                          ? "Search cities by name, state, or country..."
-                          : "Search countries by name or ID..."
-                  }
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className={styles.searchInput}
-                />
-              </div>
-              {searchQuery && (
-                <span className={styles.resultCount}>
-                  {activeTab === "artists"
-                    ? `${filteredAndSortedArtists.length} of ${artists.length} artists`
-                    : activeTab === "shops"
-                      ? `${filteredAndSortedShops.length} of ${allShops.length} shops`
-                      : activeTab === "cities"
-                        ? `${filteredAndSortedCities.length} of ${cities.length} cities`
-                        : `${filteredAndSortedCountries.length} of ${countries.length} countries`}
-                </span>
-              )}
-            </div>
-          )}
+        {/* Embedded pages keep their full-width search below the title */}
+        {embeddedTab && renderSearchControls(false)}
 
         {/* Content */}
         <div className={styles.content}>
