@@ -14,10 +14,15 @@
 // before returning or buffered spans/logs/metrics/errors may never send.
 
 import * as Sentry from "@sentry/node";
+import { version } from "../../package.json";
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment: process.env.NODE_ENV || "production",
+  // Semver release (mirrors the frontend) so backend spans/logs/metrics tie to
+  // a real version — e.g. "[email protected]" — not the per-commit SHA that
+  // the Vercel↔Sentry integration would otherwise stamp.
+  release: `tattoo-directory@${version}`,
   // Capture every trace — the link-health workflow is low volume (a few dozen
   // probes per cron tick), so 100% sampling costs nothing meaningful and makes
   // trace-based metrics complete.
