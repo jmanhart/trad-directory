@@ -342,6 +342,15 @@
   font-size: 0.9rem;
 }
 
+/* Table location: one line, ellipsis if it still overflows after abbreviation. */
+.locationEllipsis {
+  display: block;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Integer columns (counts): shrink to ~label width, never wrap. The 1% width
    is the standard trick to make an auto-layout column collapse to its content
    so the text columns absorb the remaining space (no horizontal scroll). */

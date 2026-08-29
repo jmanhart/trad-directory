@@ -99,7 +99,8 @@ function fmtHealthDate(iso: string | null | undefined): string {
 // Compact location for the dense table view: city in full, state + country
 // abbreviated when known (e.g. "Seattle, WA, US"); unknown names fall back to
 // full text so nothing is lost. The detail flyout keeps the full names.
-const US_STATE_ABBR: Record<string, string> = {
+const STATE_ABBR: Record<string, string> = {
+  // United States
   Alabama: "AL", Alaska: "AK", Arizona: "AZ", Arkansas: "AR", California: "CA",
   Colorado: "CO", Connecticut: "CT", Delaware: "DE", Florida: "FL", Georgia: "GA",
   Hawaii: "HI", Idaho: "ID", Illinois: "IL", Indiana: "IN", Iowa: "IA",
@@ -112,6 +113,15 @@ const US_STATE_ABBR: Record<string, string> = {
   "South Dakota": "SD", Tennessee: "TN", Texas: "TX", Utah: "UT", Vermont: "VT",
   Virginia: "VA", Washington: "WA", "West Virginia": "WV", Wisconsin: "WI",
   Wyoming: "WY", "District of Columbia": "DC",
+  // Canada
+  Alberta: "AB", "British Columbia": "BC", Manitoba: "MB", "New Brunswick": "NB",
+  "Newfoundland and Labrador": "NL", "Northwest Territories": "NT",
+  "Nova Scotia": "NS", Nunavut: "NU", Ontario: "ON", "Prince Edward Island": "PE",
+  Quebec: "QC", Saskatchewan: "SK", Yukon: "YT",
+  // Australia
+  "New South Wales": "NSW", Victoria: "VIC", Queensland: "QLD",
+  "Western Australia": "WA", "South Australia": "SA", Tasmania: "TAS",
+  "Australian Capital Territory": "ACT", "Northern Territory": "NT",
 };
 
 const COUNTRY_ABBR: Record<string, string> = {
@@ -129,7 +139,7 @@ function shortLocation(
 ): string {
   const parts: string[] = [];
   if (city) parts.push(city);
-  if (state) parts.push(US_STATE_ABBR[state] ?? state);
+  if (state) parts.push(STATE_ABBR[state] ?? state);
   if (country) parts.push(COUNTRY_ABBR[country] ?? country);
   return parts.length > 0 ? parts.join(", ") : "—";
 }
@@ -2201,11 +2211,13 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                             />
                           </td>
                           <td className={styles.locationCell}>
-                            {shortLocation(
-                              artist.city_name,
-                              artist.state_name,
-                              artist.country_name
-                            )}
+                            <span className={styles.locationEllipsis}>
+                              {shortLocation(
+                                artist.city_name,
+                                artist.state_name,
+                                artist.country_name
+                              )}
+                            </span>
                           </td>
                           <td className={styles.shopCell}>
                             {artist.shop_name || "—"}
@@ -2257,12 +2269,6 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                       </th>
                       <th
                         className={styles.sortableHeader}
-                        onClick={() => handleSort("address")}
-                      >
-                        Address {getSortIcon("address")}
-                      </th>
-                      <th
-                        className={styles.sortableHeader}
                         onClick={() => handleSort("shop_artist_count")}
                       >
                         Artists {getSortIcon("shop_artist_count")}
@@ -2310,14 +2316,13 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                             />
                           </td>
                           <td className={styles.locationCell}>
-                            {shortLocation(
-                              shop.city_name,
-                              shop.state_name,
-                              shop.country_name
-                            )}
-                          </td>
-                          <td className={styles.shopCell}>
-                            {shop.address || "—"}
+                            <span className={styles.locationEllipsis}>
+                              {shortLocation(
+                                shop.city_name,
+                                shop.state_name,
+                                shop.country_name
+                              )}
+                            </span>
                           </td>
                           <td className={styles.numCell}>
                             {artistCountByShop.get(
