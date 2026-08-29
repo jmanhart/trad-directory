@@ -1,0 +1,194 @@
+.container {
+  width: 100%;
+  margin: 0;
+  padding: 0.8rem 2rem 2rem;
+  box-sizing: border-box;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--color-text-primary);
+}
+
+/* Segmented status filter — same pattern as the analytics controls. */
+.filters {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.filterBtn {
+  padding: 0.35rem 0.7rem;
+  background-color: var(--color-surface);
+  border: none;
+  border-radius: 0;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.filterBtn + .filterBtn {
+  border-left: 1px solid var(--color-border);
+}
+
+.filterBtn:hover {
+  background-color: var(--color-surface-muted);
+}
+
+.filterActive,
+.filterActive:hover {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+.filterBtn:focus {
+  outline: none;
+}
+
+.filterBtn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.filterActive:focus-visible {
+  outline-color: #fff;
+}
+
+.caption {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.tableWrap {
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  overflow-x: auto;
+  background-color: var(--color-surface);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.table th,
+.table td {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.table a:hover {
+  text-decoration: underline;
+}
+
+.detail {
+  color: var(--color-text-tertiary);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Status badges — tinted like the submission status badges elsewhere. */
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.badge_dead {
+  background-color: rgba(192, 57, 43, 0.12);
+  color: #c0392b;
+}
+
+.badge_suspect {
+  background-color: rgba(185, 119, 14, 0.14);
+  color: #b9770e;
+}
+
+.badge_unknown {
+  background-color: rgba(108, 117, 125, 0.14);
+  color: #6c757d;
+}
+
+.badge_alive {
+  background-color: rgba(46, 125, 50, 0.12);
+  color: #2e7d32;
+}
+
+.actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.actions button {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.actions button:hover:not(:disabled) {
+  border-color: var(--color-primary);
+}
+
+.actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.actions .danger {
+  color: #c0392b;
+}
+
+.actions .danger:hover:not(:disabled) {
+  border-color: #c0392b;
+}
+
+.empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
