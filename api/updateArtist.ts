@@ -55,6 +55,7 @@ export default async function handler(req: any, res: any) {
     if (data.url !== undefined) updateData.url = data.url || null;
     if (data.contact !== undefined) updateData.contact = data.contact || null;
     if (data.city_id !== undefined) updateData.city_id = data.city_id || null;
+    if (data.secondary_city_id !== undefined) updateData.secondary_city_id = data.secondary_city_id || null;
     if (data.is_traveling !== undefined) updateData.is_traveling = data.is_traveling || false;
 
     // Update the artist

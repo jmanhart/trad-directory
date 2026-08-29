@@ -41,6 +41,7 @@ export default async function handler(req: any, res: any) {
     const updateData: any = {};
     if (data.city_name !== undefined) updateData.city_name = data.city_name;
     if (data.state_id !== undefined) updateData.state_id = data.state_id || null;
+    if (data.country_id !== undefined) updateData.country_id = data.country_id || null;
 
     // Re-geocode if city name or state changed
     if (data.city_name !== undefined || data.state_id !== undefined) {
