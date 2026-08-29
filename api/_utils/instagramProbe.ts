@@ -40,9 +40,9 @@ const USER_AGENT =
   "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 function delay(ms: number): Promise<void> {
-  const { promise, resolve } = Promise.withResolvers<void>();
-  setTimeout(resolve, ms);
-  return promise;
+  // Plain Promise, not Promise.withResolvers() — the latter is ES2024 (Node 22+)
+  // and throws on Vercel's Node 20 runtime.
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /** True only when the JSON body clearly contains a populated user object. */
