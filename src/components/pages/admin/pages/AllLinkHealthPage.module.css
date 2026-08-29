@@ -155,6 +155,11 @@
   color: #2e7d32;
 }
 
+.badge_unchecked {
+  background-color: rgba(120, 120, 120, 0.1);
+  color: var(--color-text-secondary);
+}
+
 .actions {
   display: flex;
   gap: 0.35rem;

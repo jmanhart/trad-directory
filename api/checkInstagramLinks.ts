@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import * as Sentry from "@sentry/node";
 import { probeInstagram } from "./_utils/instagramProbe";
+import { nextState, type LinkStatus } from "./_utils/linkHealth";
 
 export const config = { maxDuration: 300 };
 
@@ -8,24 +9,10 @@ export const config = { maxDuration: 300 };
 // probe endpoint hard, so we abort a wave and let the next tick retry rather
 // than hammer through blocks.
 const WAVE_SIZE = 12; // handles probed per cron tick (kept under IG's per-IP throttle)
-const CONFIRM_DEAD_AFTER = 3; // consecutive dead probes before status flips to dead
 const MIN_DELAY_MS = 3000;
 const MAX_DELAY_MS = 6000;
 const PROBE_TIMEOUT_MS = 10000;
 const RATE_LIMIT_ABORT = 3; // consecutive rate-limit/timeout unknowns -> stop wave
-
-const HOUR = 3_600_000;
-const DAY = 24 * HOUR;
-
-type Status = "alive" | "suspect" | "dead" | "unknown";
-
-// How long until a row of each status is due for another probe.
-const RECHECK_MS: Record<Status, number> = {
-  alive: 45 * DAY,
-  suspect: 3 * DAY,
-  dead: 21 * DAY,
-  unknown: 6 * HOUR,
-};
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -52,63 +39,17 @@ interface HandleRow {
 interface HealthRow {
   entity_type: string;
   entity_id: number;
-  status: Status;
+  status: LinkStatus;
   fail_streak: number;
   next_check_at: string;
   last_alive_at: string | null;
   ignored: boolean;
 }
 
-interface NextState {
-  status: Status;
-  fail_streak: number;
-  last_alive_at: string | null;
-  next_check_at: string;
-}
-
 function delay(ms: number): Promise<void> {
   const { promise, resolve } = Promise.withResolvers<void>();
   setTimeout(resolve, ms);
   return promise;
-}
-
-// State machine: alive resets the streak; a dead probe increments it and only
-// confirms `dead` after CONFIRM_DEAD_AFTER in a row (otherwise `suspect`);
-// `unknown` never changes status or streak (it just reschedules a soon retry).
-function nextState(
-  prev: HealthRow | undefined,
-  probe: Status,
-  nowIso: string,
-  now: number
-): NextState {
-  const prevStreak = prev?.fail_streak ?? 0;
-  const prevAlive = prev?.last_alive_at ?? null;
-
-  if (probe === "alive") {
-    return {
-      status: "alive",
-      fail_streak: 0,
-      last_alive_at: nowIso,
-      next_check_at: new Date(now + RECHECK_MS.alive).toISOString(),
-    };
-  }
-  if (probe === "dead") {
-    const streak = prevStreak + 1;
-    const status: Status = streak >= CONFIRM_DEAD_AFTER ? "dead" : "suspect";
-    return {
-      status,
-      fail_streak: streak,
-      last_alive_at: prevAlive,
-      next_check_at: new Date(now + RECHECK_MS[status]).toISOString(),
-    };
-  }
-  // unknown: preserve prior verdict, retry soon.
-  return {
-    status: prev?.status ?? "unknown",
-    fail_streak: prevStreak,
-    last_alive_at: prevAlive,
-    next_check_at: new Date(now + RECHECK_MS.unknown).toISOString(),
-  };
 }
 
 export default async function handler(req: CronRequest, res: CronResponse) {

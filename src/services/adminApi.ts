@@ -565,13 +565,13 @@ export interface LinkHealthRow {
   entity_id: number;
   entity_name: string;
   instagram_handle: string;
-  status: "alive" | "suspect" | "dead" | "unknown";
+  status: "unchecked" | "alive" | "suspect" | "dead" | "unknown";
   fail_streak: number;
   status_code: number | null;
   error_message: string | null;
   last_alive_at: string | null;
   next_check_at: string;
-  checked_at: string;
+  checked_at: string | null;
 }
 
 export async function fetchLinkHealth(
@@ -589,21 +589,33 @@ export async function fetchLinkHealth(
   return result.rows || [];
 }
 
-export async function updateLinkHealth(
+export interface CheckLinkResult {
+  status: "unchecked" | "alive" | "suspect" | "dead" | "unknown";
+  probe: {
+    result: "alive" | "dead" | "unknown";
+    statusCode: number | null;
+    detail: string;
+  };
+  checked_at: string;
+}
+
+// On-demand live probe of one link (the "Check Link" action). Returns the new
+// stored status plus the raw probe result so the UI can show what IG said.
+export async function checkLink(
   entity_type: "artist" | "shop",
-  entity_id: number,
-  action: "recheck" | "ignore" | "unignore"
-): Promise<void> {
-  const apiUrl = import.meta.env.VITE_API_URL || "/api/updateLinkHealth";
+  entity_id: number
+): Promise<CheckLinkResult> {
+  const apiUrl = import.meta.env.VITE_API_URL || "/api/checkLink";
   const response = await fetch(apiUrl, {
     method: "PUT",
     headers: adminHeaders(),
-    body: JSON.stringify({ entity_type, entity_id, action }),
+    body: JSON.stringify({ entity_type, entity_id }),
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
   }
+  return response.json();
 }
 
 export async function addArtistLocation(

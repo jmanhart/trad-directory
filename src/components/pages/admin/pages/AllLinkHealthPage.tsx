@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   fetchLinkHealth,
-  updateLinkHealth,
-  updateArtist,
-  updateShop,
-  deleteArtist,
-  deleteShop,
+  checkLink,
   type LinkHealthRow,
+  type CheckLinkResult,
 } from "../../../../services/adminApi";
 import styles from "./AllLinkHealthPage.module.css";
 
@@ -21,10 +18,12 @@ const FILTERS: Filter[] = [
   { key: "dead", label: "Dead", status: "dead" },
   { key: "suspect", label: "Suspect", status: "suspect" },
   { key: "unknown", label: "Unknown", status: "unknown" },
+  { key: "unchecked", label: "Unchecked", status: "unchecked" },
   { key: "all", label: "All", status: "all" },
 ];
 
 const STATUS_LABEL: Record<string, string> = {
+  unchecked: "Unchecked",
   alive: "Alive",
   suspect: "Suspect",
   dead: "Dead",
@@ -32,9 +31,9 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 function fmtDate(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "Never";
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString();
+  return Number.isNaN(d.getTime()) ? "Never" : d.toLocaleDateString();
 }
 
 export default function AllLinkHealthPage() {
@@ -43,9 +42,13 @@ export default function AllLinkHealthPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [justChecked, setJustChecked] = useState<Record<string, CheckLinkResult>>(
+    {}
+  );
 
   const load = useCallback((f: Filter) => {
     setLoading(true);
+    setJustChecked({});
     fetchLinkHealth(f.status)
       .then(r => {
         setRows(r);
@@ -61,44 +64,17 @@ export default function AllLinkHealthPage() {
     load(filter);
   }, [filter, load]);
 
-  async function act(r: LinkHealthRow, fn: () => Promise<void>) {
-    setBusyKey(`${r.entity_type}:${r.entity_id}`);
+  async function runCheck(r: LinkHealthRow) {
+    const key = `${r.entity_type}:${r.entity_id}`;
+    setBusyKey(key);
     try {
-      await fn();
-      load(filter);
+      const result = await checkLink(r.entity_type, r.entity_id);
+      setJustChecked(prev => ({ ...prev, [key]: result }));
     } catch (e: unknown) {
-      window.alert(e instanceof Error ? e.message : "action failed");
+      window.alert(e instanceof Error ? e.message : "check failed");
     } finally {
       setBusyKey(null);
     }
-  }
-
-  function fixHandle(r: LinkHealthRow) {
-    const next = window.prompt(
-      `New Instagram handle for ${r.entity_name}:`,
-      r.instagram_handle
-    );
-    if (!next || !next.trim() || next.trim() === r.instagram_handle) return;
-    const handle = next.trim();
-    act(r, async () => {
-      if (r.entity_type === "artist") {
-        await updateArtist({ id: r.entity_id, instagram_handle: handle });
-      } else {
-        await updateShop({ id: r.entity_id, instagram_handle: handle });
-      }
-      await updateLinkHealth(r.entity_type, r.entity_id, "recheck");
-    });
-  }
-
-  function cull(r: LinkHealthRow) {
-    const ok = window.confirm(
-      `Delete ${r.entity_type} "${r.entity_name}" (@${r.instagram_handle})? This cannot be undone.`
-    );
-    if (!ok) return;
-    act(r, async () => {
-      if (r.entity_type === "artist") await deleteArtist(r.entity_id);
-      else await deleteShop(r.entity_id);
-    });
   }
 
   return (
@@ -134,15 +110,13 @@ export default function AllLinkHealthPage() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Type</th>
                 <th>Name</th>
                 <th>Instagram</th>
                 <th>Status</th>
-                <th>Streak</th>
                 <th>Last alive</th>
                 <th>Last checked</th>
                 <th>Detail</th>
-                <th>Actions</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -150,9 +124,15 @@ export default function AllLinkHealthPage() {
                 const key = `${r.entity_type}:${r.entity_id}`;
                 const handle = r.instagram_handle.replace(/^@/, "");
                 const busy = busyKey === key;
+                const jc = justChecked[key];
+                const status = jc?.status ?? r.status;
+                const checkedAt = jc?.checked_at ?? r.checked_at;
+                const detail = jc
+                  ? `${jc.probe.result} · ${jc.probe.detail}`
+                  : r.error_message ??
+                    (r.status_code != null ? `HTTP ${r.status_code}` : "—");
                 return (
                   <tr key={key}>
-                    <td>{r.entity_type}</td>
                     <td>{r.entity_name}</td>
                     <td>
                       <a
@@ -165,51 +145,17 @@ export default function AllLinkHealthPage() {
                     </td>
                     <td>
                       <span
-                        className={`${styles.badge} ${styles[`badge_${r.status}`]}`}
+                        className={`${styles.badge} ${styles[`badge_${status}`]}`}
                       >
-                        {STATUS_LABEL[r.status] ?? r.status}
+                        {STATUS_LABEL[status] ?? status}
                       </span>
                     </td>
-                    <td>{r.fail_streak}</td>
                     <td>{fmtDate(r.last_alive_at)}</td>
-                    <td>{fmtDate(r.checked_at)}</td>
-                    <td className={styles.detail}>
-                      {r.error_message ??
-                        (r.status_code != null ? `HTTP ${r.status_code}` : "—")}
-                    </td>
+                    <td>{fmtDate(checkedAt)}</td>
+                    <td className={styles.detail}>{detail}</td>
                     <td className={styles.actions}>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() =>
-                          act(r, () =>
-                            updateLinkHealth(r.entity_type, r.entity_id, "recheck")
-                          )
-                        }
-                      >
-                        Re-check
-                      </button>
-                      <button type="button" disabled={busy} onClick={() => fixHandle(r)}>
-                        Fix handle
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() =>
-                          act(r, () =>
-                            updateLinkHealth(r.entity_type, r.entity_id, "ignore")
-                          )
-                        }
-                      >
-                        Ignore
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        className={styles.danger}
-                        onClick={() => cull(r)}
-                      >
-                        Delete
+                      <button type="button" disabled={busy} onClick={() => runCheck(r)}>
+                        {busy ? "Checking…" : "Check Link"}
                       </button>
                     </td>
                   </tr>

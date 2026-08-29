@@ -124,10 +124,10 @@ export default async function handler(req: any, res: any) {
       // Don't throw - the shop was created successfully, just the slug failed
     }
 
-    // Seed link health as verified-now so the wave checker doesn't prioritise a
-    // freshly hand-added handle — you just confirmed it from a live profile.
+    // Seed link health as "unchecked" but not due for ~45 days: a hand-added
+    // handle was just eyeballed, so the checker shouldn't prioritise it — but
+    // we don't claim a verdict it never actually probed.
     if (shopData.instagram_handle) {
-      const nowIso = new Date().toISOString();
       const recheckIso = new Date(
         Date.now() + 45 * 24 * 60 * 60 * 1000
       ).toISOString();
@@ -139,12 +139,12 @@ export default async function handler(req: any, res: any) {
             entity_id: newShop.id,
             entity_name: data.shop_name,
             instagram_handle: shopData.instagram_handle,
-            status: "alive",
+            status: "unchecked",
             fail_streak: 0,
-            last_alive_at: nowIso,
+            last_alive_at: null,
             next_check_at: recheckIso,
             is_broken: false,
-            checked_at: nowIso,
+            checked_at: null,
           },
           { onConflict: "entity_type,entity_id" }
         );
