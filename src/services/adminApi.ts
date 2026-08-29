@@ -560,6 +560,52 @@ export async function fetchBrokenLinks(): Promise<BrokenLinkResult[]> {
   }
 }
 
+export interface LinkHealthRow {
+  entity_type: "artist" | "shop";
+  entity_id: number;
+  entity_name: string;
+  instagram_handle: string;
+  status: "alive" | "suspect" | "dead" | "unknown";
+  fail_streak: number;
+  status_code: number | null;
+  error_message: string | null;
+  last_alive_at: string | null;
+  next_check_at: string;
+  checked_at: string;
+}
+
+export async function fetchLinkHealth(
+  status = "dead,suspect"
+): Promise<LinkHealthRow[]> {
+  const base = import.meta.env.VITE_API_URL || "/api/listLinkHealth";
+  const url = `${base}${base.includes("?") ? "&" : "?"}status=${encodeURIComponent(status)}`;
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${ADMIN_API_KEY}` },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch link health: ${response.status}`);
+  }
+  const result = await response.json();
+  return result.rows || [];
+}
+
+export async function updateLinkHealth(
+  entity_type: "artist" | "shop",
+  entity_id: number,
+  action: "recheck" | "ignore" | "unignore"
+): Promise<void> {
+  const apiUrl = import.meta.env.VITE_API_URL || "/api/updateLinkHealth";
+  const response = await fetch(apiUrl, {
+    method: "PUT",
+    headers: adminHeaders(),
+    body: JSON.stringify({ entity_type, entity_id, action }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+  }
+}
+
 interface BrokenLink {
   url: string;
   handle: string;
