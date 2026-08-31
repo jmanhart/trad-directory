@@ -1371,6 +1371,35 @@ function MapInner({
           </Source>
         )}
 
+        {/* SPIKE (explore/open-maps): limited highways from open vector tiles
+            (OpenFreeMap, keyless). Only motorway + trunk, thin + subtle. */}
+        {worldGeoJSON && usStatesGeoJSON && (
+        <Source
+          id="osm-vector"
+          type="vector"
+          url="https://tiles.openfreemap.org/planet"
+        >
+          <Layer
+            id="highways"
+            type="line"
+            source-layer="transportation"
+            filter={["match", ["get", "class"], ["motorway", "trunk"], true, false]}
+            paint={{
+              "line-color": "#c0392b",
+              "line-opacity": 0.35,
+              "line-width": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                4, 0.3,
+                8, 1,
+                12, 2.5,
+              ],
+            }}
+          />
+        </Source>
+        )}
+
         {/* Tier 1: Continent clusters (or loading placeholders) */}
         {tier === "continent" &&
           (loading || cityData.length === 0) &&
