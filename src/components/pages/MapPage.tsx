@@ -14,6 +14,7 @@ import MapArtistPanel from "../../components/map/MapArtistPanel";
 import MapShopPanel from "../../components/map/MapShopPanel";
 import type { MapShopData } from "../../components/map/MapShopPanel";
 import SearchBar from "../../components/common/SearchBar";
+import Tag from "../../components/common/Tag";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import styles from "./MapPage.module.css";
 
@@ -749,6 +750,7 @@ export default function MapPage() {
             placeholder="Search artist, shop, or city..."
           />
         </div>
+        <Tag tone="soft">Beta</Tag>
       </div>
       <MapView
         cityData={cityDots}

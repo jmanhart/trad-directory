@@ -1,0 +1,27 @@
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: 999px;
+}
+
+.primary {
+  color: #fff;
+  background-color: var(--color-primary);
+}
+
+.soft {
+  color: var(--color-primary);
+  background-color: var(--color-primary-soft);
+}
+
+.neutral {
+  color: var(--color-text-secondary);
+  background-color: var(--gray-200);
+}

@@ -9,7 +9,7 @@
   z-index: 1;
 }
 
-/* ── Floating overlay bar (hamburger + search as unified card) ── */
+/* ── Floating overlay: the search bar + a small status tag ── */
 .mapOverlay {
   position: absolute;
   top: var(--map-panel-inset);
@@ -17,7 +17,7 @@
   z-index: 15;
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 0.5rem;
   pointer-events: auto;
   width: var(--map-panel-width);
 }
