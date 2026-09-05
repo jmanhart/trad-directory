@@ -83,52 +83,6 @@ export default function SearchBar({
       return labelMatch || detailMatch;
     });
 
-    // Debug: Log filtering results for location suggestions
-    if (normalizedQuery.length >= 2) {
-      const allLocationSuggestions = suggestions.filter(
-        s => s.type === "location"
-      );
-      const locationMatches = filtered.filter(s => s.type === "location");
-
-      // Check for specific countries
-      const hasUnitedStates = allLocationSuggestions.some(s =>
-        s.label.toLowerCase().includes("united states")
-      );
-      const hasUnitedKingdom = allLocationSuggestions.some(s =>
-        s.label.toLowerCase().includes("united kingdom")
-      );
-      const hasCanada = allLocationSuggestions.some(s =>
-        s.label.toLowerCase().includes("canada")
-      );
-
-      const matchesUnitedStates = locationMatches.some(s =>
-        s.label.toLowerCase().includes("united states")
-      );
-      const matchesUnitedKingdom = locationMatches.some(s =>
-        s.label.toLowerCase().includes("united kingdom")
-      );
-      const matchesCanada = locationMatches.some(s =>
-        s.label.toLowerCase().includes("canada")
-      );
-
-      console.log(`[SearchBar] Filtering for "${normalizedQuery}":`, {
-        totalSuggestions: suggestions.length,
-        totalLocationSuggestions: allLocationSuggestions.length,
-        filteredCount: filtered.length,
-        locationMatches: locationMatches.length,
-        hasUnitedStates,
-        hasUnitedKingdom,
-        hasCanada,
-        matchesUnitedStates,
-        matchesUnitedKingdom,
-        matchesCanada,
-        sampleAllLocations: allLocationSuggestions
-          .slice(0, 10)
-          .map(s => s.label),
-        sampleLocationMatches: locationMatches.slice(0, 10).map(s => s.label),
-      });
-    }
-
     // Group by type for better organization
     const grouped: Record<string, Suggestion[]> = {
       artist: [],
@@ -143,41 +97,6 @@ export default function SearchBar({
     // Flatten with artists first, then shops, then locations
     return [...grouped.artist, ...grouped.shop, ...grouped.location];
   }, [query, suggestions, keepOpen]);
-
-  // Debug logging
-  useEffect(() => {
-    if (debug) {
-      const locationSuggestions = suggestions.filter(
-        s => s.type === "location"
-      );
-      const countrySuggestions = filteredSuggestions.filter(
-        s => s.type === "location"
-      );
-
-      console.log("[SearchBar] State:", {
-        query,
-        totalSuggestions: suggestions.length,
-        totalLocationSuggestions: locationSuggestions.length,
-        filteredSuggestionsCount: filteredSuggestions.length,
-        filteredLocationSuggestions: countrySuggestions.length,
-        showSuggestions,
-        highlightedIndex,
-        keepOpen,
-        sampleLocationSuggestions: locationSuggestions.slice(0, 5),
-        sampleFilteredSuggestions: filteredSuggestions.slice(0, 5),
-      });
-    }
-  }, [
-    query,
-    suggestions.length,
-    filteredSuggestions.length,
-    showSuggestions,
-    highlightedIndex,
-    debug,
-    keepOpen,
-    filteredSuggestions,
-    suggestions,
-  ]);
 
   // Handle click outside to close suggestions (disabled when keepOpen is true)
   useEffect(() => {
@@ -239,10 +158,6 @@ export default function SearchBar({
   };
 
   const selectSuggestion = (suggestion: Suggestion) => {
-    if (debug) {
-      console.debug("[SearchBar] Selected suggestion:", suggestion);
-    }
-
     setQuery(suggestion.label);
 
     // Don't close if keepOpen is enabled
