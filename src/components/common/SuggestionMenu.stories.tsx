@@ -35,9 +35,23 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** The full suggested list, open, with one row keyboard-active. */
+/** The full suggested list, open. Click a row (or it starts on one) to make it
+ *  the active row. */
 export const Open: Story = {
-  args: { items: mockSuggestions, activeIndex: 2 },
+  render: args => {
+    const [activeIndex, setActiveIndex] = useState(2);
+    return (
+      <SuggestionMenu
+        {...args}
+        items={mockSuggestions}
+        activeIndex={activeIndex}
+        onSelect={(suggestion, index) => {
+          setActiveIndex(index);
+          args.onSelect(suggestion, index);
+        }}
+      />
+    );
+  },
 };
 
 /** No matches — renders the empty message when `emptyLabel` is provided. */
