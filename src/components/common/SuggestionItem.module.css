@@ -46,6 +46,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* Sit left by the icon even when a parent (e.g. the home hero) centers text. */
+  text-align: left;
 }
 
 .detail {
