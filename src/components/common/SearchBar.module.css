@@ -17,7 +17,7 @@
   width: 100%;
   padding: 10px 10px 10px 40px;
   border: 3px solid var(--color-border);
-  border-radius: var(--border-radius);
+  border-radius: 9999px;
   font-size: 16px;
   background-color: var(--color-surface);
   color: var(--color-text-primary);
@@ -51,7 +51,6 @@
 .searchBar.large .input {
   padding: 18px 18px 18px 55px;
   font-size: 19px;
-  border-radius: 48px;
 }
 
 .searchBar.large .icon {
@@ -148,9 +147,7 @@
 .compact .input {
   padding: 10px 12px 10px 44px;
   font-size: 16px;
-  border-width: 2px;
   min-height: 44px;
-  border-radius: 9999px;
 }
 
 .compact .input::placeholder {
@@ -401,7 +398,6 @@
   .searchBar.large .input {
     padding: 14px 14px 14px 45px;
     font-size: 16px;
-    border-radius: var(--border-radius);
   }
 
   .searchBar.large .icon {
@@ -416,7 +412,6 @@
   .input {
     font-size: 16px; /* Prevents zoom on iOS */
     padding: 12px 12px 12px 40px;
-    border-radius: var(--border-radius);
   }
 
   .suggestionsList {
@@ -441,7 +436,6 @@
   .input {
     padding: 10px 10px 10px 38px;
     font-size: 16px;
-    border-radius: var(--border-radius);
   }
 
   .icon {
