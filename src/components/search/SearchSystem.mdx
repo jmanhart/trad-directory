@@ -1,6 +1,8 @@
 import { Meta, Canvas, Controls } from "@storybook/blocks";
 import * as SearchBarStories from "../common/SearchBar.stories";
 import * as TableSearchStories from "../common/TableSearch.stories";
+import * as SuggestionMenuStories from "../common/SuggestionMenu.stories";
+import * as SuggestionItemStories from "../common/SuggestionItem.stories";
 
 <Meta title="Search/Overview" />
 
@@ -37,6 +39,32 @@ Sizes:
 ### Props
 
 <Controls of={SearchBarStories.Default} />
+
+---
+
+## Suggestions menu — `SuggestionMenu` & `SuggestionItem`
+
+The dropdown behind `SearchBar` (and, soon, the admin autocompletes). A
+`SuggestionMenu` is a `role="listbox"` of `SuggestionItem` rows; it's
+presentational, so the parent owns the active row and key handling via the
+exported `useSuggestionNav` hook (ArrowDown/Up wrap, Enter selects, Escape closes).
+
+The full list, open, with one row keyboard-active:
+
+<Canvas of={SuggestionMenuStories.Open} />
+
+Live keyboard nav — type to filter, then ↑/↓ to move and Enter to select:
+
+<Canvas of={SuggestionMenuStories.KeyboardNav} />
+
+### Menu props
+
+<Controls of={SuggestionMenuStories.Open} />
+
+A single row carries the per-item states (rest / hover / active / pressed);
+here they are together in context:
+
+<Canvas of={SuggestionItemStories.AllItems} />
 
 ---
 
@@ -92,7 +120,7 @@ The UI is thin; the search logic lives in a few shared modules:
 - **Public, typeahead-with-suggestions?** Use `SearchBar`.
 - **Filtering a table or list?** Use `TableSearch`.
 - **Don't** hand-roll a new dropdown — the shared **`SuggestionMenu`** primitive
-  (in progress) is the one accessible menu every autocomplete should use.
+  is the one accessible menu every autocomplete should use.
 - Every search component ships a `*.stories.tsx` and is linked from this page.
 
 ## Roadmap (consolidation in progress)
@@ -100,6 +128,6 @@ The UI is thin; the search logic lives in a few shared modules:
 1. **Cleanup** ✅ — stripped debug logging; removed the dead `services/mcpApi`.
 2. **Unify `SearchBar` wiring** — one shared search/select handler across all
    mounts; replace the map's CSS `!important` overrides with a real variant.
-3. **Extract `SuggestionMenu`** — the accessible listbox behind `SearchBar`, then
-   migrate the admin autocompletes (New-Adding city, Data Builder) onto it.
+3. **Extract `SuggestionMenu`** ✅ — the accessible listbox behind `SearchBar`;
+   next, migrate the admin autocompletes (New-Adding city, Data Builder) onto it.
 4. **Docs** — this page + per-component autodocs stay in lockstep with the code.
