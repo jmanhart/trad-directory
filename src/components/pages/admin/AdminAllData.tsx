@@ -3,7 +3,6 @@ import { useSearchParams } from "react-router-dom";
 import {
   Message,
   MessageWithRetry,
-  Input,
 } from "./AdminFormComponents";
 import { Tabs } from "../../common/Tabs";
 import Pagination from "../../common/Pagination";
@@ -19,7 +18,7 @@ import {
   type LinkStatusRec,
 } from "../../../services/adminApi";
 import { useAdminData } from "./useAdminData";
-import SearchIcon from "../../../assets/icons/searchIcon";
+import TableSearch from "../../common/TableSearch";
 import styles from "./AdminAllData.module.css";
 import { StatusPill } from "./StatusPill";
 import RecordEditor, { type EditorTarget } from "./RecordEditor";
@@ -923,9 +922,9 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, activeTab]);
 
-  // Search controls shared by the consolidated bar (compact) and the embedded
-  // pages (full-width). Same value/onChange wiring; only placeholder length,
-  // count string, and container class differ.
+  // Search control shared by the consolidated bar (compact) and the embedded
+  // pages (full-width). Same value/onChange wiring; only the placeholder and
+  // variant differ. Result count is intentionally omitted.
   const renderSearchControls = (compact: boolean) => {
     const searchable =
       activeTab === "artists" ||
@@ -950,33 +949,13 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
             ? "Search cities by name, state, or country..."
             : "Search countries by name or ID...";
 
-    const count =
-      activeTab === "artists"
-        ? `${filteredAndSortedArtists.length} of ${artists.length} artists`
-        : activeTab === "shops"
-          ? `${filteredAndSortedShops.length} of ${allShops.length} shops`
-          : activeTab === "cities"
-            ? `${filteredAndSortedCities.length} of ${cities.length} cities`
-            : `${filteredAndSortedCountries.length} of ${countries.length} countries`;
-
     return (
-      <div
-        className={
-          compact ? styles.searchContainerCompact : styles.searchContainer
-        }
-      >
-        <div className={styles.searchInputWrapper}>
-          <SearchIcon className={styles.searchIcon} aria-hidden />
-          <Input
-            type="text"
-            placeholder={placeholder}
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className={styles.searchInput}
-          />
-        </div>
-        {searchQuery && <span className={styles.resultCount}>{count}</span>}
-      </div>
+      <TableSearch
+        variant={compact ? "compact" : "full"}
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder={placeholder}
+      />
     );
   };
 

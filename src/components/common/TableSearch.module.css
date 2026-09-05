@@ -1,0 +1,84 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0 1rem;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--border-radius);
+  background-color: var(--color-surface);
+}
+
+.inputWrapper:focus-within {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-primary);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  /* No fixed control height: the wrapper's padding defines the box so the
+     control never overflows a tight toolbar/header bar. */
+  height: auto;
+  padding: 0.75rem 0;
+  border: none;
+  border-radius: 0;
+  font-size: 1rem;
+  font-family: inherit;
+  background: transparent;
+  color: var(--color-text-primary);
+}
+
+.input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.resultCount {
+  color: var(--color-text-tertiary);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* Compact: a self-contained pill that flexes with available width but caps at
+   320px, and stays short enough to sit inside a 56px header bar. */
+.compact {
+  /* Content-width so it sits at the right of a toolbar without stealing the
+     space the tabs (flex: 1) need on the left. */
+  width: auto;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.compact .inputWrapper {
+  flex: none;
+  width: clamp(200px, 24vw, 320px);
+  padding: 0.4rem 0.9rem;
+  align-self: center;
+}
+
+.compact .input {
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
+}
