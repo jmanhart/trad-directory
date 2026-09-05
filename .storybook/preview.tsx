@@ -8,6 +8,9 @@ import "../src/styles/variables.css";
 import "../src/styles/globals.css";
 
 const preview: Preview = {
+  // Living docs: every story gets an auto-generated "Docs" page from its
+  // argTypes + JSDoc. Component-specific docs stay in sync with the code.
+  tags: ["autodocs"],
   parameters: {
     controls: {
       matchers: {

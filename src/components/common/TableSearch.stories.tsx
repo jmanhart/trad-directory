@@ -12,7 +12,15 @@ function TableSearchDemo(props: TableSearchProps) {
 const meta = {
   title: "Search/TableSearch",
   component: TableSearch,
-  parameters: { layout: "padded" },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "Lightweight, controlled search box for admin data tables. Variants: `full` (stretches above a table) and `compact` (a responsive pill for toolbars/header bars). Optional result count is off unless `resultCount` is passed. Uses a bare input so it carries no fixed control height and fits tight bars.",
+      },
+    },
+  },
   render: args => <TableSearchDemo {...args} />,
   args: {
     value: "",
