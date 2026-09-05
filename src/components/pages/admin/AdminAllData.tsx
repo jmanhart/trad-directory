@@ -18,7 +18,7 @@ import {
   type LinkStatusRec,
 } from "../../../services/adminApi";
 import { useAdminData } from "./useAdminData";
-import TableSearch from "../../common/TableSearch";
+import SearchBar from "../../common/SearchBar";
 import styles from "./AdminAllData.module.css";
 import { StatusPill } from "./StatusPill";
 import RecordEditor, { type EditorTarget } from "./RecordEditor";
@@ -949,11 +949,25 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
             ? "Search cities by name, state, or country..."
             : "Search countries by name or ID...";
 
+    if (compact) {
+      return (
+        <div className={styles.headerSearch}>
+          <SearchBar
+            size="compact"
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+            suggestions={[]}
+            placeholder={placeholder}
+          />
+        </div>
+      );
+    }
     return (
-      <TableSearch
-        variant={compact ? "compact" : "full"}
+      <SearchBar
+        size="medium"
         value={searchQuery}
-        onChange={setSearchQuery}
+        onValueChange={setSearchQuery}
+        suggestions={[]}
         placeholder={placeholder}
       />
     );

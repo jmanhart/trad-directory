@@ -1,6 +1,5 @@
 import { Meta, Canvas, Controls } from "@storybook/blocks";
 import * as SearchBarStories from "../common/SearchBar.stories";
-import * as TableSearchStories from "../common/TableSearch.stories";
 import * as SuggestionMenuStories from "../common/SuggestionMenu.stories";
 import * as SuggestionItemStories from "../common/SuggestionItem.stories";
 import { FullExperience } from "../common/SearchSystemDemo";
@@ -20,7 +19,7 @@ This page is the source of truth — when a search surface changes, update it he
 ## The full experience
 
 Every search component together in one view — the public `SearchBar`, the open
-`SuggestionMenu`, and the admin `TableSearch`. Start here, then jump to any
+`SuggestionMenu`, and the admin `SearchBar` filter. Start here, then jump to any
 component below.
 
 <FullExperience />
@@ -77,22 +76,13 @@ here they are together in context:
 
 ---
 
-## Admin table search — `TableSearch`
+## Admin table search — `SearchBar` (filter mode)
 
-A lightweight, controlled search box for data tables. Two variants: `full`
-(stretches above a table) and `compact` (a responsive pill for toolbars/header
-bars). An optional result count is off by default.
+The admin data tables use the **same `SearchBar`** in filter mode: controlled
+`value` / `onValueChange`, no suggestions dropdown. This replaced the old,
+separate `TableSearch` — one search component, not two.
 
-<Canvas of={TableSearchStories.Full} />
-<Canvas of={TableSearchStories.Compact} />
-
-Inside a mock 56px header bar (proves it fits without overflow):
-
-<Canvas of={TableSearchStories.InHeaderBar} />
-
-### Props
-
-<Controls of={TableSearchStories.Full} />
+<Canvas of={SearchBarStories.Filter} />
 
 ---
 
@@ -119,7 +109,7 @@ The UI is thin; the search logic lives in a few shared modules:
 | Mobile top bar | `SearchBar` (compact) | navigates to results |
 | Map overlay | `SearchBar` (compact) | embedded/card styling |
 | Results page | `SearchResults` + `ResultsSection` | tabs of artists/shops |
-| Admin data tables | `TableSearch` | artists/shops/cities/countries |
+| Admin data tables | `SearchBar` (filter mode) | artists/shops/cities/countries |
 | Admin add-link | bespoke inputs | pending consolidation |
 | Admin new-adding | bespoke city autocomplete | pending consolidation |
 | Data Builder | `MultiSelect` | bespoke checkbox menu |
@@ -127,7 +117,7 @@ The UI is thin; the search logic lives in a few shared modules:
 ## Usage guidelines
 
 - **Public, typeahead-with-suggestions?** Use `SearchBar`.
-- **Filtering a table or list?** Use `TableSearch`.
+- **Filtering a table or list?** Use `SearchBar` in filter mode (`value` / `onValueChange`, no `suggestions`).
 - **Don't** hand-roll a new dropdown — the shared **`SuggestionMenu`** primitive
   is the one accessible menu every autocomplete should use.
 - Every search component ships a `*.stories.tsx` and is linked from this page.

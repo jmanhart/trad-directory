@@ -9,8 +9,12 @@ import { type Suggestion } from "../../utils/suggestions";
 type SearchBarSize = "small" | "medium" | "large" | "compact";
 
 interface SearchBarProps {
-  onSearch: (query: string) => void;
-  suggestions: Suggestion[];
+  onSearch?: (query: string) => void;
+  suggestions?: Suggestion[];
+  /** Controlled value — when set, SearchBar is a controlled filter input. */
+  value?: string;
+  /** Fired on every keystroke (and on clear/select) — use for live filtering. */
+  onValueChange?: (query: string) => void;
   onSelectSuggestion?: (suggestion: Suggestion) => void;
   size?: SearchBarSize;
   /** Enable debug mode for easier testing and styling */
@@ -33,15 +37,22 @@ interface SearchBarProps {
  */
 export default function SearchBar({
   onSearch,
-  suggestions,
+  suggestions = [],
   onSelectSuggestion,
+  value,
+  onValueChange,
   size = "medium",
   debug = false,
   placeholder = "Search by artist, shop, city, or country...",
   keepOpen = false,
   className,
 }: SearchBarProps) {
-  const [query, setQuery] = useState(keepOpen ? "test" : "");
+  const [internalQuery, setInternalQuery] = useState(keepOpen ? "test" : "");
+  const query = value !== undefined ? value : internalQuery;
+  const setQuery = (next: string) => {
+    if (value === undefined) setInternalQuery(next);
+    onValueChange?.(next);
+  };
   const [showSuggestions, setShowSuggestions] = useState(keepOpen);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -169,7 +180,7 @@ export default function SearchBar({
     if (onSelectSuggestion) {
       onSelectSuggestion(suggestion);
     } else {
-      onSearch(suggestion.label);
+      onSearch?.(suggestion.label);
     }
   };
 
@@ -204,7 +215,7 @@ export default function SearchBar({
         const index = highlightedIndex >= 0 ? highlightedIndex : 0;
         selectSuggestion(filteredSuggestions[index]);
       } else if (query.trim() !== "") {
-        onSearch(query);
+        onSearch?.(query);
         setShowSuggestions(false);
       }
       return;

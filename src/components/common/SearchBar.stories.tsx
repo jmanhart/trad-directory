@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn, within, userEvent } from "@storybook/test";
 import SearchBar from "./SearchBar";
@@ -33,5 +34,35 @@ export const SuggestionsOpen: Story = {
     const canvas = within(canvasElement);
     const input = canvas.getByRole("textbox");
     await userEvent.type(input, "a");
+  },
+};
+
+/**
+ * Controlled **filter mode**: live `value` / `onValueChange`, no suggestions
+ * dropdown. This is what the admin data tables use (replacing the old
+ * TableSearch).
+ */
+export const Filter: Story = {
+  render: () => {
+    function FilterDemo() {
+      const [value, setValue] = useState("");
+      return (
+        <SearchBar
+          size="compact"
+          value={value}
+          onValueChange={setValue}
+          suggestions={[]}
+          placeholder="Search artists…"
+        />
+      );
+    }
+    return <FilterDemo />;
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Live filter — type and the value updates on every keystroke; no menu.",
+      },
+    },
   },
 };

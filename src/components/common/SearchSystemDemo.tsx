@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from "react";
 import SearchBar from "./SearchBar";
-import TableSearch from "./TableSearch";
 import { mockSuggestions } from "./__fixtures__/suggestions.mock";
 
 function Section({
@@ -26,7 +25,8 @@ function Section({
 /**
  * The search system composed in one view — used by the Search/Overview doc.
  * Not a Storybook story of its own; a living demo the doc renders inline.
- * One public SearchBar (type to open its menu) plus the admin TableSearch.
+ * One public SearchBar (type to open its menu) plus the admin filter (SearchBar
+ * in filter mode).
  */
 export function FullExperience() {
   const [tableQuery, setTableQuery] = useState("");
@@ -52,13 +52,14 @@ export function FullExperience() {
       </Section>
 
       <Section
-        title="Admin table search — TableSearch"
-        hint="Filters dense admin data tables."
+        title="Admin table search — SearchBar (filter mode)"
+        hint="Same component, controlled + no suggestions; filters dense tables live."
       >
-        <TableSearch
-          variant="full"
+        <SearchBar
+          size="medium"
           value={tableQuery}
-          onChange={setTableQuery}
+          onValueChange={setTableQuery}
+          suggestions={[]}
           placeholder="Search artists…"
         />
       </Section>

@@ -232,6 +232,13 @@
   border-bottom-width: 3px;
 }
 
+/* Constrain the compact SearchBar filter on the right of the sticky bar so it
+   doesn't stretch and steal the tabs' space. */
+.headerSearch {
+  flex-shrink: 0;
+  width: clamp(200px, 24vw, 320px);
+}
+
 .content {
   width: 100%;
 }
