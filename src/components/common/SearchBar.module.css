@@ -73,7 +73,7 @@
 
 .clearButton {
   position: absolute;
-  right: 8px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
@@ -90,6 +90,30 @@
 
 .clearButton:hover {
   color: var(--color-text-primary);
+}
+
+/* Match the magnifier's size and mirror its inset for symmetric margin. */
+.clearButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+.searchBar.large .clearButton {
+  right: 18px;
+}
+
+.searchBar.large .clearButton svg {
+  width: 24px;
+  height: 24px;
+}
+
+.small .clearButton {
+  right: 8px;
+}
+
+.small .clearButton svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* Icon sizes */
