@@ -18,6 +18,8 @@ export interface SuggestionMenuProps {
   emptyLabel?: string;
   /** Show the per-row type badge (debug). */
   showTypeBadge?: boolean;
+  /** Extra class on the <ul> — e.g. positioning when used as a dropdown. */
+  className?: string;
 }
 
 /**
@@ -34,6 +36,7 @@ export default function SuggestionMenu({
   itemIdPrefix = "suggestion",
   emptyLabel,
   showTypeBadge = false,
+  className,
 }: SuggestionMenuProps) {
   if (items.length === 0) {
     return emptyLabel ? (
@@ -44,7 +47,7 @@ export default function SuggestionMenu({
   }
 
   return (
-    <ul id={id} role="listbox" className={styles.menu}>
+    <ul id={id} role="listbox" className={`${styles.menu} ${className ?? ""}`}>
       {items.map((suggestion, index) => (
         <SuggestionItem
           key={`${suggestion.type}-${suggestion.id ?? suggestion.label}-${index}`}
