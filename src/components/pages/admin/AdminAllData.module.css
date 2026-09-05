@@ -10,7 +10,7 @@
 .container {
   width: 100%;
   margin: 0;
-  padding: 0 2rem 2rem;
+  padding: 0 1.25rem 1.25rem;
   box-sizing: border-box;
 }
 
@@ -196,11 +196,11 @@
    lands at y=56 to align with the sidebar .sideHeader bottom border. */
 .dataHeaderBar {
   box-sizing: border-box;
-  /* Full-bleed: cancel .container's 2rem side padding so the bar spans edge
-     to edge (no app-bg gap beside the white); re-inset content to align with
-     the table below. */
-  margin: 0 -2rem;
-  padding: 0 2rem;
+  /* Full-bleed: cancel .container's 1.25rem side padding so the bar spans edge
+     to edge (no app-bg gap beside the white); re-inset content to 1.25rem so
+     the tabs (left) and search (right) sit flush with the table below. */
+  margin: 0 -1.25rem;
+  padding: 0 1.25rem;
   position: sticky;
   top: 0;
   z-index: 20;
@@ -222,6 +222,14 @@
   align-items: flex-end;
   flex: 1;
   min-width: 0;
+}
+
+/* Data-table tabs: give the active tab extra emphasis and a taller underline.
+   Scoped here so the shared Tabs on the public site are unaffected. Targets
+   the stable data-active attribute set by the Tabs component. */
+.dataHeaderBar .dataTabs button[data-active="true"] {
+  font-weight: 700;
+  border-bottom-width: 3px;
 }
 
 .content {
@@ -259,7 +267,7 @@
   top: 0;
   z-index: 10;
   background: var(--color-surface);
-  box-shadow: inset 0 -2px 0 var(--color-border);
+  box-shadow: inset 0 -1px 0 var(--color-border);
 }
 
 /* Consolidated view: pin the header row directly beneath the 56px header bar. */
@@ -267,13 +275,12 @@
   top: 56px;
 }
 
-/* .tableWrapper's overflow-x:auto forces overflow-y to a scroll context,
-   which would trap the sticky header inside the wrapper. In the consolidated
-   view let overflow resolve to .mainCol (the scroller) so the header pins.
-   The design collapses columns to avoid horizontal overflow, so dropping the
-   wrapper's own scroll is safe; wide tables fall back to .mainCol scrolling. */
+/* overflow-x:auto/hidden would create a scroll container that traps the
+   sticky header inside the wrapper. `clip` clips the table's square corners to
+   the wrapper's border-radius WITHOUT establishing a scroll container, so the
+   sticky header still resolves to .mainCol and pins beneath the header bar. */
 .consolidated .tableWrapper {
-  overflow: visible;
+  overflow: clip;
 }
 
 .table th {
@@ -281,7 +288,6 @@
   text-align: left;
   font-weight: 600;
   color: var(--color-text-primary);
-  border-bottom: 2px solid var(--color-border);
   white-space: nowrap;
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -309,6 +315,11 @@
 .table tbody tr {
   border-bottom: 1px solid var(--color-border);
   transition: background-color 0.15s ease;
+}
+
+/* No divider on the last row: the wrapper's own bottom border closes the table. */
+.table tbody tr:last-child {
+  border-bottom: none;
 }
 
 .table tbody tr:hover {
