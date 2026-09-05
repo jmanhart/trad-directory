@@ -16,7 +16,9 @@ const meta = {
     },
   },
   args: { onSelect: fn() },
-  // A single option must live inside a role="listbox" to be valid.
+  // A single option must live inside a role="listbox" to be valid — but keep it
+  // a plain, full-width row here. The menu's border/radius/shadow chrome belongs
+  // to SuggestionMenu, not to an individual item.
   decorators: [
     Story => (
       <ul
@@ -24,10 +26,8 @@ const meta = {
         style={{
           listStyle: "none",
           margin: 0,
-          padding: 4,
-          maxWidth: 360,
-          border: "1px solid var(--color-border)",
-          borderRadius: 8,
+          padding: 0,
+          maxWidth: 420,
           background: "var(--color-surface)",
         }}
       >
