@@ -14,6 +14,29 @@ From the next tagged release onward this file is maintained automatically by
 [Conventional Commits](https://www.conventionalcommits.org/) — do not hand-edit
 released sections.
 
+## [0.4.1](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.4.0...tattoo-directory-v0.4.1) (2026-09-05)
+
+
+### Added
+
+* **search:** SuggestionItem + SuggestionMenu primitives (accessible listbox, keyboard nav) ([#54](https://github.com/jmanhart/trad-directory/issues/54))
+* **common:** Tag and Tooltip components (accessible, app-styled) ([#54](https://github.com/jmanhart/trad-directory/issues/54))
+* **storybook:** living Search/Overview docs + autodocs across components ([#54](https://github.com/jmanhart/trad-directory/issues/54))
+
+
+### Changed
+
+* **search:** unify on SearchBar → SuggestionMenu → SuggestionItem; add a controlled filter mode ([#54](https://github.com/jmanhart/trad-directory/issues/54))
+* **admin:** replace TableSearch with SearchBar filter mode on the data tables ([#54](https://github.com/jmanhart/trad-directory/issues/54))
+* **map:** search-first overlay (remove hamburger/sidebar); standard SearchBar with a BETA tag + tooltip ([#54](https://github.com/jmanhart/trad-directory/issues/54))
+* **admin:** polish the data table — thinner header divider, clean corners, bolder active tab, unified spacing ([#51](https://github.com/jmanhart/trad-directory/issues/51))
+* **admin:** add headroom above the top value in the analytics chart; remove the Data Health section ([#52](https://github.com/jmanhart/trad-directory/issues/52))
+
+
+### Fixed
+
+* **admin:** data-builder pulled artists from every same-named city — match by city_id (e.g. Portland ME vs OR) ([#50](https://github.com/jmanhart/trad-directory/issues/50))
+
 ## [0.4.0](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.3.1...tattoo-directory-v0.4.0) (2026-08-29)
 
 
