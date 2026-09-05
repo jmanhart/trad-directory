@@ -3,6 +3,7 @@ import * as SearchBarStories from "../common/SearchBar.stories";
 import * as TableSearchStories from "../common/TableSearch.stories";
 import * as SuggestionMenuStories from "../common/SuggestionMenu.stories";
 import * as SuggestionItemStories from "../common/SuggestionItem.stories";
+import * as FullExperienceStories from "../common/SearchSystem.stories";
 
 <Meta title="Search/Overview" />
 
@@ -15,6 +16,14 @@ This page is the source of truth — when a search surface changes, update it he
 
 > Status: this system drifted across iterations and is mid-consolidation. See
 > **Roadmap** at the bottom for what's converging.
+
+## The full experience
+
+Every search component together in one view — the public `SearchBar`, the open
+`SuggestionMenu`, and the admin `TableSearch`. Start here, then jump to any
+component below.
+
+<Canvas of={FullExperienceStories.Default} />
 
 ---
 
