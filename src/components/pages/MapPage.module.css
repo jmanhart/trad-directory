@@ -44,21 +44,6 @@
   display: block;
 }
 
-.hamburgerButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-right: none;
-  border-radius: 0;
-  padding: 0.5rem 0.75rem;
-  box-shadow: none;
-  pointer-events: auto;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-
 .overlaySearch {
   flex: 1;
   min-width: 0;
@@ -90,7 +75,7 @@
   background: transparent;
   border-radius: 0;
   box-shadow: none;
-  padding-left: 0 !important;
+  padding-left: 1rem !important;
   padding-right: 0.75rem !important;
   font-size: 18px;
   line-height: 1.4;
