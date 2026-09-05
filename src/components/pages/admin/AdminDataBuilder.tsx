@@ -7,6 +7,7 @@ import styles from "./AdminDataBuilder.module.css";
 interface ArtistRow {
   id: number;
   name: string;
+  city_id: number | null;
   instagram_handle: string | null;
   city_name: string | null;
   state_name: string | null;
