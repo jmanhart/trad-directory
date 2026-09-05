@@ -134,6 +134,24 @@ function cssVar(name: string, fallback: string): string {
   return value || fallback;
 }
 
+/**
+ * Axis max that sits one comfortable step above the data so bars/lines never
+ * touch the top gridline. Small integer counts get exactly one extra gridline
+ * (e.g. 3 -> 4); larger ranges round up to a nice 1/1.2/1.5/2/2.5/... x 10^n
+ * value. Returns undefined for all-zero data so echarts keeps its default.
+ */
+function axisMaxWithHeadroom(dataMax: number): number | undefined {
+  if (!Number.isFinite(dataMax) || dataMax <= 0) return undefined;
+  if (dataMax < 10) return Math.floor(dataMax) + 1;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(dataMax)));
+  const normalized = dataMax / magnitude;
+  const niceFractions = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+  for (const fraction of niceFractions) {
+    if (fraction > normalized) return fraction * magnitude;
+  }
+  return 10 * magnitude;
+}
+
 interface EntryTimelineChartProps {
   entity: EntityKey;
   range: Range;
@@ -227,6 +245,7 @@ export default function EntryTimelineChart({
     const textPrimary = cssVar("--color-text-primary", "#141414");
 
     const isTotal = mode === "total";
+    const seriesMax = Math.max(0, ...(isTotal ? cumulative : counts));
     const option: EChartsOption = {
       grid: { top: 12, right: 12, bottom: 24, left: 8, containLabel: true },
       tooltip: {
@@ -246,6 +265,7 @@ export default function EntryTimelineChart({
       yAxis: {
         type: "value",
         minInterval: 1,
+        max: axisMaxWithHeadroom(seriesMax),
         splitLine: { lineStyle: { color: border } },
         axisLabel: { color: textSecondary, fontSize: 11 },
       },
