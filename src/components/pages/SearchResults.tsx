@@ -102,7 +102,6 @@ function SearchResults() {
   const performSearch = async (query: string) => {
     try {
       setIsLoading(true);
-      console.log(`[SearchResults] Performing search for: "${query}"`);
 
       addBreadcrumb("Search performed on results page", "search", "info", {
         query,
@@ -115,9 +114,6 @@ function SearchResults() {
         searchShops(query),
       ]);
       const totalCount = artistResults.length + shopResults.length;
-      console.log(
-        `[SearchResults] Search completed. Found ${artistResults.length} artists, ${shopResults.length} shops for "${query}"`
-      );
 
       trackSearch({
         search_term: query,
@@ -131,7 +127,6 @@ function SearchResults() {
       setHasSearched(true);
     } catch (err) {
       setError("Error searching.");
-      console.error("[SearchResults] Search error:", err);
       captureException(err as Error, {
         component: "SearchResults",
         action: "perform_search",

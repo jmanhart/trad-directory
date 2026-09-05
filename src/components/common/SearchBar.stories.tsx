@@ -1,23 +1,22 @@
+import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn, within, userEvent } from "@storybook/test";
 import SearchBar from "./SearchBar";
-import type { Suggestion } from "../../utils/suggestions";
-
-const suggestions: Suggestion[] = [
-  { label: "Sailor Jerry", type: "artist", detail: "@sailorjerry", id: 1 },
-  { label: "Ed Hardy", type: "artist", detail: "@edhardy", id: 2 },
-  { label: "Kari Barba", type: "artist", detail: "@karibarba", id: 4 },
-  { label: "Old Ironside Tattoo", type: "shop", detail: "Honolulu, HI", id: 10 },
-  { label: "Outer Limits Tattoo", type: "shop", detail: "Anaheim, CA", id: 12 },
-  { label: "Honolulu, Hawaii", type: "location", artistCount: 12 },
-  { label: "Long Beach, California", type: "location", artistCount: 7 },
-];
+import { mockSuggestions } from "./__fixtures__/suggestions.mock";
 
 const meta = {
   title: "Search/SearchBar",
   component: SearchBar,
-  parameters: { layout: "padded" },
-  args: { onSearch: fn(), onSelectSuggestion: fn(), suggestions },
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component:
+          "The centralized public site search: a combobox with a grouped, keyboard-navigable suggestions menu (artists / shops / locations). Sizes: small | medium | large | compact. Mounted in the home hero, global header, mobile top bar, and map overlay.",
+      },
+    },
+  },
+  args: { onSearch: fn(), onSelectSuggestion: fn(), suggestions: mockSuggestions },
 } satisfies Meta<typeof SearchBar>;
 
 export default meta;
@@ -35,5 +34,35 @@ export const SuggestionsOpen: Story = {
     const canvas = within(canvasElement);
     const input = canvas.getByRole("textbox");
     await userEvent.type(input, "a");
+  },
+};
+
+/**
+ * Controlled **filter mode**: live `value` / `onValueChange`, no suggestions
+ * dropdown. This is what the admin data tables use (replacing the old
+ * TableSearch).
+ */
+export const Filter: Story = {
+  render: () => {
+    function FilterDemo() {
+      const [value, setValue] = useState("");
+      return (
+        <SearchBar
+          size="compact"
+          value={value}
+          onValueChange={setValue}
+          suggestions={[]}
+          placeholder="Search artists…"
+        />
+      );
+    }
+    return <FilterDemo />;
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Live filter — type and the value updates on every keystroke; no menu.",
+      },
+    },
   },
 };

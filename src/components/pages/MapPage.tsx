@@ -14,8 +14,8 @@ import MapArtistPanel from "../../components/map/MapArtistPanel";
 import MapShopPanel from "../../components/map/MapShopPanel";
 import type { MapShopData } from "../../components/map/MapShopPanel";
 import SearchBar from "../../components/common/SearchBar";
-import MapSidebar from "../../components/map/MapSidebar";
-import { SuggestArtistModal } from "../../components/common/SuggestArtistModal";
+import Tag from "../../components/common/Tag";
+import Tooltip from "../../components/common/Tooltip";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import styles from "./MapPage.module.css";
 
@@ -46,8 +46,6 @@ export default function MapPage() {
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
   const [selectedShop, setSelectedShop] = useState<MapShopData | null>(null);
   const [highlightedCity, setHighlightedCity] = useState<CityDot | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
 
   // flyTo state for programmatic map navigation
   const [flyTo, setFlyTo] = useState<{
@@ -743,35 +741,7 @@ export default function MapPage() {
 
   return (
     <div className={styles.container}>
-      <MapSidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        onOpenSuggestModal={() => setIsSuggestModalOpen(true)}
-      />
-      <SuggestArtistModal
-        isOpen={isSuggestModalOpen}
-        onClose={() => setIsSuggestModalOpen(false)}
-      />
       <div className={styles.mapOverlay}>
-        <button
-          className={styles.hamburgerButton}
-          onClick={() => setSidebarOpen(true)}
-          aria-label="Open menu"
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          >
-            <line x1="3" y1="5" x2="17" y2="5" />
-            <line x1="3" y1="10" x2="17" y2="10" />
-            <line x1="3" y1="15" x2="17" y2="15" />
-          </svg>
-        </button>
         <div className={styles.overlaySearch}>
           <SearchBar
             size="compact"
@@ -779,9 +749,14 @@ export default function MapPage() {
             suggestions={suggestions}
             onSelectSuggestion={handleMapSelectSuggestion}
             placeholder="Search artist, shop, or city..."
-            className={styles.mapSearchBar}
           />
         </div>
+        <Tooltip
+          content="This is a beta and still working out the kinks"
+          placement="bottom"
+        >
+          <Tag tone="soft">Beta</Tag>
+        </Tooltip>
       </div>
       <MapView
         cityData={cityDots}

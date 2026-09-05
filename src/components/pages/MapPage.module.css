@@ -9,7 +9,7 @@
   z-index: 1;
 }
 
-/* ── Floating overlay bar (hamburger + search as unified card) ── */
+/* ── Floating overlay: the search bar + a small status tag ── */
 .mapOverlay {
   position: absolute;
   top: var(--map-panel-inset);
@@ -17,13 +17,9 @@
   z-index: 15;
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 0.5rem;
   pointer-events: auto;
   width: var(--map-panel-width);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  box-shadow: var(--shadow-lg);
 }
 
 .overlayLogo {
@@ -44,85 +40,9 @@
   display: block;
 }
 
-.hamburgerButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-right: none;
-  border-radius: 0;
-  padding: 0.5rem 0.75rem;
-  box-shadow: none;
-  pointer-events: auto;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-
 .overlaySearch {
   flex: 1;
   min-width: 0;
-}
-
-/* When suggestions are open, flatten bottom corners of the card */
-.mapOverlay:has(ul[role="listbox"]) {
-  border-radius: 8px 8px 0 0;
-}
-
-/* ── Map SearchBar overrides (unified card style) ── */
-
-/* Remove positioning from inner wrappers so dropdown positions relative to .mapOverlay */
-.mapSearchBar {
-  position: static !important;
-}
-
-.mapSearchBar > div {
-  position: static;
-}
-
-/* Hide the magnifying glass icon */
-.mapSearchBar span[aria-hidden="true"] {
-  display: none;
-}
-
-.mapSearchBar input {
-  border: none;
-  background: transparent;
-  border-radius: 0;
-  box-shadow: none;
-  padding-left: 0 !important;
-  padding-right: 0.75rem !important;
-  font-size: 18px;
-  line-height: 1.4;
-  caret-color: var(--color-red-dark);
-}
-
-.mapSearchBar input:focus {
-  outline: none;
-  border-color: transparent;
-  box-shadow: none;
-}
-
-/* Align suggestion text with search input text, match font */
-.mapSearchBar li {
-  padding-left: 1rem;
-  gap: 8px;
-  font-weight: 400;
-  font-size: 16px;
-}
-
-/* Suggestions dropdown flows seamlessly from the card */
-.mapSearchBar ul[role="listbox"] {
-  position: absolute;
-  top: 100%;
-  left: -1px;
-  right: -1px;
-  width: auto;
-  border: 1px solid var(--color-border);
-  border-top: 1px solid var(--color-border);
-  border-radius: 0 0 8px 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  margin-top: 0;
 }
 
 /* ── Info card (no city selected) ── */
@@ -285,11 +205,5 @@
     padding: 0.5rem 1rem;
     white-space: nowrap;
     text-align: center;
-  }
-
-  .mapSearchBar ul[role="listbox"] {
-    left: -1px;
-    right: -1px;
-    width: auto;
   }
 }

@@ -28,7 +28,7 @@ interface UseSearchSuggestionsReturn {
 export function useSearchSuggestions(
   options: UseSearchSuggestionsOptions = {}
 ): UseSearchSuggestionsReturn {
-  const { autoFetch = true, debug = false } = options;
+  const { autoFetch = true } = options;
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(autoFetch);
   const [error, setError] = useState<string | null>(null);
@@ -39,52 +39,19 @@ export function useSearchSuggestions(
       setLoading(true);
       setError(null);
 
-      console.log("[useSearchSuggestions] Fetching suggestions...");
-
-      // Fetch both artists and countries in parallel
+      // Fetch artists and countries in parallel; countries are best-effort.
       const [artistsData, countriesData] = await Promise.all([
         fetchTattooShopsWithArtists(),
-        fetchAllCountries().catch((err) => {
-          // If countries fetch fails, log but don't block suggestions
-          console.warn("[useSearchSuggestions] Failed to fetch countries:", err);
-          return [];
-        }),
+        fetchAllCountries().catch(() => []),
       ]);
 
-      console.log("[useSearchSuggestions] Data fetched:", {
-        artistsCount: artistsData?.length || 0,
-        countriesCount: countriesData?.length || 0,
-      });
-
       if (artistsData) {
-        const builtSuggestions = buildSuggestions(artistsData, countriesData);
-        setSuggestions(builtSuggestions);
-
-        const locationSuggestions = builtSuggestions.filter((s) => s.type === "location");
-        const countrySuggestions = locationSuggestions.filter(s => {
-          return countriesData?.some(c => 
-            c.country_name?.trim().toLowerCase() === s.label.toLowerCase()
-          );
-        });
-
-        console.log("[useSearchSuggestions] Loaded suggestions:", {
-          total: builtSuggestions.length,
-          artists: builtSuggestions.filter((s) => s.type === "artist").length,
-          shops: builtSuggestions.filter((s) => s.type === "shop").length,
-          locations: locationSuggestions.length,
-          countries: countrySuggestions.length,
-          sampleCountries: countrySuggestions.slice(0, 5).map(s => ({
-            name: s.label,
-            count: s.artistCount,
-          })),
-        });
+        setSuggestions(buildSuggestions(artistsData, countriesData));
       }
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Error fetching suggestions.";
-      setError(errorMessage);
-      
-      console.error("[useSearchSuggestions] Error:", err);
+      setError(
+        err instanceof Error ? err.message : "Error fetching suggestions."
+      );
     } finally {
       setLoading(false);
     }

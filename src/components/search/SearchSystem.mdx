@@ -1,0 +1,132 @@
+import { Meta, Canvas, Controls } from "@storybook/blocks";
+import * as SearchBarStories from "../common/SearchBar.stories";
+import * as SuggestionMenuStories from "../common/SuggestionMenu.stories";
+import * as SuggestionItemStories from "../common/SuggestionItem.stories";
+import { FullExperience } from "../common/SearchSystemDemo";
+
+<Meta title="Search/Overview" />
+
+# The Search System
+
+A living map of every place a user types to find something in Trad Directory.
+It's deliberately split into a **public** search (the marketing/site experience,
+with a grouped suggestions menu) and an **admin** search (dense data tables).
+This page is the source of truth — when a search surface changes, update it here.
+
+> Status: this system drifted across iterations and is mid-consolidation. See
+> **Roadmap** at the bottom for what's converging.
+
+## The full experience
+
+Every search component together in one view — the public `SearchBar`, the open
+`SuggestionMenu`, and the admin `SearchBar` filter. Start here, then jump to any
+component below.
+
+<FullExperience />
+
+---
+
+## Public search — `SearchBar`
+
+The centralized site search: a combobox with a grouped, keyboard-navigable
+suggestions menu (artists / shops / locations). It ships four sizes and is
+mounted in the home hero, the global header, the mobile top bar, and the map
+overlay.
+
+<Canvas of={SearchBarStories.Default} />
+
+Type a query to see the grouped suggestions menu:
+
+<Canvas of={SearchBarStories.SuggestionsOpen} />
+
+Sizes:
+
+<Canvas of={SearchBarStories.Compact} />
+<Canvas of={SearchBarStories.Large} />
+
+### Props
+
+<Controls of={SearchBarStories.Default} />
+
+---
+
+## Suggestions menu — `SuggestionMenu` & `SuggestionItem`
+
+The dropdown behind `SearchBar` (and, soon, the admin autocompletes). A
+`SuggestionMenu` is a `role="listbox"` of `SuggestionItem` rows; it's
+presentational, so the parent owns the active row and key handling via the
+exported `useSuggestionNav` hook (ArrowDown/Up wrap, Enter selects, Escape closes).
+
+The full list, open, with one row keyboard-active:
+
+<Canvas of={SuggestionMenuStories.Open} />
+
+Live keyboard nav — type to filter, then ↑/↓ to move and Enter to select:
+
+<Canvas of={SuggestionMenuStories.KeyboardNav} />
+
+### Menu props
+
+<Controls of={SuggestionMenuStories.Open} />
+
+A single row carries the per-item states (rest / hover / active / pressed);
+here they are together in context:
+
+<Canvas of={SuggestionItemStories.AllItems} />
+
+---
+
+## Admin table search — `SearchBar` (filter mode)
+
+The admin data tables use the **same `SearchBar`** in filter mode: controlled
+`value` / `onValueChange`, no suggestions dropdown. This replaced the old,
+separate `TableSearch` — one search component, not two.
+
+<Canvas of={SearchBarStories.Filter} />
+
+---
+
+## Data & execution layer
+
+The UI is thin; the search logic lives in a few shared modules:
+
+- **`hooks/useSearchSuggestions`** — builds the `Suggestion[]` fed to `SearchBar`
+  (artists + countries), consumed by the header, top bar, map, and home page.
+- **`utils/suggestions`** — the `Suggestion` type and builders.
+- **`utils/locationSearch`** — `classifyLocationQuery`, which detects when a query
+  is really a location so results can show a map preview.
+- **`utils/navigation`** — `createSearchHandler`, which routes a query to
+  `/search-results?q=…`.
+- **`services/api`** — `searchArtists` / `searchShops` (client-side filtering over
+  the fetched dataset) powering the results page.
+
+## Where search appears
+
+| Surface | Component | Notes |
+| --- | --- | --- |
+| Home hero | `SearchBar` (large) | full suggestions |
+| Global header | `SearchBar` | non-home pages |
+| Mobile top bar | `SearchBar` (compact) | navigates to results |
+| Map overlay | `SearchBar` (compact) | embedded/card styling |
+| Results page | `SearchResults` + `ResultsSection` | tabs of artists/shops |
+| Admin data tables | `SearchBar` (filter mode) | artists/shops/cities/countries |
+| Admin add-link | bespoke inputs | pending consolidation |
+| Admin new-adding | bespoke city autocomplete | pending consolidation |
+| Data Builder | `MultiSelect` | bespoke checkbox menu |
+
+## Usage guidelines
+
+- **Public, typeahead-with-suggestions?** Use `SearchBar`.
+- **Filtering a table or list?** Use `SearchBar` in filter mode (`value` / `onValueChange`, no `suggestions`).
+- **Don't** hand-roll a new dropdown — the shared **`SuggestionMenu`** primitive
+  is the one accessible menu every autocomplete should use.
+- Every search component ships a `*.stories.tsx` and is linked from this page.
+
+## Roadmap (consolidation in progress)
+
+1. **Cleanup** ✅ — stripped debug logging; removed the dead `services/mcpApi`.
+2. **Unify `SearchBar` wiring** — one shared search/select handler across all
+   mounts; replace the map's CSS `!important` overrides with a real variant.
+3. **Extract `SuggestionMenu`** ✅ — the accessible listbox behind `SearchBar`;
+   next, migrate the admin autocompletes (New-Adding city, Data Builder) onto it.
+4. **Docs** — this page + per-component autodocs stay in lockstep with the code.
