@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { lazy, Suspense, useState } from "react";
 import { useAdminDataContext } from "../AdminDataProvider";
 import styles from "./AllAnalyticsPage.module.css";
@@ -13,7 +12,7 @@ import type { EntityKey, Mode, Range } from "./timelineControls";
 const EntryTimelineChart = lazy(() => import("./EntryTimelineChart"));
 
 export default function AllAnalyticsPage() {
-  const { stats, health, loading } = useAdminDataContext();
+  const { stats, loading } = useAdminDataContext();
 
   const [entity, setEntity] = useState<EntityKey>("artists");
   const [range, setRange] = useState<Range>(30);
@@ -25,42 +24,6 @@ export default function AllAnalyticsPage() {
     cities: stats.totalCities,
     countries: stats.totalCountries,
   };
-
-  const healthItems = [
-    {
-      label: "Broken IG Links",
-      value: health.brokenLinks,
-      sub: `${health.brokenLinksPct}% of profiles`,
-      to: "/admin/broken-links",
-    },
-    {
-      label: "Artists Missing IG",
-      value: health.artistsMissingIg,
-      to: "/admin/data?tab=artists",
-    },
-    {
-      label: "Artists Missing Location",
-      value: health.artistsMissingLocation,
-      to: "/admin/data?tab=artists",
-    },
-    {
-      label: "Empty Cities",
-      value: health.emptyCities,
-      sub: "no artists or shops",
-      to: "/admin/data?tab=cities",
-    },
-    {
-      label: "Orphaned Shops",
-      value: health.orphanedShops,
-      sub: "no linked artists",
-      to: "/admin/data?tab=shops",
-    },
-    {
-      label: "Pending Submissions",
-      value: health.pendingSubmissions,
-      to: "/admin/submissions",
-    },
-  ];
 
   return (
     <div className={styles.container}>
@@ -130,26 +93,6 @@ export default function AllAnalyticsPage() {
         <Suspense fallback={<div className={styles.chartFallback} />}>
           <EntryTimelineChart entity={entity} range={range} mode={mode} />
         </Suspense>
-      </div>
-
-      <h2 className={styles.sectionTitle}>Data Health</h2>
-      <div className={styles.healthGrid}>
-        {healthItems.map(item => {
-          const warn = !loading && item.value > 0;
-          return (
-            <Link key={item.label} to={item.to} className={styles.healthCard}>
-              <div className={styles.statLabel}>{item.label}</div>
-              <div
-                className={`${styles.statValue} ${
-                  warn ? styles.warnValue : styles.okValue
-                }`}
-              >
-                {loading ? "—" : item.value.toLocaleString()}
-              </div>
-              {item.sub && <div className={styles.healthSub}>{item.sub}</div>}
-            </Link>
-          );
-        })}
       </div>
     </div>
   );
