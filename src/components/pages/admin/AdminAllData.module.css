@@ -191,61 +191,6 @@
   margin-bottom: 0.75rem;
 }
 
-.searchContainer {
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  width: 100%;
-}
-
-.searchInputWrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex: 1;
-  min-width: 0;
-  padding: 0 1rem;
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--border-radius);
-  background-color: var(--color-surface);
-}
-
-.searchInputWrapper:focus-within {
-  border-color: var(--color-primary);
-  outline: none;
-  box-shadow: 0 0 0 2px
-    color-mix(in srgb, var(--color-primary) 20%, transparent);
-}
-
-.searchIcon {
-  flex-shrink: 0;
-  width: 1.25rem;
-  height: 1.25rem;
-  color: var(--color-primary);
-}
-
-.searchInput {
-  flex: 1;
-  min-width: 0;
-  padding: 0.75rem 0;
-  border: none;
-  border-radius: 0;
-  font-size: 1rem;
-  background: transparent;
-}
-
-.searchInput:focus {
-  outline: none;
-  box-shadow: none;
-}
-
-.resultCount {
-  color: var(--color-text-tertiary);
-  font-size: 0.9rem;
-  white-space: nowrap;
-}
-
 /* Consolidated ALL DATA view: sticky top bar holding the tabs (left) and a
    compact search (right). Its single bottom border is the only divider and
    lands at y=56 to align with the sidebar .sideHeader bottom border. */
@@ -277,27 +222,6 @@
   align-items: flex-end;
   flex: 1;
   min-width: 0;
-}
-
-/* Compact search that lives inside the bar on the right. */
-.searchContainerCompact {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0;
-  flex-shrink: 0;
-}
-
-.searchContainerCompact .searchInputWrapper {
-  flex: none;
-  width: 320px;
-  max-width: 320px;
-  padding: 0.4rem 0.9rem;
-}
-
-.searchContainerCompact .searchInput {
-  padding: 0.4rem 0;
-  font-size: 0.9rem;
 }
 
 .content {

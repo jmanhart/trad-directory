@@ -13,6 +13,7 @@ interface Country {
 interface ArtistRow {
   id: number;
   name: string;
+  city_id: number | null;
   instagram_handle: string | null;
   city_name: string | null;
   state_name: string | null;
@@ -330,30 +331,32 @@ export default function DataBuilder({ cities, states, countries, artists, broken
     let filtered = artists;
 
     if (selectedCityIds.size > 0) {
-      const cityNames = new Set(
-        cities
-          .filter(c => selectedCityIds.has(c.id))
-          .map(c => c.city_name)
-      );
       filtered = artists.filter(
-        a => a.city_name && cityNames.has(a.city_name)
+        a => a.city_id != null && selectedCityIds.has(a.city_id)
       );
     } else if (selectedStateIds.size > 0) {
-      const stateNames = new Set(
-        states
-          .filter(s => selectedStateIds.has(s.id))
-          .map(s => s.state_name)
+      // Resolve selected states to their city ids so name collisions
+      // (e.g. Portland ME vs Portland OR) never cross-match.
+      const stateCityIds = new Set(
+        cities
+          .filter(c => c.state_id != null && selectedStateIds.has(c.state_id))
+          .map(c => c.id)
       );
       filtered = artists.filter(
-        a => a.state_name && stateNames.has(a.state_name)
+        a => a.city_id != null && stateCityIds.has(a.city_id)
       );
     } else if (selectedCountryId) {
       const country = countries.find(
         c => c.id === parseInt(selectedCountryId)
       );
       if (country) {
+        const countryCityIds = new Set(
+          cities
+            .filter(c => c.country_name === country.country_name)
+            .map(c => c.id)
+        );
         filtered = artists.filter(
-          a => a.country_name === country.country_name
+          a => a.city_id != null && countryCityIds.has(a.city_id)
         );
       }
     }
@@ -385,29 +388,46 @@ export default function DataBuilder({ cities, states, countries, artists, broken
       return `- ${a.name}`;
     };
 
-    // Group by city when multiple cities are in the output
-    const distinctCities = new Set(clean.map(a => a.city_name || "Unknown"));
-    const shouldGroup = distinctCities.size > 1;
+    // Group by city (keyed on city_id) when multiple cities are in the
+    // output, so same-named cities never merge into one section.
+    const distinctCityIds = new Set(clean.map(a => a.city_id ?? -1));
+    const shouldGroup = distinctCityIds.size > 1;
 
     let md: string;
 
     if (shouldGroup) {
-      // Group artists by city, cities in A-Z order
-      const byCity = new Map<string, ArtistRow[]>();
+      const byCity = new Map<number, ArtistRow[]>();
       for (const a of clean) {
-        const key = a.city_name || "Unknown";
+        const key = a.city_id ?? -1;
         if (!byCity.has(key)) byCity.set(key, []);
         byCity.get(key)!.push(a);
       }
 
-      const sortedCityKeys = [...byCity.keys()].sort((a, b) =>
-        a.localeCompare(b, undefined, { sensitivity: "base" })
+      // Count city-name occurrences to detect collisions that need the
+      // state appended for disambiguation.
+      const nameCounts = new Map<string, number>();
+      for (const rows of byCity.values()) {
+        const name = rows[0].city_name || "Unknown";
+        nameCounts.set(name, (nameCounts.get(name) ?? 0) + 1);
+      }
+
+      const groups = [...byCity.values()].map(rows => {
+        const r = rows[0];
+        const name = r.city_name || "Unknown";
+        const label =
+          (nameCounts.get(name) ?? 0) > 1 && r.state_name
+            ? `${name}, ${r.state_name}`
+            : name;
+        return { label, rows };
+      });
+
+      groups.sort((a, b) =>
+        a.label.localeCompare(b.label, undefined, { sensitivity: "base" })
       );
 
-      const sections = sortedCityKeys.map(cityName => {
-        const cityArtists = byCity.get(cityName)!;
-        const lines = cityArtists.map(formatArtistLine);
-        return `**${cityName}**\n${lines.join("\n")}`;
+      const sections = groups.map(({ label, rows }) => {
+        const lines = rows.map(formatArtistLine);
+        return `**${label}**\n${lines.join("\n")}`;
       });
 
       md = `**${heading}**\n\n${sections.join("\n\n")}`;
