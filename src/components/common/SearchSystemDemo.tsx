@@ -1,30 +1,8 @@
 import { useState, type ReactNode } from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
 import SearchBar from "./SearchBar";
 import SuggestionMenu, { useSuggestionNav } from "./SuggestionMenu";
 import TableSearch from "./TableSearch";
 import { mockSuggestions } from "./__fixtures__/suggestions.mock";
-
-const meta = {
-  title: "Search/Full Experience",
-  // Composed showcase, not a single-component API — skip the autodocs page.
-  tags: ["!autodocs"],
-  parameters: {
-    layout: "fullscreen",
-    docs: {
-      description: {
-        component:
-          "The whole search system in one view: the public SearchBar, the open SuggestionMenu (SuggestionItem rows), and the admin TableSearch. A living smoke test that every piece renders and behaves together.",
-      },
-    },
-  },
-} satisfies Meta;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-const noop = fn();
 
 function Section({
   title,
@@ -37,7 +15,7 @@ function Section({
 }) {
   return (
     <section style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-      <h3 style={{ margin: 0, color: "var(--color-primary)" }}>{title}</h3>
+      <h4 style={{ margin: 0, color: "var(--color-primary)" }}>{title}</h4>
       <p style={{ margin: "0 0 0.5rem", color: "var(--color-text-secondary)" }}>
         {hint}
       </p>
@@ -46,7 +24,11 @@ function Section({
   );
 }
 
-function FullExperience() {
+/**
+ * The whole search system composed in one view — used by the Search/Overview
+ * doc. Not a Storybook story of its own; a living demo the doc renders inline.
+ */
+export function FullExperience() {
   const [query, setQuery] = useState("");
   const [tableQuery, setTableQuery] = useState("");
 
@@ -63,11 +45,10 @@ function FullExperience() {
   return (
     <div
       style={{
-        padding: "2rem",
         maxWidth: 780,
         display: "flex",
         flexDirection: "column",
-        gap: "2.75rem",
+        gap: "2.5rem",
       }}
     >
       <Section
@@ -77,8 +58,8 @@ function FullExperience() {
         <div style={{ minHeight: 64 }}>
           <SearchBar
             suggestions={mockSuggestions}
-            onSearch={noop}
-            onSelectSuggestion={noop}
+            onSearch={() => {}}
+            onSelectSuggestion={() => {}}
           />
         </div>
       </Section>
@@ -135,8 +116,3 @@ function FullExperience() {
     </div>
   );
 }
-
-/** The full search system, composed — every component together in one view. */
-export const Default: Story = {
-  render: () => <FullExperience />,
-};
