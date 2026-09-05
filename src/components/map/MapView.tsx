@@ -1371,8 +1371,9 @@ function MapInner({
           </Source>
         )}
 
-        {/* SPIKE (explore/open-maps): limited highways from open vector tiles
-            (OpenFreeMap, keyless). Only motorway + trunk, thin + subtle. */}
+        {/* Limited road network from open vector tiles (OpenFreeMap, keyless):
+            motorway + trunk, solid light gray with round joins so overlapping
+            segments read as one smooth color (no opacity stacking). */}
         {worldGeoJSON && usStatesGeoJSON && (
         <Source
           id="osm-vector"
@@ -1384,14 +1385,14 @@ function MapInner({
             type="line"
             source-layer="transportation"
             filter={["match", ["get", "class"], ["motorway", "trunk"], true, false]}
+            layout={{ "line-join": "round", "line-cap": "round" }}
             paint={{
-              "line-color": "#c0392b",
-              "line-opacity": 0.35,
+              "line-color": "#b0b6be",
               "line-width": [
                 "interpolate",
                 ["linear"],
                 ["zoom"],
-                4, 0.3,
+                4, 0.4,
                 8, 1,
                 12, 2.5,
               ],
