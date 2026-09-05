@@ -747,7 +747,6 @@ export default function MapPage() {
             suggestions={suggestions}
             onSelectSuggestion={handleMapSelectSuggestion}
             placeholder="Search artist, shop, or city..."
-            className={styles.mapSearchBar}
           />
         </div>
       </div>
