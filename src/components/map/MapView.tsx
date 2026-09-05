@@ -34,6 +34,17 @@ const STATE_CLUSTER_MIN_CITIES = 5;
 // Panel-aware padding for map zoom/fit operations
 const PANEL_WIDTH = 400; // 340px panel + gap + breathing room
 
+// Artist-count -> red ramp for the choropleth country/state fills: more
+// artists = deeper red = more visual weight. Empty places fall back to gray.
+function redForArtistCount(count: number): string {
+  if (count >= 75) return "#9c0101";
+  if (count >= 40) return "#ac2015";
+  if (count >= 20) return "#c33f30";
+  if (count >= 8) return "#d9635a";
+  if (count >= 3) return "#e78980";
+  return "#f0a9a4";
+}
+
 function getMapPadding(opensPanel = true) {
   const isDesktop = window.innerWidth > 767;
   if (isDesktop) {
@@ -1203,60 +1214,62 @@ function MapInner({
     [selectedCity, highlightedCity]
   );
 
-  // Derive which states and countries have entries for visual distinction
-  const statesWithEntriesArray = useMemo(() => {
-    const names = new Set<string>();
+  // Artist counts per state/country drive the choropleth fill (deeper red =
+  // more weight), built as MapLibre `match` expressions on the feature name
+  // with a light-gray fallback for places that have no artists.
+  const statesFillColor = useMemo(() => {
+    const counts = new Map<string, number>();
     cityData.forEach(dot => {
-      if (dot.stateName) names.add(dot.stateName);
-    });
-    return Array.from(names);
-  }, [cityData]);
-
-  const countriesWithEntriesArray = useMemo(() => {
-    const names = new Set<string>();
-    cityData.forEach(dot => {
-      if (dot.countryName) {
-        // Add both DB name and mapped GeoJSON name to cover all variants
-        names.add(dot.countryName);
-        const geoName = COUNTRY_NAME_MAP[dot.countryName];
-        if (geoName) names.add(geoName);
+      if (dot.stateName) {
+        counts.set(
+          dot.stateName,
+          (counts.get(dot.stateName) ?? 0) + dot.artistCount
+        );
       }
     });
-    return Array.from(names);
+    const pairs: string[] = [];
+    counts.forEach((n, name) => pairs.push(name, redForArtistCount(n)));
+    return (
+      pairs.length
+        ? ["match", ["get", "name"], ...pairs, "#e9e9e9"]
+        : "#e9e9e9"
+    ) as unknown as string;
   }, [cityData]);
 
-  // Country fill paint with hover + has-entries distinction
+  const countriesFillColor = useMemo(() => {
+    const counts = new Map<string, number>();
+    cityData.forEach(dot => {
+      if (!dot.countryName) return;
+      const add = (name: string) =>
+        counts.set(name, (counts.get(name) ?? 0) + dot.artistCount);
+      add(dot.countryName);
+      const geoName = COUNTRY_NAME_MAP[dot.countryName];
+      if (geoName && geoName !== dot.countryName) add(geoName);
+    });
+    const pairs: string[] = [];
+    counts.forEach((n, name) => pairs.push(name, redForArtistCount(n)));
+    return (
+      pairs.length
+        ? ["match", ["get", "name"], ...pairs, "#e9e9e9"]
+        : "#e9e9e9"
+    ) as unknown as string;
+  }, [cityData]);
+
+  // Fills encode data only (artist count); hover/selected live on the borders.
   const countryFillPaint = useMemo(
     () => ({
-      "fill-color": [
-        "case",
-        ["==", ["id"], hoveredCountryId ?? -1],
-        "hsl(0, 0%, 72%)",
-        ["in", ["get", "name"], ["literal", countriesWithEntriesArray]],
-        "hsl(0, 0%, 82%)",
-        "hsl(0, 0%, 90%)",
-      ] as unknown as string,
+      "fill-color": countriesFillColor,
       "fill-opacity": 1,
     }),
-    [hoveredCountryId, countriesWithEntriesArray]
+    [countriesFillColor]
   );
 
-  // State fill paint with hover + selected + has-entries distinction
   const statesFillPaint = useMemo(
     () => ({
-      "fill-color": [
-        "case",
-        ["==", ["get", "name"], selectedStateName ?? ""],
-        "hsl(0, 0%, 72%)",
-        ["==", ["get", "name"], hoveredStateName ?? ""],
-        "hsl(0, 0%, 72%)",
-        ["in", ["get", "name"], ["literal", statesWithEntriesArray]],
-        "hsl(0, 0%, 82%)",
-        "hsl(0, 0%, 90%)",
-      ] as unknown as string,
+      "fill-color": statesFillColor,
       "fill-opacity": 1,
     }),
-    [selectedStateName, hoveredStateName, statesWithEntriesArray]
+    [statesFillColor]
   );
 
   return (
@@ -1340,7 +1353,12 @@ function MapInner({
               type="line"
               paint={{
                 "line-color": "#ffffff",
-                "line-width": 0.5,
+                "line-width": [
+                  "case",
+                  ["==", ["id"], hoveredCountryId ?? -1],
+                  1.5,
+                  0.5,
+                ] as unknown as number,
               }}
               filter={["!=", ["get", "name"], "United States of America"]}
             />
@@ -1364,8 +1382,20 @@ function MapInner({
               id="states-line"
               type="line"
               paint={{
-                "line-color": "#ffffff",
-                "line-width": 0.3,
+                "line-color": [
+                  "case",
+                  ["==", ["get", "name"], selectedStateName ?? ""],
+                  "#5c0000",
+                  "#ffffff",
+                ] as unknown as string,
+                "line-width": [
+                  "case",
+                  ["==", ["get", "name"], selectedStateName ?? ""],
+                  3,
+                  ["==", ["get", "name"], hoveredStateName ?? ""],
+                  2,
+                  0.3,
+                ] as unknown as number,
               }}
             />
           </Source>
