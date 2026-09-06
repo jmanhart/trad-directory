@@ -4,6 +4,7 @@ import { CountBadge } from "../common/CountBadge";
 import type { Artist } from "../../types/entities";
 import type { CityDot } from "./MapView";
 import styles from "./MapDetailPanel.module.css";
+import { PanelHeroBackground } from "./PanelHeroBackground";
 
 type ShopEntry = { id: number; shop_name: string; slug?: string | null };
 
@@ -238,6 +239,9 @@ export default function MapDetailPanel({
   return (
     <div className={styles.card}>
       <div className={styles.dragHandle} />
+      <div className={styles.heroRegion}>
+        <PanelHeroBackground />
+        <div className={styles.heroContent}>
 
       {breadcrumb && breadcrumb.length > 1 && (
         <nav className={styles.breadcrumb} aria-label="Location path">
@@ -298,6 +302,8 @@ export default function MapDetailPanel({
           </div>
         </div>
       )}
+        </div>
+      </div>
 
       <div className={styles.list}>
         {loading && (

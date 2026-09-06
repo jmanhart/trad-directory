@@ -3,6 +3,7 @@ import { getShopUrl } from "../../services/api";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import type { Artist } from "../../types/entities";
 import styles from "./MapShopPanel.module.css";
+import { PanelHeroBackground } from "./PanelHeroBackground";
 
 export interface MapShopData {
   id: number;
@@ -42,6 +43,9 @@ export default function MapShopPanel({
 
   return (
     <div className={styles.card}>
+      <div className={styles.heroRegion}>
+        <PanelHeroBackground />
+        <div className={styles.heroContent}>
       <div className={styles.header}>
         <div>
           <Link to={getShopUrl(shop)} className={styles.nameLink}>
@@ -66,6 +70,8 @@ export default function MapShopPanel({
           >
             {showBackButton ? "\u2190" : "\u00d7"}
           </button>
+        </div>
+      </div>
         </div>
       </div>
 

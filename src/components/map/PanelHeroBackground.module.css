@@ -1,0 +1,50 @@
+/* Light-red tint + light bleeding illustrations behind a map panel's header.
+   Fills its (position:relative) parent; header content sits above via z-index. */
+.hero {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--color-background);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.art {
+  position: absolute;
+  opacity: 0.28;
+  user-select: none;
+}
+
+/* Bleed off the top-left corner. */
+.artTopLeft {
+  top: -38px;
+  left: -30px;
+  width: 165px;
+  transform: rotate(-12deg);
+}
+
+/* Peek in from the top edge, center-ish. */
+.artTopMid {
+  top: -30px;
+  left: 44%;
+  width: 110px;
+  transform: rotate(9deg);
+  opacity: 0.24;
+}
+
+/* Bleed off the top-right corner. */
+.artTopRight {
+  top: -34px;
+  right: -22px;
+  width: 145px;
+  transform: rotate(14deg);
+}
+
+/* A smaller, fainter accent lower on the right. */
+.artRight {
+  top: 40px;
+  right: 40px;
+  width: 92px;
+  transform: rotate(-6deg);
+  opacity: 0.2;
+}
