@@ -17,7 +17,10 @@ import {
   MAP_STYLE,
   WORLD_GEO_URL,
   US_STATES_GEO_URL,
+  CANADA_PROVINCES_GEO_URL,
+  AUSTRALIA_STATES_GEO_URL,
   useGeoJSON,
+  useGeoJSONFile,
 } from "./mapPrimitives";
 import type { MapLayerMouseEvent, ViewStateChangeEvent } from "react-map-gl";
 import useIsMobile from "../../hooks/useIsMobile";
@@ -593,6 +596,21 @@ function MapInner({
   // Load GeoJSON data
   const worldGeoJSON = useGeoJSON(WORLD_GEO_URL, "countries");
   const usStatesGeoJSON = useGeoJSON(US_STATES_GEO_URL, "states");
+  const caProvincesGeoJSON = useGeoJSONFile(CANADA_PROVINCES_GEO_URL);
+  const auStatesGeoJSON = useGeoJSONFile(AUSTRALIA_STATES_GEO_URL);
+
+  // US states + Canada provinces + Australia states share one polygon layer.
+  // The choropleth fill keys off the feature name (unique across all three),
+  // so every region colors by its own artist count.
+  const allStatesGeoJSON = useMemo(() => {
+    const features = [
+      usStatesGeoJSON,
+      caProvincesGeoJSON,
+      auStatesGeoJSON,
+    ].flatMap(fc => (fc ? fc.features : []));
+    if (features.length === 0) return null;
+    return { type: "FeatureCollection" as const, features };
+  }, [usStatesGeoJSON, caProvincesGeoJSON, auStatesGeoJSON]);
 
   // Minimum tier override — when set, tier won't drop below this level
   // Used when fitBounds zooms to a level below the desired tier (e.g. country click)
@@ -678,7 +696,7 @@ function MapInner({
         minLat = Infinity,
         maxLat = -Infinity;
 
-      const feat = usStatesGeoJSON?.features.find(
+      const feat = allStatesGeoJSON?.features.find(
         f => f.properties?.name === stateName
       );
 
@@ -740,7 +758,7 @@ function MapInner({
       const estimatedZoom = Math.log2(360 / span) + 0.5;
       syncTier(Math.max(estimatedZoom, ZOOM_CITY));
     },
-    [usStatesGeoJSON, cityData, syncTier]
+    [allStatesGeoJSON, cityData, syncTier]
   );
 
   // Tier 1: Continent clusters. Continents that contain a state-having country
@@ -1383,7 +1401,7 @@ function MapInner({
               id="countries-fill"
               type="fill"
               paint={countryFillPaint}
-              filter={["!=", ["get", "name"], "United States of America"]}
+              filter={["match", ["get", "name"], ["United States of America", "Canada", "Australia"], false, true]}
             />
             <Layer
               id="countries-line"
@@ -1397,17 +1415,18 @@ function MapInner({
                   0.5,
                 ] as unknown as number,
               }}
-              filter={["!=", ["get", "name"], "United States of America"]}
+              filter={["match", ["get", "name"], ["United States of America", "Canada", "Australia"], false, true]}
             />
           </Source>
         )}
 
-        {/* US state borders */}
-        {usStatesGeoJSON && (
+        {/* State / province borders: US states, Canada provinces, Australia
+            states — one layer, choropleth-filled by artist count. */}
+        {allStatesGeoJSON && (
           <Source
             id="us-states"
             type="geojson"
-            data={usStatesGeoJSON}
+            data={allStatesGeoJSON}
             promoteId="name"
           >
             <Layer

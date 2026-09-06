@@ -12,6 +12,8 @@ export const WORLD_GEO_URL =
   "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json";
 export const US_STATES_GEO_URL =
   "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
+export const CANADA_PROVINCES_GEO_URL = "/geo/canada-provinces.geojson";
+export const AUSTRALIA_STATES_GEO_URL = "/geo/australia-states.geojson";
 
 // Minimal map style with just a background color — we add our own GeoJSON layers
 export const MAP_STYLE = {
@@ -92,6 +94,26 @@ export function useGeoJSON(url: string, objectKey: string) {
       cancelled = true;
     };
   }, [url, objectKey]);
+  return data;
+}
+
+// Fetch a plain GeoJSON FeatureCollection (served locally, already GeoJSON —
+// no TopoJSON conversion). Used for the Canada/Australia state polygons.
+export function useGeoJSONFile(url: string) {
+  const [data, setData] = useState<FeatureCollection<Geometry> | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(url)
+      .then(res => res.json())
+      .then((fc: FeatureCollection<Geometry>) => {
+        if (cancelled) return;
+        setData(fixAntimeridian(fc));
+      })
+      .catch(err => console.error("Failed to load GeoJSON:", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
   return data;
 }
 
