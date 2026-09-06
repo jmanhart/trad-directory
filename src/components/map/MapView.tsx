@@ -31,6 +31,10 @@ const ZOOM_CONTINENT = 2.5;
 const ZOOM_COUNTRY = 4.5;
 const ZOOM_CITY = 6.5;
 
+// In globe (3D) mode, cap zoom so the whole sphere stays visible and centered;
+// drilling into a country/state is done by switching to flat (2D) mode.
+const GLOBE_MAX_ZOOM = 2.2;
+
 // Minimum cities for a non-US country to get state-level clustering
 const STATE_CLUSTER_MIN_CITIES = 5;
 
@@ -328,6 +332,7 @@ const LoadingMarker = memo(function LoadingMarker({
       longitude={continent.lng}
       latitude={continent.lat}
       anchor="center"
+      opacityWhenCovered="0"
     >
       <svg
         width={size}
@@ -388,6 +393,7 @@ const CityMarker = memo(function CityMarker({
       latitude={city.lat}
       anchor="top"
       offset={[0, -halfPx]}
+      opacityWhenCovered="0"
     >
       <div
         className={styles.cityMarker}
@@ -487,6 +493,7 @@ const ClusterMarker = memo(function ClusterMarker({
       latitude={cluster.lat}
       anchor="top"
       offset={[0, -r]}
+      opacityWhenCovered="0"
     >
       <div
         className={styles.cityMarker}
@@ -932,6 +939,17 @@ function MapInner({
   }, []);
 
   // Zoom controls
+  const [projection, setProjection] = useState<"globe" | "mercator">(
+    "globe"
+  );
+  const handleToggleProjection = useCallback(() => {
+    setProjection(prev => {
+      const next = prev === "globe" ? "mercator" : "globe";
+      mapRef.current?.getMap().setProjection({ type: next });
+      return next;
+    });
+  }, []);
+
   const handleZoomIn = useCallback(() => {
     mapRef.current?.zoomIn({ duration: 300 });
   }, []);
@@ -1338,6 +1356,15 @@ function MapInner({
       >
         <button
           className={styles.zoomButton}
+          onClick={handleToggleProjection}
+          title={
+            projection === "globe" ? "Switch to flat map" : "Switch to globe"
+          }
+        >
+          {projection === "globe" ? "2D" : "3D"}
+        </button>
+        <button
+          className={styles.zoomButton}
           onClick={handleZoomIn}
           title="Zoom in"
         >
@@ -1382,7 +1409,7 @@ function MapInner({
         scrollZoom={{
           around: "center",
         }}
-        maxZoom={18}
+        maxZoom={projection === "globe" ? GLOBE_MAX_ZOOM : 18}
         minZoom={1}
         attributionControl={false}
         dragRotate={false}
