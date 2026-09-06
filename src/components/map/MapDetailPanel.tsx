@@ -236,6 +236,38 @@ export default function MapDetailPanel({
       );
   }, [variant, groupBy, artists]);
 
+  const renderArtistRow = (artist: Artist) => (
+    <button
+      key={artist.id}
+      className={styles.listItem}
+      onClick={() => onArtistClick?.(artist)}
+    >
+      <span className={styles.artistName}>{artist.name}</span>
+      {artist.instagram_handle && (
+        <a
+          href={`https://instagram.com/${artist.instagram_handle}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.handleLink}
+          onClick={e => e.stopPropagation()}
+        >
+          <span className={styles.handle}>@{artist.instagram_handle}</span>
+          <InstagramIcon className={styles.handleIcon} />
+        </a>
+      )}
+    </button>
+  );
+
+  const renderShopRow = (shop: ShopEntry) => (
+    <button
+      key={shop.id}
+      className={styles.listItem}
+      onClick={() => onShopClick?.(shop)}
+    >
+      <span className={styles.shopName}>{shop.shop_name}</span>
+    </button>
+  );
+
   return (
     <div className={styles.card}>
       <div className={styles.dragHandle} />
@@ -319,29 +351,7 @@ export default function MapDetailPanel({
                   No artist details available
                 </div>
               )}
-              {artists.map(artist => (
-                <button
-                  key={artist.id}
-                  className={styles.listItem}
-                  onClick={() => onArtistClick?.(artist)}
-                >
-                  <span className={styles.artistName}>{artist.name}</span>
-                  {artist.instagram_handle && (
-                    <a
-                      href={`https://instagram.com/${artist.instagram_handle}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.handleLink}
-                      onClick={e => e.stopPropagation()}
-                    >
-                      <span className={styles.handle}>
-                        @{artist.instagram_handle}
-                      </span>
-                      <InstagramIcon className={styles.handleIcon} />
-                    </a>
-                  )}
-                </button>
-              ))}
+              {artists.map(renderArtistRow)}
             </>
           )}
 
@@ -356,60 +366,37 @@ export default function MapDetailPanel({
                   No artist details available
                 </div>
               )}
-              {artistsByCity.map(([cityName, group]) => {
-                const isExpanded = expandedCities.has(
-                  `artists:${cityName}`
-                );
-                return (
-                  <div key={cityName} className={styles.cityGroup}>
-                    <button
-                      className={styles.cityGroupHeader}
-                      onClick={() => {
-                        toggleCity(`artists:${cityName}`);
-                        if (group.dot) {
-                          onCityClick?.(group.dot);
-                        }
-                      }}
-                    >
-                      <span className={styles.cityGroupLeft}>
-                        <span className={styles.cityGroupName}>
-                          {cityName}
-                        </span>
-                        <CountBadge count={group.artists.length} />
-                      </span>
-                      <ChevronIcon
-                        className={`${styles.cityGroupChevron} ${!isExpanded ? styles.chevronCollapsed : ""}`}
-                      />
-                    </button>
-                    {isExpanded &&
-                      group.artists.map(artist => (
+              {artistsByCity.length === 1
+                ? artistsByCity[0][1].artists.map(renderArtistRow)
+                : artistsByCity.map(([cityName, group]) => {
+                    const isExpanded = expandedCities.has(
+                      `artists:${cityName}`
+                    );
+                    return (
+                      <div key={cityName} className={styles.cityGroup}>
                         <button
-                          key={artist.id}
-                          className={styles.listItem}
-                          onClick={() => onArtistClick?.(artist)}
+                          className={styles.cityGroupHeader}
+                          onClick={() => {
+                            toggleCity(`artists:${cityName}`);
+                            if (group.dot) {
+                              onCityClick?.(group.dot);
+                            }
+                          }}
                         >
-                          <span className={styles.artistName}>
-                            {artist.name}
+                          <span className={styles.cityGroupLeft}>
+                            <span className={styles.cityGroupName}>
+                              {cityName}
+                            </span>
+                            <CountBadge count={group.artists.length} />
                           </span>
-                          {artist.instagram_handle && (
-                            <a
-                              href={`https://instagram.com/${artist.instagram_handle}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={styles.handleLink}
-                              onClick={e => e.stopPropagation()}
-                            >
-                              <InstagramIcon className={styles.handleIcon} />
-                              <span className={styles.handle}>
-                                @{artist.instagram_handle}
-                              </span>
-                            </a>
-                          )}
+                          <ChevronIcon
+                            className={`${styles.cityGroupChevron} ${!isExpanded ? styles.chevronCollapsed : ""}`}
+                          />
                         </button>
-                      ))}
-                  </div>
-                );
-              })}
+                        {isExpanded && group.artists.map(renderArtistRow)}
+                      </div>
+                    );
+                  })}
             </>
           )}
 
@@ -461,15 +448,7 @@ export default function MapDetailPanel({
           hasTabs &&
           activeTab === "shops" &&
           variant === "city" &&
-          shops.map(shop => (
-            <button
-              key={shop.id}
-              className={styles.listItem}
-              onClick={() => onShopClick?.(shop)}
-            >
-              <span className={styles.shopName}>{shop.shop_name}</span>
-            </button>
-          ))}
+          shops.map(renderShopRow)}
 
         {!loading &&
           hasTabs &&
@@ -477,44 +456,35 @@ export default function MapDetailPanel({
           variant === "region" &&
           groupBy === "city" &&
           shopsByCity &&
-          shopsByCity.map(([cityName, group]) => {
-            const isExpanded = expandedCities.has(`shops:${cityName}`);
-            return (
-              <div key={cityName} className={styles.cityGroup}>
-                <button
-                  className={styles.cityGroupHeader}
-                  onClick={() => {
-                    toggleCity(`shops:${cityName}`);
-                    if (group.dot) {
-                      onCityClick?.(group.dot);
-                    }
-                  }}
-                >
-                  <span className={styles.cityGroupLeft}>
-                    <span className={styles.cityGroupName}>
-                      {cityName}
-                    </span>
-                    <CountBadge count={group.shops.length} />
-                  </span>
-                  <ChevronIcon
-                    className={`${styles.cityGroupChevron} ${!isExpanded ? styles.chevronCollapsed : ""}`}
-                  />
-                </button>
-                {isExpanded &&
-                  group.shops.map(shop => (
+          (shopsByCity.length === 1
+            ? shopsByCity[0][1].shops.map(renderShopRow)
+            : shopsByCity.map(([cityName, group]) => {
+                const isExpanded = expandedCities.has(`shops:${cityName}`);
+                return (
+                  <div key={cityName} className={styles.cityGroup}>
                     <button
-                      key={shop.id}
-                      className={styles.listItem}
-                      onClick={() => onShopClick?.(shop)}
+                      className={styles.cityGroupHeader}
+                      onClick={() => {
+                        toggleCity(`shops:${cityName}`);
+                        if (group.dot) {
+                          onCityClick?.(group.dot);
+                        }
+                      }}
                     >
-                      <span className={styles.shopName}>
-                        {shop.shop_name}
+                      <span className={styles.cityGroupLeft}>
+                        <span className={styles.cityGroupName}>
+                          {cityName}
+                        </span>
+                        <CountBadge count={group.shops.length} />
                       </span>
+                      <ChevronIcon
+                        className={`${styles.cityGroupChevron} ${!isExpanded ? styles.chevronCollapsed : ""}`}
+                      />
                     </button>
-                  ))}
-              </div>
-            );
-          })}
+                    {isExpanded && group.shops.map(renderShopRow)}
+                  </div>
+                );
+              }))}
 
         {!loading &&
           hasTabs &&
