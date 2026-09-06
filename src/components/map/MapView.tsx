@@ -743,28 +743,31 @@ function MapInner({
     [usStatesGeoJSON, cityData, syncTier]
   );
 
-  // Tier 1: Continent clusters — except North America, which is exploded into
-  // country clusters (US/Canada/Mexico/...) because it's dense; every other
-  // continent stays a single cluster.
+  // Tier 1: Continent clusters. Continents that contain a state-having country
+  // are exploded into country clusters (so US/Canada/Australia get their own
+  // marker and can be drilled into); every other continent stays one cluster.
   const continentClusters = useMemo(() => {
     const continentMap = new Map<
       string,
       { dots: CityDot[]; artists: number; shops: number }
     >();
-    const naCountryMap = new Map<
+    const countryBucket = new Map<
       string,
       { dots: CityDot[]; artists: number; shops: number }
     >();
+    // Explode a continent into countries when it holds a state-having country
+    // (US/Canada -> North America, Australia -> Oceania).
+    const explodeContinents = new Set<string>();
+    cityData.forEach(d => {
+      if (d.countryName && STATE_HAVING_COUNTRIES.has(d.countryName)) {
+        explodeContinents.add(getContinentForDot(d));
+      }
+    });
     cityData.forEach(d => {
       const continent = getContinentForDot(d);
-      const bucket =
-        continent === "North America"
-          ? naCountryMap
-          : continentMap;
-      const key =
-        continent === "North America"
-          ? d.countryName || "Unknown"
-          : continent;
+      const explode = explodeContinents.has(continent);
+      const bucket = explode ? countryBucket : continentMap;
+      const key = explode ? d.countryName || "Unknown" : continent;
       if (!bucket.has(key)) {
         bucket.set(key, { dots: [], artists: 0, shops: 0 });
       }
@@ -788,7 +791,7 @@ function MapInner({
         cityCount: v.dots.length,
       });
     });
-    naCountryMap.forEach((v, country) => {
+    countryBucket.forEach((v, country) => {
       const center = COUNTRY_CENTERS[country] || weightedCentroid(v.dots);
       clusters.push({
         name: country,
