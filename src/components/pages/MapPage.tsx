@@ -8,7 +8,7 @@ import useBottomSheet from "../../hooks/useBottomSheet";
 import { useSearchSuggestions } from "../../hooks/useSearchSuggestions";
 import { useMapCityDots } from "../../hooks/useMapCityDots";
 import type { Suggestion } from "../../utils/suggestions";
-import MapView, { CityDot } from "../../components/map/MapView";
+import MapView, { CityDot, STATE_HAVING_COUNTRIES } from "../../components/map/MapView";
 import MapDetailPanel from "../../components/map/MapDetailPanel";
 import MapArtistPanel from "../../components/map/MapArtistPanel";
 import MapShopPanel from "../../components/map/MapShopPanel";
@@ -23,13 +23,6 @@ interface SelectedRegion {
   name: string;
   type: "state" | "country";
 }
-
-// Countries whose panel drills through a state/province layer before cities.
-const STATE_HAVING: Record<string, true> = {
-  "United States": true,
-  Canada: true,
-  Australia: true,
-};
 
 export default function MapPage() {
   const isMobile = useIsMobile();
@@ -705,7 +698,7 @@ export default function MapPage() {
     : "";
 
   const regionGroupBy: "city" | "state" =
-    selectedRegion?.type === "country" && STATE_HAVING[selectedRegion.name]
+    selectedRegion?.type === "country" && STATE_HAVING_COUNTRIES.has(selectedRegion.name)
       ? "state"
       : "city";
 
@@ -715,7 +708,7 @@ export default function MapPage() {
       const c = selectedCity.countryName;
       const s = selectedCity.stateName;
       if (c) crumbs.push({ label: c, onClick: () => selectCountry(c) });
-      if (s && c && STATE_HAVING[c])
+      if (s && c && STATE_HAVING_COUNTRIES.has(c))
         crumbs.push({ label: s, onClick: () => handleStateClick(s) });
       crumbs.push({ label: selectedCity.cityName });
     } else if (selectedRegion?.type === "state") {

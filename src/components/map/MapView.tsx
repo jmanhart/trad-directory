@@ -31,6 +31,15 @@ const ZOOM_CITY = 6.5;
 // Minimum cities for a non-US country to get state-level clustering
 const STATE_CLUSTER_MIN_CITIES = 5;
 
+// Countries whose artist data is rich enough to drill down to individual
+// states/provinces (state clustering on the map + state breadcrumb in the
+// panel). Single source of truth, also imported by MapPage.
+export const STATE_HAVING_COUNTRIES = new Set([
+  "United States",
+  "Canada",
+  "Australia",
+]);
+
 // Panel-aware padding for map zoom/fit operations
 const PANEL_WIDTH = 400; // 340px panel + gap + breathing room
 
@@ -657,48 +666,71 @@ function MapInner({
     []
   );
 
-  // Zoom to fit a US state using its GeoJSON bounding box
+  // Zoom to fit a state. US states use their GeoJSON polygon; other
+  // state-having countries (Canada, Australia) have no polygon data, so fall
+  // back to the bounding box of that state's city dots.
   const flyToStateBounds = useCallback(
     (stateName: string) => {
-      if (!usStatesGeoJSON || !mapRef.current) return;
+      if (!mapRef.current) return;
 
-      const feat = usStatesGeoJSON.features.find(
-        f => f.properties?.name === stateName
-      );
-      if (!feat) return;
-
-      // Walk all coordinates to find bounding box
       let minLng = Infinity,
         maxLng = -Infinity,
         minLat = Infinity,
         maxLat = -Infinity;
 
-      const walkCoords = (coords: unknown) => {
-        if (
-          Array.isArray(coords) &&
-          coords.length >= 2 &&
-          typeof coords[0] === "number"
-        ) {
-          const [lng, lat] = coords as [number, number];
-          if (lng < minLng) minLng = lng;
-          if (lng > maxLng) maxLng = lng;
-          if (lat < minLat) minLat = lat;
-          if (lat > maxLat) maxLat = lat;
-        } else if (Array.isArray(coords)) {
-          for (const c of coords) walkCoords(c);
-        }
-      };
+      const feat = usStatesGeoJSON?.features.find(
+        f => f.properties?.name === stateName
+      );
 
-      walkCoords((feat.geometry as { coordinates: unknown }).coordinates);
+      if (feat) {
+        // Walk all polygon coordinates to find the bounding box.
+        const walkCoords = (coords: unknown) => {
+          if (
+            Array.isArray(coords) &&
+            coords.length >= 2 &&
+            typeof coords[0] === "number"
+          ) {
+            const [lng, lat] = coords as [number, number];
+            if (lng < minLng) minLng = lng;
+            if (lng > maxLng) maxLng = lng;
+            if (lat < minLat) minLat = lat;
+            if (lat > maxLat) maxLat = lat;
+          } else if (Array.isArray(coords)) {
+            for (const c of coords) walkCoords(c);
+          }
+        };
+        const geom = feat.geometry;
+        if (geom && "coordinates" in geom) {
+          walkCoords(geom.coordinates);
+        }
+      } else {
+        // No polygon — derive bounds from the state's city dots, padded so a
+        // single city or tight cluster doesn't over-zoom.
+        const dots = cityData.filter(d => d.stateName === stateName);
+        if (dots.length === 0) return;
+        dots.forEach(d => {
+          if (d.lng < minLng) minLng = d.lng;
+          if (d.lng > maxLng) maxLng = d.lng;
+          if (d.lat < minLat) minLat = d.lat;
+          if (d.lat > maxLat) maxLat = d.lat;
+        });
+        minLng -= 1;
+        maxLng += 1;
+        minLat -= 1;
+        maxLat += 1;
+      }
 
       if (!isFinite(minLng)) return;
 
+      const fitOpts = feat
+        ? { padding: getMapPadding(), duration: 1000 }
+        : { padding: getMapPadding(), duration: 1000, maxZoom: ZOOM_CITY + 1 };
       mapRef.current.fitBounds(
         [
           [minLng, minLat],
           [maxLng, maxLat],
         ],
-        { padding: getMapPadding(), duration: 1000 }
+        fitOpts
       );
 
       // Estimate resulting zoom to sync tier
@@ -708,7 +740,7 @@ function MapInner({
       const estimatedZoom = Math.log2(360 / span) + 0.5;
       syncTier(Math.max(estimatedZoom, ZOOM_CITY));
     },
-    [usStatesGeoJSON, syncTier]
+    [usStatesGeoJSON, cityData, syncTier]
   );
 
   // Tier 1: Continent clusters — except North America, which is exploded into
@@ -775,20 +807,20 @@ function MapInner({
   const countryClusters = useMemo(() => {
     const map = new Map<
       string,
-      { dots: CityDot[]; artists: number; shops: number; isUSState: boolean }
+      { dots: CityDot[]; artists: number; shops: number; isState: boolean }
     >();
     cityData.forEach(d => {
       const country = d.countryName || "Unknown";
       let key: string;
-      let isUSState = false;
-      if (country === "United States" && d.stateName) {
+      let isState = false;
+      if (STATE_HAVING_COUNTRIES.has(country) && d.stateName) {
         key = d.stateName;
-        isUSState = true;
+        isState = true;
       } else {
         key = country;
       }
       if (!map.has(key)) {
-        map.set(key, { dots: [], artists: 0, shops: 0, isUSState });
+        map.set(key, { dots: [], artists: 0, shops: 0, isState });
       }
       const entry = map.get(key)!;
       entry.dots.push(d);
@@ -798,7 +830,7 @@ function MapInner({
 
     const clusters: Cluster[] = [];
     map.forEach((v, name) => {
-      const center = v.isUSState
+      const center = v.isState
         ? US_STATE_CENTERS[name] || weightedCentroid(v.dots)
         : COUNTRY_CENTERS[name] || weightedCentroid(v.dots);
       clusters.push({
@@ -828,7 +860,7 @@ function MapInner({
     cityData.forEach(d => {
       const country = d.countryName || "Unknown";
       let key: string;
-      if (country === "United States" && d.stateName) {
+      if (STATE_HAVING_COUNTRIES.has(country) && d.stateName) {
         key = d.stateName;
       } else if (
         (countryCityCounts.get(country) || 0) >=
@@ -850,10 +882,12 @@ function MapInner({
 
     const clusters: Cluster[] = [];
     map.forEach((v, name) => {
-      const isUSState = v.dots.some(
-        d => d.countryName === "United States" && d.stateName === name
+      const isState = v.dots.some(
+        d =>
+          STATE_HAVING_COUNTRIES.has(d.countryName ?? "") &&
+          d.stateName === name
       );
-      const center = isUSState
+      const center = isState
         ? US_STATE_CENTERS[name] || weightedCentroid(v.dots)
         : weightedCentroid(v.dots);
       clusters.push({
@@ -950,7 +984,7 @@ function MapInner({
       // State-having countries with on-map state clusters (currently the US)
       // land on the country tier so those clusters show and match the panel;
       // every other country drops to city dots.
-      const hasStateClusters = dbName === "United States";
+      const hasStateClusters = STATE_HAVING_COUNTRIES.has(dbName);
       minTierRef.current = hasStateClusters ? "country" : "city";
 
       mapRef.current.fitBounds(
@@ -1112,13 +1146,13 @@ function MapInner({
   // US state clusters at this tier zoom directly to city level
   const handleCountryClusterClick = useCallback(
     (cluster: Cluster) => {
-      const isUSState = cityData.some(
+      const isState = cityData.some(
         d =>
-          d.countryName === "United States" &&
+          STATE_HAVING_COUNTRIES.has(d.countryName ?? "") &&
           d.stateName === cluster.name
       );
 
-      if (isUSState) {
+      if (isState) {
         setSelectedStateName(cluster.name);
         flyToStateBounds(cluster.name);
         onStateClick?.(cluster.name);
@@ -1137,13 +1171,13 @@ function MapInner({
     (cluster: Cluster) => {
       const clusterName = cluster.name;
 
-      const isUSState = cityData.some(
+      const isState = cityData.some(
         d =>
-          d.countryName === "United States" &&
+          STATE_HAVING_COUNTRIES.has(d.countryName ?? "") &&
           d.stateName === clusterName
       );
 
-      if (isUSState) {
+      if (isState) {
         setSelectedStateName(clusterName);
         flyToStateBounds(clusterName);
         onStateClick?.(clusterName);
