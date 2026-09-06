@@ -372,16 +372,14 @@ export default function MapDetailPanel({
                       }}
                     >
                       <span className={styles.cityGroupLeft}>
-                        <ChevronIcon
-                          className={`${styles.cityGroupChevron} ${!isExpanded ? styles.chevronCollapsed : ""}`}
-                        />
                         <span className={styles.cityGroupName}>
                           {cityName}
                         </span>
-                      </span>
-                      <span className={styles.cityGroupRight}>
                         <CountBadge count={group.artists.length} />
                       </span>
+                      <ChevronIcon
+                        className={`${styles.cityGroupChevron} ${!isExpanded ? styles.chevronCollapsed : ""}`}
+                      />
                     </button>
                     {isExpanded &&
                       group.artists.map(artist => (
@@ -432,13 +430,11 @@ export default function MapDetailPanel({
                   <>
                     <span className={styles.cityGroupLeft}>
                       <span className={styles.cityGroupName}>{stateName}</span>
-                    </span>
-                    <span className={styles.cityGroupRight}>
                       <CountBadge count={stateArtists.length} />
-                      {!isOther && (
-                        <ChevronIcon className={styles.drillChevron} />
-                      )}
                     </span>
+                    {!isOther && (
+                      <ChevronIcon className={styles.drillChevron} />
+                    )}
                   </>
                 );
                 return isOther ? (
@@ -495,14 +491,14 @@ export default function MapDetailPanel({
                   }}
                 >
                   <span className={styles.cityGroupLeft}>
-                    <ChevronIcon
-                      className={`${styles.cityGroupChevron} ${!isExpanded ? styles.chevronCollapsed : ""}`}
-                    />
                     <span className={styles.cityGroupName}>
                       {cityName}
                     </span>
+                    <CountBadge count={group.shops.length} />
                   </span>
-                  <CountBadge count={group.shops.length} />
+                  <ChevronIcon
+                    className={`${styles.cityGroupChevron} ${!isExpanded ? styles.chevronCollapsed : ""}`}
+                  />
                 </button>
                 {isExpanded &&
                   group.shops.map(shop => (
@@ -532,13 +528,11 @@ export default function MapDetailPanel({
               <>
                 <span className={styles.cityGroupLeft}>
                   <span className={styles.cityGroupName}>{stateName}</span>
-                </span>
-                <span className={styles.cityGroupRight}>
                   <CountBadge count={count} />
-                  {!isOther && (
-                    <ChevronIcon className={styles.drillChevron} />
-                  )}
                 </span>
+                {!isOther && (
+                  <ChevronIcon className={styles.drillChevron} />
+                )}
               </>
             );
             return isOther ? (
