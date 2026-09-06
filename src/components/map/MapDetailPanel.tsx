@@ -301,7 +301,9 @@ export default function MapDetailPanel({
       <div className={styles.header}>
         <div>
           <h2 className={styles.title}>{title}</h2>
-          {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+          {subtitle && !(breadcrumb && breadcrumb.length > 1) && (
+            <p className={styles.subtitle}>{subtitle}</p>
+          )}
         </div>
         <div className={styles.headerActions}>
           <button
