@@ -6,6 +6,13 @@
   height: 100%;
 }
 
+/* Faint dark halo so the globe lifts off the page (the inverse of a bright
+   atmosphere glow). Drop-shadow follows the sphere's alpha, so it tracks the
+   globe as it rotates/zooms. Start subtle — bump the alpha/blur as needed. */
+.mapWrapper :global(.maplibregl-canvas) {
+  filter: drop-shadow(0 0 24px rgba(0, 0, 0, 0.12));
+}
+
 .tooltip {
   position: fixed;
   background: rgba(0, 0, 0, 0.9);
