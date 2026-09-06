@@ -148,45 +148,6 @@
   }
 }
 
-.tabs {
-  display: flex;
-  gap: 0.5rem;
-  border-bottom: 2px solid var(--color-border);
-  margin-bottom: 1.5rem;
-  padding: 0 0.5rem;
-  overflow-x: auto;
-}
-
-.tab {
-  padding: 0.75rem 1.5rem;
-  background: none;
-  border: none;
-  border-bottom: 3px solid transparent;
-  color: var(--color-text-secondary);
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  margin-bottom: -2px;
-}
-
-.tab:hover:not(:disabled) {
-  color: var(--color-text-primary);
-  background-color: var(--color-surface);
-}
-
-.tab.active {
-  color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
-  font-weight: 600;
-}
-
-.tab:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .dataTabs {
   margin-bottom: 0.75rem;
 }
