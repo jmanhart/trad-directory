@@ -15,9 +15,12 @@ export const US_STATES_GEO_URL =
 export const CANADA_PROVINCES_GEO_URL = "/geo/canada-provinces.geojson";
 export const AUSTRALIA_STATES_GEO_URL = "/geo/australia-states.geojson";
 
-// Minimal map style with just a background color — we add our own GeoJSON layers
+// Minimal map style with just a background color — we add our own GeoJSON
+// layers. `projection: globe` renders a 3D globe when zoomed out and smoothly
+// transitions to flat mercator as you zoom into a country/state.
 export const MAP_STYLE = {
   version: 8 as const,
+  projection: { type: "globe" as const },
   sources: {},
   layers: [
     {
