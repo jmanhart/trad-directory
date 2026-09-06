@@ -1,6 +1,6 @@
 .mapWrapper {
   position: relative;
-  background: var(--color-surface);
+  background: #eceef0;
   overflow: hidden;
   width: 100%;
   height: 100%;
