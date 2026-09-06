@@ -28,7 +28,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 1.5rem 1.5rem 1.25rem;
+  padding: 1.5rem 3rem 1.25rem 1.5rem;
   flex-shrink: 0;
 }
 
@@ -47,10 +47,13 @@
 }
 
 .headerActions {
+  position: absolute;
+  top: 0.85rem;
+  right: 1.1rem;
+  z-index: 2;
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  flex-shrink: 0;
 }
 
 .closeButton {
@@ -120,9 +123,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.625rem 0.75rem;
-  margin: 0 0.75rem;
-  width: calc(100% - 1.5rem);
+  padding: 0.625rem 1.5rem;
+  margin: 0;
+  width: 100%;
   text-decoration: none;
   color: var(--color-text-secondary);
   border: none;
@@ -130,7 +133,7 @@
   box-shadow: none;
   transition: background 0.15s;
   background: none;
-  border-radius: 2px;
+  border-radius: 0;
   cursor: pointer;
   font: inherit;
   text-align: left;
@@ -271,7 +274,7 @@
 
 /* Items inside a city group get slightly indented */
 .cityGroup .listItem {
-  padding-left: 1.5rem;
+  padding-left: 2.5rem;
 }
 
 .cityGroup .listItem:last-child {
@@ -293,7 +296,7 @@
   flex-wrap: wrap;
   gap: 0.25rem;
   margin: 0;
-  padding: 1.25rem 1.5rem 0;
+  padding: 1.25rem 3rem 0 1.5rem;
   font-size: 0.75rem;
   color: var(--color-text-tertiary);
 }
@@ -358,9 +361,9 @@
 
   .listItem {
     min-height: 44px;
-    padding: 0.625rem 0.5rem;
-    margin: 0 0.5rem;
-    width: calc(100% - 1rem);
+    padding: 0.625rem 1rem;
+    margin: 0;
+    width: 100%;
   }
 
   .cityGroupHeader {
@@ -369,7 +372,12 @@
   }
 
   .cityGroup .listItem {
-    padding-left: 1rem;
+    padding-left: 2rem;
+  }
+
+  .headerActions {
+    top: 0.5rem;
+    right: 0.5rem;
   }
 
   .closeButton {

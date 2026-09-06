@@ -52,9 +52,9 @@
 .tab[data-active="true"],
 .tab.active {
   color: var(--color-primary);
-  font-weight: 600;
+  font-weight: 700;
   border-bottom-color: var(--color-primary);
-  border-bottom-width: 2px;
+  border-bottom-width: 3px;
 }
 
 .tab:disabled {
@@ -76,6 +76,6 @@
   line-height: 1;
   color: #fff;
   background-color: var(--color-primary, #c41e3a);
-  border-radius: 10px;
+  border-radius: 999px;
   vertical-align: middle;
 }
