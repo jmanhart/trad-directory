@@ -932,6 +932,17 @@ function MapInner({
   }, []);
 
   // Zoom controls
+  const [projection, setProjection] = useState<"globe" | "mercator">(
+    "globe"
+  );
+  const handleToggleProjection = useCallback(() => {
+    setProjection(prev => {
+      const next = prev === "globe" ? "mercator" : "globe";
+      mapRef.current?.getMap().setProjection({ type: next });
+      return next;
+    });
+  }, []);
+
   const handleZoomIn = useCallback(() => {
     mapRef.current?.zoomIn({ duration: 300 });
   }, []);
@@ -1336,6 +1347,15 @@ function MapInner({
         className={styles.zoomControls}
         onClick={e => e.stopPropagation()}
       >
+        <button
+          className={styles.zoomButton}
+          onClick={handleToggleProjection}
+          title={
+            projection === "globe" ? "Switch to flat map" : "Switch to globe"
+          }
+        >
+          {projection === "globe" ? "2D" : "3D"}
+        </button>
         <button
           className={styles.zoomButton}
           onClick={handleZoomIn}
