@@ -14,6 +14,14 @@ From the next tagged release onward this file is maintained automatically by
 [Conventional Commits](https://www.conventionalcommits.org/) — do not hand-edit
 released sections.
 
+## [0.4.1](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.4.0...tattoo-directory-v0.4.1) (2026-09-06)
+
+
+### Fixed
+
+* **search:** left-align suggestion name next to the icon ([0b62a83](https://github.com/jmanhart/trad-directory/commit/0b62a837886efa97a9c547a524aecdf6964ea982))
+* **search:** match clear (x) icon size to the magnifier with symmetric margin ([b940f8f](https://github.com/jmanhart/trad-directory/commit/b940f8f225d61c9ae8100de3f114231ded05ada4))
+
 ## [0.4.1](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.4.0...tattoo-directory-v0.4.1) (2026-09-05)
 
 
