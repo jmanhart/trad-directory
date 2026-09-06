@@ -26,7 +26,7 @@ export const MAP_STYLE = {
     {
       id: "background",
       type: "background" as const,
-      paint: { "background-color": "#ffffff" },
+      paint: { "background-color": "#d4dade" },
     },
   ],
 };
