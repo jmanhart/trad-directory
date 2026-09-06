@@ -328,6 +328,7 @@ const LoadingMarker = memo(function LoadingMarker({
       longitude={continent.lng}
       latitude={continent.lat}
       anchor="center"
+      opacityWhenCovered="0"
     >
       <svg
         width={size}
@@ -388,6 +389,7 @@ const CityMarker = memo(function CityMarker({
       latitude={city.lat}
       anchor="top"
       offset={[0, -halfPx]}
+      opacityWhenCovered="0"
     >
       <div
         className={styles.cityMarker}
@@ -487,6 +489,7 @@ const ClusterMarker = memo(function ClusterMarker({
       latitude={cluster.lat}
       anchor="top"
       offset={[0, -r]}
+      opacityWhenCovered="0"
     >
       <div
         className={styles.cityMarker}
