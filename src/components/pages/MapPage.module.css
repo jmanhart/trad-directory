@@ -45,6 +45,17 @@
   min-width: 0;
 }
 
+/* Beta tag overlaid on the right end of the search bar so the search fills the
+   full card width (instead of the tag pushing it narrower / sticking out). */
+.betaBadge {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  z-index: 16;
+  pointer-events: auto;
+}
+
 /* ── Info card (no city selected) ── */
 .infoCard {
   position: absolute;

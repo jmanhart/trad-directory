@@ -744,12 +744,14 @@ export default function MapPage() {
             placeholder="Search artist, shop, or city..."
           />
         </div>
-        <Tooltip
-          content="This is a beta and still working out the kinks"
-          placement="bottom"
-        >
-          <Tag tone="soft">Beta</Tag>
-        </Tooltip>
+        <div className={styles.betaBadge}>
+          <Tooltip
+            content="This is a beta and still working out the kinks"
+            placement="bottom"
+          >
+            <Tag tone="soft">Beta</Tag>
+          </Tooltip>
+        </div>
       </div>
       <MapView
         cityData={cityDots}
