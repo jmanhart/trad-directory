@@ -17,7 +17,10 @@ import {
   MAP_STYLE,
   WORLD_GEO_URL,
   US_STATES_GEO_URL,
+  CANADA_PROVINCES_GEO_URL,
+  AUSTRALIA_STATES_GEO_URL,
   useGeoJSON,
+  useGeoJSONFile,
 } from "./mapPrimitives";
 import type { MapLayerMouseEvent, ViewStateChangeEvent } from "react-map-gl";
 import useIsMobile from "../../hooks/useIsMobile";
@@ -31,8 +34,28 @@ const ZOOM_CITY = 6.5;
 // Minimum cities for a non-US country to get state-level clustering
 const STATE_CLUSTER_MIN_CITIES = 5;
 
+// Countries whose artist data is rich enough to drill down to individual
+// states/provinces (state clustering on the map + state breadcrumb in the
+// panel). Single source of truth, also imported by MapPage.
+export const STATE_HAVING_COUNTRIES = new Set([
+  "United States",
+  "Canada",
+  "Australia",
+]);
+
 // Panel-aware padding for map zoom/fit operations
 const PANEL_WIDTH = 400; // 340px panel + gap + breathing room
+
+// Artist-count -> red ramp for the choropleth country/state fills: more
+// artists = deeper red = more visual weight. Empty places fall back to gray.
+function redForArtistCount(count: number): string {
+  if (count >= 75) return "#9c0101";
+  if (count >= 40) return "#ac2015";
+  if (count >= 20) return "#c33f30";
+  if (count >= 8) return "#d9635a";
+  if (count >= 3) return "#e78980";
+  return "#f0a9a4";
+}
 
 function getMapPadding(opensPanel = true) {
   const isDesktop = window.innerWidth > 767;
@@ -573,6 +596,21 @@ function MapInner({
   // Load GeoJSON data
   const worldGeoJSON = useGeoJSON(WORLD_GEO_URL, "countries");
   const usStatesGeoJSON = useGeoJSON(US_STATES_GEO_URL, "states");
+  const caProvincesGeoJSON = useGeoJSONFile(CANADA_PROVINCES_GEO_URL);
+  const auStatesGeoJSON = useGeoJSONFile(AUSTRALIA_STATES_GEO_URL);
+
+  // US states + Canada provinces + Australia states share one polygon layer.
+  // The choropleth fill keys off the feature name (unique across all three),
+  // so every region colors by its own artist count.
+  const allStatesGeoJSON = useMemo(() => {
+    const features = [
+      usStatesGeoJSON,
+      caProvincesGeoJSON,
+      auStatesGeoJSON,
+    ].flatMap(fc => (fc ? fc.features : []));
+    if (features.length === 0) return null;
+    return { type: "FeatureCollection" as const, features };
+  }, [usStatesGeoJSON, caProvincesGeoJSON, auStatesGeoJSON]);
 
   // Minimum tier override — when set, tier won't drop below this level
   // Used when fitBounds zooms to a level below the desired tier (e.g. country click)
@@ -646,48 +684,71 @@ function MapInner({
     []
   );
 
-  // Zoom to fit a US state using its GeoJSON bounding box
+  // Zoom to fit a state. US states use their GeoJSON polygon; other
+  // state-having countries (Canada, Australia) have no polygon data, so fall
+  // back to the bounding box of that state's city dots.
   const flyToStateBounds = useCallback(
     (stateName: string) => {
-      if (!usStatesGeoJSON || !mapRef.current) return;
+      if (!mapRef.current) return;
 
-      const feat = usStatesGeoJSON.features.find(
-        f => f.properties?.name === stateName
-      );
-      if (!feat) return;
-
-      // Walk all coordinates to find bounding box
       let minLng = Infinity,
         maxLng = -Infinity,
         minLat = Infinity,
         maxLat = -Infinity;
 
-      const walkCoords = (coords: unknown) => {
-        if (
-          Array.isArray(coords) &&
-          coords.length >= 2 &&
-          typeof coords[0] === "number"
-        ) {
-          const [lng, lat] = coords as [number, number];
-          if (lng < minLng) minLng = lng;
-          if (lng > maxLng) maxLng = lng;
-          if (lat < minLat) minLat = lat;
-          if (lat > maxLat) maxLat = lat;
-        } else if (Array.isArray(coords)) {
-          for (const c of coords) walkCoords(c);
-        }
-      };
+      const feat = allStatesGeoJSON?.features.find(
+        f => f.properties?.name === stateName
+      );
 
-      walkCoords((feat.geometry as { coordinates: unknown }).coordinates);
+      if (feat) {
+        // Walk all polygon coordinates to find the bounding box.
+        const walkCoords = (coords: unknown) => {
+          if (
+            Array.isArray(coords) &&
+            coords.length >= 2 &&
+            typeof coords[0] === "number"
+          ) {
+            const [lng, lat] = coords as [number, number];
+            if (lng < minLng) minLng = lng;
+            if (lng > maxLng) maxLng = lng;
+            if (lat < minLat) minLat = lat;
+            if (lat > maxLat) maxLat = lat;
+          } else if (Array.isArray(coords)) {
+            for (const c of coords) walkCoords(c);
+          }
+        };
+        const geom = feat.geometry;
+        if (geom && "coordinates" in geom) {
+          walkCoords(geom.coordinates);
+        }
+      } else {
+        // No polygon — derive bounds from the state's city dots, padded so a
+        // single city or tight cluster doesn't over-zoom.
+        const dots = cityData.filter(d => d.stateName === stateName);
+        if (dots.length === 0) return;
+        dots.forEach(d => {
+          if (d.lng < minLng) minLng = d.lng;
+          if (d.lng > maxLng) maxLng = d.lng;
+          if (d.lat < minLat) minLat = d.lat;
+          if (d.lat > maxLat) maxLat = d.lat;
+        });
+        minLng -= 1;
+        maxLng += 1;
+        minLat -= 1;
+        maxLat += 1;
+      }
 
       if (!isFinite(minLng)) return;
 
+      const fitOpts = feat
+        ? { padding: getMapPadding(), duration: 1000 }
+        : { padding: getMapPadding(), duration: 1000, maxZoom: ZOOM_CITY + 1 };
       mapRef.current.fitBounds(
         [
           [minLng, minLat],
           [maxLng, maxLat],
         ],
-        { padding: getMapPadding(), duration: 1000 }
+        fitOpts
       );
 
       // Estimate resulting zoom to sync tier
@@ -697,31 +758,34 @@ function MapInner({
       const estimatedZoom = Math.log2(360 / span) + 0.5;
       syncTier(Math.max(estimatedZoom, ZOOM_CITY));
     },
-    [usStatesGeoJSON, syncTier]
+    [allStatesGeoJSON, cityData, syncTier]
   );
 
-  // Tier 1: Continent clusters — except North America, which is exploded into
-  // country clusters (US/Canada/Mexico/...) because it's dense; every other
-  // continent stays a single cluster.
+  // Tier 1: Continent clusters. Continents that contain a state-having country
+  // are exploded into country clusters (so US/Canada/Australia get their own
+  // marker and can be drilled into); every other continent stays one cluster.
   const continentClusters = useMemo(() => {
     const continentMap = new Map<
       string,
       { dots: CityDot[]; artists: number; shops: number }
     >();
-    const naCountryMap = new Map<
+    const countryBucket = new Map<
       string,
       { dots: CityDot[]; artists: number; shops: number }
     >();
+    // Explode a continent into countries when it holds a state-having country
+    // (US/Canada -> North America, Australia -> Oceania).
+    const explodeContinents = new Set<string>();
+    cityData.forEach(d => {
+      if (d.countryName && STATE_HAVING_COUNTRIES.has(d.countryName)) {
+        explodeContinents.add(getContinentForDot(d));
+      }
+    });
     cityData.forEach(d => {
       const continent = getContinentForDot(d);
-      const bucket =
-        continent === "North America"
-          ? naCountryMap
-          : continentMap;
-      const key =
-        continent === "North America"
-          ? d.countryName || "Unknown"
-          : continent;
+      const explode = explodeContinents.has(continent);
+      const bucket = explode ? countryBucket : continentMap;
+      const key = explode ? d.countryName || "Unknown" : continent;
       if (!bucket.has(key)) {
         bucket.set(key, { dots: [], artists: 0, shops: 0 });
       }
@@ -745,7 +809,7 @@ function MapInner({
         cityCount: v.dots.length,
       });
     });
-    naCountryMap.forEach((v, country) => {
+    countryBucket.forEach((v, country) => {
       const center = COUNTRY_CENTERS[country] || weightedCentroid(v.dots);
       clusters.push({
         name: country,
@@ -764,20 +828,20 @@ function MapInner({
   const countryClusters = useMemo(() => {
     const map = new Map<
       string,
-      { dots: CityDot[]; artists: number; shops: number; isUSState: boolean }
+      { dots: CityDot[]; artists: number; shops: number; isState: boolean }
     >();
     cityData.forEach(d => {
       const country = d.countryName || "Unknown";
       let key: string;
-      let isUSState = false;
-      if (country === "United States" && d.stateName) {
+      let isState = false;
+      if (STATE_HAVING_COUNTRIES.has(country) && d.stateName) {
         key = d.stateName;
-        isUSState = true;
+        isState = true;
       } else {
         key = country;
       }
       if (!map.has(key)) {
-        map.set(key, { dots: [], artists: 0, shops: 0, isUSState });
+        map.set(key, { dots: [], artists: 0, shops: 0, isState });
       }
       const entry = map.get(key)!;
       entry.dots.push(d);
@@ -787,7 +851,7 @@ function MapInner({
 
     const clusters: Cluster[] = [];
     map.forEach((v, name) => {
-      const center = v.isUSState
+      const center = v.isState
         ? US_STATE_CENTERS[name] || weightedCentroid(v.dots)
         : COUNTRY_CENTERS[name] || weightedCentroid(v.dots);
       clusters.push({
@@ -817,7 +881,7 @@ function MapInner({
     cityData.forEach(d => {
       const country = d.countryName || "Unknown";
       let key: string;
-      if (country === "United States" && d.stateName) {
+      if (STATE_HAVING_COUNTRIES.has(country) && d.stateName) {
         key = d.stateName;
       } else if (
         (countryCityCounts.get(country) || 0) >=
@@ -839,10 +903,12 @@ function MapInner({
 
     const clusters: Cluster[] = [];
     map.forEach((v, name) => {
-      const isUSState = v.dots.some(
-        d => d.countryName === "United States" && d.stateName === name
+      const isState = v.dots.some(
+        d =>
+          STATE_HAVING_COUNTRIES.has(d.countryName ?? "") &&
+          d.stateName === name
       );
-      const center = isUSState
+      const center = isState
         ? US_STATE_CENTERS[name] || weightedCentroid(v.dots)
         : weightedCentroid(v.dots);
       clusters.push({
@@ -939,7 +1005,7 @@ function MapInner({
       // State-having countries with on-map state clusters (currently the US)
       // land on the country tier so those clusters show and match the panel;
       // every other country drops to city dots.
-      const hasStateClusters = dbName === "United States";
+      const hasStateClusters = STATE_HAVING_COUNTRIES.has(dbName);
       minTierRef.current = hasStateClusters ? "country" : "city";
 
       mapRef.current.fitBounds(
@@ -1101,13 +1167,13 @@ function MapInner({
   // US state clusters at this tier zoom directly to city level
   const handleCountryClusterClick = useCallback(
     (cluster: Cluster) => {
-      const isUSState = cityData.some(
+      const isState = cityData.some(
         d =>
-          d.countryName === "United States" &&
+          STATE_HAVING_COUNTRIES.has(d.countryName ?? "") &&
           d.stateName === cluster.name
       );
 
-      if (isUSState) {
+      if (isState) {
         setSelectedStateName(cluster.name);
         flyToStateBounds(cluster.name);
         onStateClick?.(cluster.name);
@@ -1126,13 +1192,13 @@ function MapInner({
     (cluster: Cluster) => {
       const clusterName = cluster.name;
 
-      const isUSState = cityData.some(
+      const isState = cityData.some(
         d =>
-          d.countryName === "United States" &&
+          STATE_HAVING_COUNTRIES.has(d.countryName ?? "") &&
           d.stateName === clusterName
       );
 
-      if (isUSState) {
+      if (isState) {
         setSelectedStateName(clusterName);
         flyToStateBounds(clusterName);
         onStateClick?.(clusterName);
@@ -1203,60 +1269,62 @@ function MapInner({
     [selectedCity, highlightedCity]
   );
 
-  // Derive which states and countries have entries for visual distinction
-  const statesWithEntriesArray = useMemo(() => {
-    const names = new Set<string>();
+  // Artist counts per state/country drive the choropleth fill (deeper red =
+  // more weight), built as MapLibre `match` expressions on the feature name
+  // with a light-gray fallback for places that have no artists.
+  const statesFillColor = useMemo(() => {
+    const counts = new Map<string, number>();
     cityData.forEach(dot => {
-      if (dot.stateName) names.add(dot.stateName);
-    });
-    return Array.from(names);
-  }, [cityData]);
-
-  const countriesWithEntriesArray = useMemo(() => {
-    const names = new Set<string>();
-    cityData.forEach(dot => {
-      if (dot.countryName) {
-        // Add both DB name and mapped GeoJSON name to cover all variants
-        names.add(dot.countryName);
-        const geoName = COUNTRY_NAME_MAP[dot.countryName];
-        if (geoName) names.add(geoName);
+      if (dot.stateName) {
+        counts.set(
+          dot.stateName,
+          (counts.get(dot.stateName) ?? 0) + dot.artistCount
+        );
       }
     });
-    return Array.from(names);
+    const pairs: string[] = [];
+    counts.forEach((n, name) => pairs.push(name, redForArtistCount(n)));
+    return (
+      pairs.length
+        ? ["match", ["get", "name"], ...pairs, "#e9e9e9"]
+        : "#e9e9e9"
+    ) as unknown as string;
   }, [cityData]);
 
-  // Country fill paint with hover + has-entries distinction
+  const countriesFillColor = useMemo(() => {
+    const counts = new Map<string, number>();
+    cityData.forEach(dot => {
+      if (!dot.countryName) return;
+      const add = (name: string) =>
+        counts.set(name, (counts.get(name) ?? 0) + dot.artistCount);
+      add(dot.countryName);
+      const geoName = COUNTRY_NAME_MAP[dot.countryName];
+      if (geoName && geoName !== dot.countryName) add(geoName);
+    });
+    const pairs: string[] = [];
+    counts.forEach((n, name) => pairs.push(name, redForArtistCount(n)));
+    return (
+      pairs.length
+        ? ["match", ["get", "name"], ...pairs, "#e9e9e9"]
+        : "#e9e9e9"
+    ) as unknown as string;
+  }, [cityData]);
+
+  // Fills encode data only (artist count); hover/selected live on the borders.
   const countryFillPaint = useMemo(
     () => ({
-      "fill-color": [
-        "case",
-        ["==", ["id"], hoveredCountryId ?? -1],
-        "hsl(0, 0%, 72%)",
-        ["in", ["get", "name"], ["literal", countriesWithEntriesArray]],
-        "hsl(0, 0%, 82%)",
-        "hsl(0, 0%, 90%)",
-      ] as unknown as string,
+      "fill-color": countriesFillColor,
       "fill-opacity": 1,
     }),
-    [hoveredCountryId, countriesWithEntriesArray]
+    [countriesFillColor]
   );
 
-  // State fill paint with hover + selected + has-entries distinction
   const statesFillPaint = useMemo(
     () => ({
-      "fill-color": [
-        "case",
-        ["==", ["get", "name"], selectedStateName ?? ""],
-        "hsl(0, 0%, 72%)",
-        ["==", ["get", "name"], hoveredStateName ?? ""],
-        "hsl(0, 0%, 72%)",
-        ["in", ["get", "name"], ["literal", statesWithEntriesArray]],
-        "hsl(0, 0%, 82%)",
-        "hsl(0, 0%, 90%)",
-      ] as unknown as string,
+      "fill-color": statesFillColor,
       "fill-opacity": 1,
     }),
-    [selectedStateName, hoveredStateName, statesWithEntriesArray]
+    [statesFillColor]
   );
 
   return (
@@ -1333,26 +1401,32 @@ function MapInner({
               id="countries-fill"
               type="fill"
               paint={countryFillPaint}
-              filter={["!=", ["get", "name"], "United States of America"]}
+              filter={["match", ["get", "name"], ["United States of America", "Canada", "Australia"], false, true]}
             />
             <Layer
               id="countries-line"
               type="line"
               paint={{
                 "line-color": "#ffffff",
-                "line-width": 0.5,
+                "line-width": [
+                  "case",
+                  ["==", ["id"], hoveredCountryId ?? -1],
+                  1.5,
+                  0.5,
+                ] as unknown as number,
               }}
-              filter={["!=", ["get", "name"], "United States of America"]}
+              filter={["match", ["get", "name"], ["United States of America", "Canada", "Australia"], false, true]}
             />
           </Source>
         )}
 
-        {/* US state borders */}
-        {usStatesGeoJSON && (
+        {/* State / province borders: US states, Canada provinces, Australia
+            states — one layer, choropleth-filled by artist count. */}
+        {allStatesGeoJSON && (
           <Source
             id="us-states"
             type="geojson"
-            data={usStatesGeoJSON}
+            data={allStatesGeoJSON}
             promoteId="name"
           >
             <Layer
@@ -1364,11 +1438,53 @@ function MapInner({
               id="states-line"
               type="line"
               paint={{
-                "line-color": "#ffffff",
-                "line-width": 0.3,
+                "line-color": [
+                  "case",
+                  ["==", ["get", "name"], selectedStateName ?? ""],
+                  "#5c0000",
+                  "#ffffff",
+                ] as unknown as string,
+                "line-width": [
+                  "case",
+                  ["==", ["get", "name"], selectedStateName ?? ""],
+                  3,
+                  ["==", ["get", "name"], hoveredStateName ?? ""],
+                  2,
+                  0.3,
+                ] as unknown as number,
               }}
             />
           </Source>
+        )}
+
+        {/* Limited road network from open vector tiles (OpenFreeMap, keyless):
+            motorway + trunk, solid light gray with round joins so overlapping
+            segments read as one smooth color (no opacity stacking). */}
+        {worldGeoJSON && usStatesGeoJSON && (
+        <Source
+          id="osm-vector"
+          type="vector"
+          url="https://tiles.openfreemap.org/planet"
+        >
+          <Layer
+            id="highways"
+            type="line"
+            source-layer="transportation"
+            filter={["match", ["get", "class"], ["motorway", "trunk"], true, false]}
+            layout={{ "line-join": "round", "line-cap": "round" }}
+            paint={{
+              "line-color": "#b0b6be",
+              "line-width": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                4, 0.4,
+                8, 1,
+                12, 2.5,
+              ],
+            }}
+          />
+        </Source>
         )}
 
         {/* Tier 1: Continent clusters (or loading placeholders) */}
