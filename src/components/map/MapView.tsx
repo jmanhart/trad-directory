@@ -31,10 +31,6 @@ const ZOOM_CONTINENT = 2.5;
 const ZOOM_COUNTRY = 4.5;
 const ZOOM_CITY = 6.5;
 
-// In globe (3D) mode, cap zoom so the whole sphere stays visible and centered;
-// drilling into a country/state is done by switching to flat (2D) mode.
-const GLOBE_MAX_ZOOM = 2.2;
-
 // Minimum cities for a non-US country to get state-level clustering
 const STATE_CLUSTER_MIN_CITIES = 5;
 
@@ -1409,7 +1405,7 @@ function MapInner({
         scrollZoom={{
           around: "center",
         }}
-        maxZoom={projection === "globe" ? GLOBE_MAX_ZOOM : 18}
+        maxZoom={18}
         minZoom={1}
         attributionControl={false}
         dragRotate={false}
