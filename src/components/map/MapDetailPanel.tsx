@@ -4,6 +4,7 @@ import { CountBadge } from "../common/CountBadge";
 import type { Artist } from "../../types/entities";
 import type { CityDot } from "./MapView";
 import styles from "./MapDetailPanel.module.css";
+import { PanelHeroBackground } from "./PanelHeroBackground";
 
 type ShopEntry = { id: number; shop_name: string; slug?: string | null };
 
@@ -238,6 +239,9 @@ export default function MapDetailPanel({
   return (
     <div className={styles.card}>
       <div className={styles.dragHandle} />
+      <div className={styles.heroRegion}>
+        <PanelHeroBackground />
+        <div className={styles.heroContent}>
 
       {breadcrumb && breadcrumb.length > 1 && (
         <nav className={styles.breadcrumb} aria-label="Location path">
@@ -298,6 +302,8 @@ export default function MapDetailPanel({
           </div>
         </div>
       )}
+        </div>
+      </div>
 
       <div className={styles.list}>
         {loading && (
@@ -366,16 +372,14 @@ export default function MapDetailPanel({
                       }}
                     >
                       <span className={styles.cityGroupLeft}>
-                        <ChevronIcon
-                          className={`${styles.cityGroupChevron} ${!isExpanded ? styles.chevronCollapsed : ""}`}
-                        />
                         <span className={styles.cityGroupName}>
                           {cityName}
                         </span>
-                      </span>
-                      <span className={styles.cityGroupRight}>
                         <CountBadge count={group.artists.length} />
                       </span>
+                      <ChevronIcon
+                        className={`${styles.cityGroupChevron} ${!isExpanded ? styles.chevronCollapsed : ""}`}
+                      />
                     </button>
                     {isExpanded &&
                       group.artists.map(artist => (
@@ -426,13 +430,11 @@ export default function MapDetailPanel({
                   <>
                     <span className={styles.cityGroupLeft}>
                       <span className={styles.cityGroupName}>{stateName}</span>
-                    </span>
-                    <span className={styles.cityGroupRight}>
                       <CountBadge count={stateArtists.length} />
-                      {!isOther && (
-                        <ChevronIcon className={styles.drillChevron} />
-                      )}
                     </span>
+                    {!isOther && (
+                      <ChevronIcon className={styles.drillChevron} />
+                    )}
                   </>
                 );
                 return isOther ? (
@@ -489,14 +491,14 @@ export default function MapDetailPanel({
                   }}
                 >
                   <span className={styles.cityGroupLeft}>
-                    <ChevronIcon
-                      className={`${styles.cityGroupChevron} ${!isExpanded ? styles.chevronCollapsed : ""}`}
-                    />
                     <span className={styles.cityGroupName}>
                       {cityName}
                     </span>
+                    <CountBadge count={group.shops.length} />
                   </span>
-                  <CountBadge count={group.shops.length} />
+                  <ChevronIcon
+                    className={`${styles.cityGroupChevron} ${!isExpanded ? styles.chevronCollapsed : ""}`}
+                  />
                 </button>
                 {isExpanded &&
                   group.shops.map(shop => (
@@ -526,13 +528,11 @@ export default function MapDetailPanel({
               <>
                 <span className={styles.cityGroupLeft}>
                   <span className={styles.cityGroupName}>{stateName}</span>
-                </span>
-                <span className={styles.cityGroupRight}>
                   <CountBadge count={count} />
-                  {!isOther && (
-                    <ChevronIcon className={styles.drillChevron} />
-                  )}
                 </span>
+                {!isOther && (
+                  <ChevronIcon className={styles.drillChevron} />
+                )}
               </>
             );
             return isOther ? (
