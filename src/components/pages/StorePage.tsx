@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { fetchBigCartelStores } from "../../services/api";
 import type { BigCartelStore } from "../../types";
+import StoreCard from "../store/StoreCard";
 import styles from "./StorePage.module.css";
 
 export default function StorePage() {
@@ -53,32 +53,7 @@ export default function StorePage() {
       {hasStores && (
         <div className={styles.grid}>
           {stores.map(store => (
-            <div key={store.subdomain} className={styles.card}>
-              <div className={styles.cardHead}>
-                <span className={styles.kind}>
-                  {store.kind === "artist" ? "Artist" : "Studio"}
-                </span>
-                <h2 className={styles.storeName}>{store.name}</h2>
-                <span className={styles.domain}>
-                  {store.subdomain}.bigcartel.com
-                </span>
-              </div>
-              <div className={styles.actions}>
-                <a
-                  className={styles.visit}
-                  href={store.storeUrl}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                >
-                  Visit store &#8599;
-                </a>
-                {store.profilePath && (
-                  <Link className={styles.profile} to={store.profilePath}>
-                    View on TRAD &rarr;
-                  </Link>
-                )}
-              </div>
-            </div>
+            <StoreCard key={store.subdomain} store={store} />
           ))}
         </div>
       )}

@@ -81,3 +81,15 @@ export interface BigCartelStore {
   /** Internal directory profile path (/artist/... or /shop/...), if known. */
   profilePath: string | null;
 }
+
+export interface StoreProduct {
+  id: number;
+  name: string;
+  /** Price in the store's currency, major units (e.g. dollars). */
+  price: number;
+  onSale: boolean;
+  imageUrl: string | null;
+  /** Absolute URL to the product page on BigCartel. */
+  productUrl: string;
+  soldOut: boolean;
+}
