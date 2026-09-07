@@ -92,4 +92,13 @@ export interface StoreProduct {
   /** Absolute URL to the product page on BigCartel. */
   productUrl: string;
   soldOut: boolean;
+  /** ISO timestamp the product was created, for "newest" sorting. */
+  createdAt: string | null;
+}
+
+export interface StoreProductWithStore extends StoreProduct {
+  storeName: string;
+  storeKind: "artist" | "shop";
+  storeSubdomain: string;
+  storeProfilePath: string | null;
 }

@@ -56,6 +56,7 @@ function mapProducts(raw: unknown, subdomain: string): StoreProduct[] {
       imageUrl: firstImage,
       productUrl: origin + (asString(get(product, "url")) ?? ""),
       soldOut,
+      createdAt: asString(get(product, "created_at")),
     };
   });
 }
