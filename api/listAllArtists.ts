@@ -55,6 +55,17 @@ export default async function handler(req: any, res: any) {
         ),
         artist_shop (
           shop: tattoo_shops (id, shop_name, instagram_handle)
+        ),
+        artist_location (
+          is_primary,
+          role,
+          sort_order,
+          city: cities (
+            city_name,
+            state: states (state_name),
+            country: countries (country_name)
+          ),
+          shop: tattoo_shops (id, shop_name, instagram_handle)
         )
       `
         )
@@ -74,24 +85,66 @@ export default async function handler(req: any, res: any) {
       offset += pageSize;
     }
 
-    const results = (artists || []).map((artist: any) => ({
-      id: artist.id,
-      name: artist.name,
-      instagram_handle: artist.instagram_handle || null,
-      is_traveling: artist.is_traveling || false,
-      city_id: artist.city_id ?? null,
-      city_name: Array.isArray(artist.city)
-        ? artist.city[0]?.city_name
-        : artist.city?.city_name || null,
-      state_name: Array.isArray(artist.city?.state)
-        ? artist.city.state[0]?.state_name
-        : artist.city?.state?.state_name || null,
-      country_name: Array.isArray(artist.city?.country)
-        ? artist.city.country[0]?.country_name
-        : artist.city?.country?.country_name || null,
-      shop_name: artist.artist_shop?.[0]?.shop?.shop_name || null,
-      shop_instagram_handle: artist.artist_shop?.[0]?.shop?.instagram_handle || null,
-    }));
+    const results = (artists || []).map((artist: any) => {
+      const locations = (
+        Array.isArray(artist.artist_location) ? artist.artist_location : []
+      )
+        .map((loc: any) => {
+          const c = Array.isArray(loc.city) ? loc.city[0] : loc.city;
+          const s = Array.isArray(loc.shop) ? loc.shop[0] : loc.shop;
+          const st = Array.isArray(c?.state) ? c.state[0] : c?.state;
+          const ct = Array.isArray(c?.country) ? c.country[0] : c?.country;
+          return {
+            city_name: c?.city_name || null,
+            state_name: st?.state_name || null,
+            country_name: ct?.country_name || null,
+            shop_name: s?.shop_name || null,
+            shop_instagram_handle: s?.instagram_handle || null,
+            is_primary: loc.is_primary ?? false,
+            role: loc.role || null,
+            sort_order: loc.sort_order ?? 0,
+          };
+        })
+        .sort(
+          (a: any, b: any) =>
+            (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0) ||
+            a.sort_order - b.sort_order
+        );
+      const primary =
+        locations.find((l: any) => l.is_primary) || locations[0] || null;
+      const legacyCity = Array.isArray(artist.city)
+        ? artist.city[0]
+        : artist.city;
+      return {
+        id: artist.id,
+        name: artist.name,
+        instagram_handle: artist.instagram_handle || null,
+        is_traveling: artist.is_traveling || false,
+        city_id: artist.city_id ?? null,
+        // Flat fields come from the primary location (legacy city kept as fallback).
+        city_name: primary?.city_name ?? legacyCity?.city_name ?? null,
+        state_name:
+          primary?.state_name ??
+          (Array.isArray(legacyCity?.state)
+            ? legacyCity.state[0]?.state_name
+            : legacyCity?.state?.state_name) ??
+          null,
+        country_name:
+          primary?.country_name ??
+          (Array.isArray(legacyCity?.country)
+            ? legacyCity.country[0]?.country_name
+            : legacyCity?.country?.country_name) ??
+          null,
+        shop_name:
+          primary?.shop_name ?? artist.artist_shop?.[0]?.shop?.shop_name ?? null,
+        shop_instagram_handle:
+          primary?.shop_instagram_handle ??
+          artist.artist_shop?.[0]?.shop?.instagram_handle ??
+          null,
+        // Full set of locations for multi-shop / multi-city consumers.
+        locations,
+      };
+    });
 
     res.status(200).json({ artists: results });
   } catch (error) {
