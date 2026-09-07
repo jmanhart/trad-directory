@@ -1,7 +1,7 @@
 import { supabase } from "../lib/supabaseClient";
 import { createClient } from "@supabase/supabase-js";
 import { generateUniqueSlug } from "../utils/slug";
-import type { Artist, ArtistLocation, Shop, ShopWithArtists, City, Country } from "../types";
+import type { Artist, ArtistLocation, Shop, ShopWithArtists, City, Country, BigCartelStore } from "../types";
 
 /**
  * Helper function to get artist URL (uses slug if available, falls back to ID)
@@ -579,6 +579,72 @@ export async function fetchAllShops(): Promise<Shop[]> {
     }));
   } catch (err) {
     console.error("Unhandled error in fetchAllShops:", err);
+    throw err;
+  }
+}
+
+// Extract the BigCartel subdomain from a raw website URL, or null if the URL
+// isn't a BigCartel store. Handles bare hosts, missing scheme, and www./trailing
+// slash variants (the DB has all of these).
+function bigCartelSubdomain(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  try {
+    const u = new URL(trimmed.startsWith("http") ? trimmed : `https://${trimmed}`);
+    const host = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (!host.endsWith(".bigcartel.com")) return null;
+    const sub = host.slice(0, -".bigcartel.com".length);
+    return sub || null;
+  } catch {
+    return null;
+  }
+}
+
+// Fetch every artist/shop that links a BigCartel store, deduped by subdomain.
+// Artist attribution wins over shop when the same store is linked from both.
+export async function fetchBigCartelStores(): Promise<BigCartelStore[]> {
+  try {
+    const [artistsRes, shopsRes] = await Promise.all([
+      supabase.from("artists").select("id, name, slug, url").ilike("url", "%bigcartel%"),
+      supabase
+        .from("tattoo_shops")
+        .select("id, shop_name, slug, website_url")
+        .ilike("website_url", "%bigcartel%"),
+    ]);
+    if (artistsRes.error) throw new Error(artistsRes.error.message);
+    if (shopsRes.error) throw new Error(shopsRes.error.message);
+
+    const bySubdomain = new Map<string, BigCartelStore>();
+
+    for (const a of artistsRes.data || []) {
+      const subdomain = bigCartelSubdomain(a.url);
+      if (!subdomain || bySubdomain.has(subdomain)) continue;
+      bySubdomain.set(subdomain, {
+        subdomain,
+        storeUrl: `https://${subdomain}.bigcartel.com`,
+        name: a.name,
+        kind: "artist",
+        profilePath: getArtistUrl({ id: a.id, slug: a.slug, name: a.name }),
+      });
+    }
+
+    for (const s of shopsRes.data || []) {
+      const subdomain = bigCartelSubdomain(s.website_url);
+      if (!subdomain || bySubdomain.has(subdomain)) continue;
+      bySubdomain.set(subdomain, {
+        subdomain,
+        storeUrl: `https://${subdomain}.bigcartel.com`,
+        name: s.shop_name,
+        kind: "shop",
+        profilePath: getShopUrl({ id: s.id, slug: s.slug, shop_name: s.shop_name }),
+      });
+    }
+
+    return Array.from(bySubdomain.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  } catch (err) {
+    console.error("Unhandled error in fetchBigCartelStores:", err);
     throw err;
   }
 }

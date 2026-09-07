@@ -9,6 +9,7 @@ import {
 import HomePage from "./components/pages/HomePage";
 import AboutPage from "./components/pages/AboutPage";
 import ShopPage from "./components/pages/ShopPage";
+import StorePage from "./components/pages/StorePage";
 import SearchResults from "./components/pages/SearchResults";
 import LogoTypePlayground from "./components/logo/LogoTypePlayground";
 import AllArtistsPage from "./components/pages/AllArtistsPage";
@@ -66,7 +67,7 @@ const SentryApp = Sentry.withErrorBoundary(App, {
   },
 });
 
-const PAGES_WITHOUT_FOOTER = ["/artists", "/shops", "/countries", "/map"];
+const PAGES_WITHOUT_FOOTER = ["/artists", "/shops", "/countries", "/store", "/map"];
 
 // Admin routes that render standalone (not inside the sidebar AdminLayout).
 const LEGACY_ADMIN_PATHS = [
@@ -123,6 +124,7 @@ function AppContent() {
           <Route path="/artists" element={<AllArtistsPage />} />
           <Route path="/shops" element={<AllShopsPage />} />
           <Route path="/countries" element={<AllCountriesPage />} />
+          <Route path="/store" element={<StorePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/united-states" element={<UnitedStatesMapPage />} />
           <Route path="/map" element={<MapPage />} />

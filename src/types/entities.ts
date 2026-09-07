@@ -68,3 +68,16 @@ export interface Country {
   continent?: string | null;
   created_at?: string | null;
 }
+
+export interface BigCartelStore {
+  /** BigCartel store subdomain, e.g. "noahlockhart" for noahlockhart.bigcartel.com */
+  subdomain: string;
+  /** Canonical storefront URL. */
+  storeUrl: string;
+  /** Display name (artist or studio). */
+  name: string;
+  /** Whether the store is linked from an artist or a tattoo shop. */
+  kind: "artist" | "shop";
+  /** Internal directory profile path (/artist/... or /shop/...), if known. */
+  profilePath: string | null;
+}
