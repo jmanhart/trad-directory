@@ -27,7 +27,7 @@ import useIsMobile from "../../hooks/useIsMobile";
 import styles from "./MapView.module.css";
 
 // 4-tier zoom thresholds (MapLibre zoom levels 0-22)
-const ZOOM_CONTINENT = 2.5;
+const ZOOM_CONTINENT = 2.75;
 const ZOOM_COUNTRY = 4.5;
 const ZOOM_CITY = 6.5;
 
@@ -986,11 +986,11 @@ function MapInner({
   const handleReset = useCallback(() => {
     minTierRef.current = null;
     mapRef.current?.flyTo({
-      center: [0, 30],
-      zoom: 1.5,
+      center: [-97, 39],
+      zoom: 2.6,
       duration: 800,
     });
-    syncTier(1.5);
+    syncTier(2.6);
     setSelectedStateName(null);
     onCountrySelect?.(null);
   }, [onCountrySelect, syncTier]);
@@ -1416,9 +1416,9 @@ function MapInner({
       <MapGL
         ref={mapRef}
         initialViewState={{
-          longitude: 0,
-          latitude: 30,
-          zoom: 1.5,
+          longitude: -97,
+          latitude: 39,
+          zoom: 2.6,
         }}
         style={{ width: "100%", height: "100%" }}
         mapStyle={MAP_STYLE}
