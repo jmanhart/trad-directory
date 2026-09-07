@@ -96,17 +96,26 @@ export default async function handler(req: any, res: any) {
       .eq("is_primary", true)
       .maybeSingle();
 
-    const { error: locError } = await supabase
-      .from("artist_location")
-      .insert({
-        artist_id: data.artist_id,
-        shop_id: data.shop_id,
-        city_id: shopData?.city_id || null,
-        is_primary: !existingPrimary, // primary only if no primary exists yet
-      });
+    // Only dual-write a location when the shop has a city — artist_location
+    // requires a city (P3 constraint). If the shop has none, skip the location
+    // row; the artist_shop link is still created.
+    if (shopData?.city_id) {
+      const { error: locError } = await supabase
+        .from("artist_location")
+        .insert({
+          artist_id: data.artist_id,
+          shop_id: data.shop_id,
+          city_id: shopData.city_id,
+          is_primary: !existingPrimary, // primary only if no primary exists yet
+        });
 
-    if (locError) {
-      console.warn(`Failed to insert artist_location: ${locError.message}`);
+      if (locError) {
+        console.warn(`Failed to insert artist_location: ${locError.message}`);
+      }
+    } else {
+      console.warn(
+        `Skipped artist_location dual-write: shop ${data.shop_id} has no city_id`
+      );
     }
 
     res.status(200).json({
