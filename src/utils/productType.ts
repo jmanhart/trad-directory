@@ -4,6 +4,11 @@ import type { ProductType } from "../types";
 // inconsistent ("shirts" vs "t-shirts" vs "tees"), so classify every product
 // into a fixed set of buckets by keyword-matching its name plus whatever
 // categories it does carry. First matching rule wins.
+//
+// Art also catches page-size dimensions in the title (e.g. "8 x 10", "11x14",
+// "14×12") since prints/flash are almost always listed by size.
+const DIMENSION = /\b\d{1,3}\s*[x\u00d7]\s*\d{1,3}\b/;
+
 const RULES: { type: ProductType; pattern: RegExp }[] = [
   {
     type: "apparel",
@@ -11,10 +16,10 @@ const RULES: { type: ProductType; pattern: RegExp }[] = [
       /\b(shirt|t-?shirts?|tee|tees|hoodie|crewneck|sweat(?:shirt|er)?|jacket|hats?|cap|beanie|clothing|apparel|sock|shorts|pants|jersey)\b/,
   },
   {
-    // Prints, flash, and original artwork all bucket together as "Art".
+    // Prints, flash, and original artwork bucket together as "Art".
     type: "art",
     pattern:
-      /\b(prints?|poster|giclee|gicl\u00e9e|lithograph|riso|screenprint|flash|stencil|original|paintings?|artwork|art|drawing|sketch|canvas|watercolou?r|illustration)\b/,
+      /\b(prints?|poster|giclee|gicl\u00e9e|lithograph|riso|screenprint|flash|stencil|sheets?|originals?|paintings?|artwork|art|drawings?|sketch|canvas|watercolou?r|illustration)\b/,
   },
   {
     type: "accessories",
@@ -28,6 +33,8 @@ export function classifyProduct(
   categories: string[]
 ): ProductType {
   const haystack = [name, ...categories].join(" ").toLowerCase();
+  // A page-size in the title is a strong print/flash signal.
+  if (DIMENSION.test(haystack)) return "art";
   for (const rule of RULES) {
     if (rule.pattern.test(haystack)) return rule.type;
   }
