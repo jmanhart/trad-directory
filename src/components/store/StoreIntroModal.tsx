@@ -37,8 +37,13 @@ export default function StoreIntroModal({
           This is just a jumping off point to buy straight from the artist. No
           tracking links, no data grabbing, none of that bullshit.
         </p>
+        <p className={styles.note}>
+          Every store here is pulled straight from the artists&rsquo; own
+          BigCartel shops and collected in one spot, so you&rsquo;re not digging
+          through Instagram bios to find where to buy.
+        </p>
         <button type="button" className={styles.button} onClick={onClose}>
-          Hell Yeah
+          Enter and buy something rad
         </button>
       </div>
     </div>
