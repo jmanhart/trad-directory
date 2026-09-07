@@ -79,7 +79,8 @@ export function initSentry() {
         isNameRequired: false,
         nameLabel: "Instagram handle",
         namePlaceholder: "@yourhandle (optional)",
-        triggerLabel: "Feedback",
+        // No screenshot: it triggers an intrusive screen-share prompt (getDisplayMedia).
+        enableScreenshot: false,
         formTitle: "Beta feedback",
         submitButtonLabel: "Send it",
         messagePlaceholder:
