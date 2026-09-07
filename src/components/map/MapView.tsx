@@ -31,6 +31,11 @@ const ZOOM_CONTINENT = 2.75;
 const ZOOM_COUNTRY = 4.5;
 const ZOOM_CITY = 6.5;
 
+// Default opening camera for the 3D globe (US-centered overview). Geo may
+// rotate it to the visitor's region at the same zoom.
+const DEFAULT_CENTER: [number, number] = [-97, 39];
+const DEFAULT_ZOOM = 2.6;
+
 // Minimum cities for a non-US country to get state-level clustering
 const STATE_CLUSTER_MIN_CITIES = 5;
 
@@ -573,6 +578,47 @@ function MapInner({
   const isMobile = useIsMobile();
   const mapRef = useRef<MapRef>(null);
 
+  // Approximate visitor location (Vercel edge geo, no permission prompt) used
+  // to rotate the opening globe to the user's region at the same overview zoom.
+  const geoTargetRef = useRef<[number, number] | null>(null);
+  const geoAppliedRef = useRef(false);
+  const mapLoadedRef = useRef(false);
+
+  const applyGeoStart = useCallback(() => {
+    if (
+      geoAppliedRef.current ||
+      !geoTargetRef.current ||
+      !mapLoadedRef.current ||
+      !mapRef.current
+    )
+      return;
+    geoAppliedRef.current = true;
+    mapRef.current.easeTo({
+      center: geoTargetRef.current,
+      zoom: DEFAULT_ZOOM,
+      duration: 1400,
+    });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const base = import.meta.env.VITE_API_URL || "/api";
+    fetch(`${base}/geo`)
+      .then(r => (r.ok ? r.json() : null))
+      .then((geo: unknown) => {
+        if (cancelled || !geo || typeof geo !== "object") return;
+        const g = geo as { lat?: unknown; lng?: unknown };
+        if (typeof g.lat !== "number" || typeof g.lng !== "number") return;
+        const lat = Math.max(-55, Math.min(65, g.lat));
+        geoTargetRef.current = [g.lng, lat];
+        applyGeoStart();
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [applyGeoStart]);
+
   // Tooltip
   const tooltipRef = useRef<HTMLDivElement>(null);
   const tooltipDataRef = useRef<{
@@ -986,11 +1032,11 @@ function MapInner({
   const handleReset = useCallback(() => {
     minTierRef.current = null;
     mapRef.current?.flyTo({
-      center: [-97, 39],
-      zoom: 2.6,
+      center: DEFAULT_CENTER,
+      zoom: DEFAULT_ZOOM,
       duration: 800,
     });
-    syncTier(2.6);
+    syncTier(DEFAULT_ZOOM);
     setSelectedStateName(null);
     onCountrySelect?.(null);
   }, [onCountrySelect, syncTier]);
@@ -1416,12 +1462,16 @@ function MapInner({
       <MapGL
         ref={mapRef}
         initialViewState={{
-          longitude: -97,
-          latitude: 39,
-          zoom: 2.6,
+          longitude: DEFAULT_CENTER[0],
+          latitude: DEFAULT_CENTER[1],
+          zoom: DEFAULT_ZOOM,
         }}
         style={{ width: "100%", height: "100%" }}
         mapStyle={MAP_STYLE}
+        onLoad={() => {
+          mapLoadedRef.current = true;
+          applyGeoStart();
+        }}
         onZoom={handleZoom}
         onClick={handleMapClick}
         onMouseMove={handleMapMouseMove}
