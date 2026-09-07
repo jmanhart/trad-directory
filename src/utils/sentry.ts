@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/react";
+import { isSelfTraffic } from "./telemetryOptOut";
 
 // Declare global variables injected by Vite
 declare global {
@@ -9,6 +10,8 @@ declare global {
 }
 
 export function initSentry() {
+  // Your own / local traffic: keep it out of session replays (errors still report).
+  const selfTraffic = isSelfTraffic();
   Sentry.init({
     dsn:
       import.meta.env.VITE_SENTRY_DSN ||
@@ -29,8 +32,8 @@ export function initSentry() {
     profilesSampleRate: 1.0, // Profile 100% of transactions
 
     // Session replay - capture all replays for free plan
-    replaysSessionSampleRate: 1.0, // Capture 100% of session replays
-    replaysOnErrorSampleRate: 1.0, // Always capture on errors
+    replaysSessionSampleRate: selfTraffic ? 0 : 1.0, // 100% of sessions (0 for self)
+    replaysOnErrorSampleRate: selfTraffic ? 0 : 1.0, // capture on errors (0 for self)
 
     // Debug mode in development
     debug: import.meta.env.DEV,
@@ -49,11 +52,16 @@ export function initSentry() {
       Sentry.browserTracingIntegration(),
       // Browser profiling integration for performance analysis
       Sentry.browserProfilingIntegration(),
-      // Session replay integration - unmask everything (no sensitive user data)
-      Sentry.replayIntegration({
-        maskAllText: false,
-        blockAllMedia: false,
-      }),
+      // Session replay integration - unmask everything (no sensitive user data).
+      // Skipped for your own / local traffic so it never lands in replays.
+      ...(selfTraffic
+        ? []
+        : [
+            Sentry.replayIntegration({
+              maskAllText: false,
+              blockAllMedia: false,
+            }),
+          ]),
       // Forward console.log/warn/error to Sentry logs (needs enableLogs above)
       Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }),
       // User Feedback — the beta feedback channel (opens a form that ships to
