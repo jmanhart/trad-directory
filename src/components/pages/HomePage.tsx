@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useHomePageData } from "../../hooks/useHomePageData";
 import { createSearchHandler } from "../../utils/navigation";
 import { type Suggestion } from "../../utils/suggestions";
@@ -58,6 +58,16 @@ export default function HomePage() {
 
   return (
     <div className={styles.container}>
+      <Link to="/map" className={styles.mapBanner}>
+        <span className={styles.mapBannerBadge}>Beta</span>
+        <span className={styles.mapBannerText}>
+          Hey, there&rsquo;s a map now. Find trad artists near you. It&rsquo;s a
+          beta, so come kick the tires.
+        </span>
+        <span className={styles.mapBannerCta} aria-hidden="true">
+          Try it &rarr;
+        </span>
+      </Link>
       <div className={styles.heroSection}>
         <div className={styles.heroContent}>
           <div className={styles.heroText}>
