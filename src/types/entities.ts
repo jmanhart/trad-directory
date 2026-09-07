@@ -82,11 +82,7 @@ export interface BigCartelStore {
   profilePath: string | null;
 }
 
-export type ProductType =
-  | "apparel"
-  | "art"
-  | "accessories"
-  | "other";
+export type ProductType = "apparel" | "art";
 
 export interface StoreProduct {
   id: number;
