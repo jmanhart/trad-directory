@@ -4,6 +4,7 @@ import type { BigCartelStore } from "../../types";
 import StoreCard from "../store/StoreCard";
 import StoreItemsView from "../store/StoreItemsView";
 import ModeToggle, { type StoreMode } from "../store/ModeToggle";
+import StoreIntroModal from "../store/StoreIntroModal";
 import styles from "./StorePage.module.css";
 
 export default function StorePage() {
@@ -11,6 +12,7 @@ export default function StorePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<StoreMode>("stores");
+  const [showIntro, setShowIntro] = useState(true);
 
   useEffect(() => {
     async function loadStores() {
@@ -32,6 +34,7 @@ export default function StorePage() {
 
   return (
     <div className={styles.container}>
+      <StoreIntroModal open={showIntro} onClose={() => setShowIntro(false)} />
       {isLoading && <div className={styles.state}>Loading stores&hellip;</div>}
       {error && (
         <div className={`${styles.state} ${styles.error}`}>{error}</div>
