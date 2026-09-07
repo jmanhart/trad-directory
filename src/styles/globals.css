@@ -91,4 +91,13 @@ button:focus-visible {
   --input-focus-outline: var(--border-width) solid var(--color-primary);
   /* Success pill: site border (background, shadow, font already themed). */
   --success-border: var(--border-width) solid var(--color-border);
+  /* Anchor the feedback form just below the top-right trigger button. */
+  --dialog-inset: 64px 20px auto auto;
+}
+
+@media (max-width: 768px) {
+  /* On narrow screens, anchor the form to the top with side margins. */
+  #sentry-feedback {
+    --dialog-inset: 58px 12px auto 12px;
+  }
 }

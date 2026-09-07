@@ -59,6 +59,8 @@ export function initSentry() {
       // User Feedback widget (auto-injected floating button) — the beta
       // feedback channel. Opens a form that ships to Sentry.
       Sentry.feedbackIntegration({
+        // No floating button — a custom top-right trigger (FeedbackButton) attaches to this.
+        autoInject: false,
         colorScheme: "light",
         themeLight: {
           foreground: "var(--color-text-primary)",

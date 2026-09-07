@@ -36,6 +36,7 @@ import AdminNewAdding from "./components/pages/admin/AdminNewAdding";
 import AdminAllData from "./components/pages/admin/AdminAllData";
 import AdminDataBuilder from "./components/pages/admin/AdminDataBuilder";
 import TopAppBar from "./components/common/TopAppBar";
+import FeedbackButton from "./components/common/FeedbackButton";
 import AdminTopAppBar from "./components/common/AdminTopAppBar";
 import Footer from "./components/common/Footer";
 import { SuggestArtistModal } from "./components/common/SuggestArtistModal";
@@ -98,6 +99,7 @@ function AppContent() {
   return (
     <div className={`${styles.appContainer} ${isAdminLayoutRoute ? styles.adminContainer : ""}`}>
       <ScatteredSvgBackground preset="default" intensity="subtle" />
+      {isMapPage && <FeedbackButton />}
       {isAdminRoute ? (
         (isMobile || !isAdminLayoutRoute) && <AdminTopAppBar />
       ) : (
