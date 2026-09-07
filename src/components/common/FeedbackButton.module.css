@@ -1,0 +1,44 @@
+/*
+  Map-only feedback trigger, pinned top-right. Outlined (not filled) so it reads
+  cleanly over the map: white surface, brand-red border + text.
+*/
+.feedbackButton {
+  position: fixed;
+  top: 12px;
+  right: 20px;
+  z-index: 1100;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 20px;
+  border: 2px solid var(--color-primary);
+  border-radius: 9999px; /* pill, echoing the search */
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: background 0.15s ease;
+}
+
+.feedbackButton:hover {
+  background: var(--color-primary-soft);
+}
+
+.feedbackButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .feedbackButton {
+    top: 10px;
+    right: 12px;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 0.875rem;
+  }
+}

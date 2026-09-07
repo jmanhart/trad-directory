@@ -80,3 +80,24 @@ button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
+
+/* Match the Sentry User Feedback widget to the app's modal styling. */
+#sentry-feedback {
+  --font-family: Inter, system-ui, -apple-system, sans-serif;
+  --button-primary-border: none;
+  /* Inputs: site border + radius, clean thin red focus (not the heavy 2px). */
+  --input-border: var(--border-width) solid var(--color-border);
+  --input-border-radius: var(--border-radius);
+  --input-focus-outline: var(--border-width) solid var(--color-primary);
+  /* Success pill: site border (background, shadow, font already themed). */
+  --success-border: var(--border-width) solid var(--color-border);
+  /* Anchor the feedback form just below the top-right trigger button. */
+  --dialog-inset: 64px 20px auto auto;
+}
+
+@media (max-width: 768px) {
+  /* On narrow screens, anchor the form to the top with side margins. */
+  #sentry-feedback {
+    --dialog-inset: 58px 12px auto 12px;
+  }
+}
