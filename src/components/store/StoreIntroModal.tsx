@@ -31,7 +31,7 @@ export default function StoreIntroModal({
         onClick={e => e.stopPropagation()}
       >
         <h2 id="store-intro-title" className={styles.title}>
-          Not my work, not my money
+          I make no money from this
         </h2>
         <p className={styles.body}>
           This is just a jumping off point to buy straight from the artist. No
