@@ -52,8 +52,7 @@ export default function HomePage() {
     <Link to="/map" className={styles.mapBanner}>
       <span className={styles.mapBannerBadge}>Beta</span>
       <span className={styles.mapBannerText}>
-        Hey, there&rsquo;s a map now. Find trad artists near you. It&rsquo;s a
-        beta, so come kick the tires.
+        There&rsquo;s a map now. Find trad artists near you.
       </span>
       <span className={styles.mapBannerCta} aria-hidden="true">
         Try it &rarr;
