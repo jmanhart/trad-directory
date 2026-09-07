@@ -54,6 +54,9 @@ function mapProducts(raw: unknown, subdomain: string): StoreProduct[] {
     const categoryNames = Array.isArray(categoriesRaw)
       ? categoriesRaw.map(c => asString(get(c, "name")) ?? "").filter(Boolean)
       : [];
+    const optionNames = options
+      .map(o => asString(get(o, "name")) ?? "")
+      .filter(Boolean);
     return {
       id: asNumber(get(product, "id")),
       name,
@@ -63,7 +66,7 @@ function mapProducts(raw: unknown, subdomain: string): StoreProduct[] {
       productUrl: origin + (asString(get(product, "url")) ?? ""),
       soldOut,
       createdAt: asString(get(product, "created_at")),
-      type: classifyProduct(name, categoryNames),
+      type: classifyProduct(name, categoryNames, optionNames),
     };
   });
 }

@@ -1,22 +1,30 @@
 import type { ProductType } from "../types";
 
-// Store-set BigCartel categories are sparse (~half of products) and
-// inconsistent ("shirts" vs "t-shirts" vs "tees"), so classify every product
-// into a fixed set of buckets by keyword-matching its name plus whatever
-// categories it does carry. First matching rule wins.
-//
-// Art also catches page-size dimensions in the title (e.g. "8 x 10", "11x14",
-// "14×12") since prints/flash are almost always listed by size.
+// A controlled option/variant name that is a garment size (S, XL, "Large",
+// "2XL", ...). This is the strongest apparel signal: BigCartel size runs live
+// in a product's options, so matching them avoids the false positives of
+// matching bare "s"/"m"/"l" in free-text titles. Dimensions like "11x14" are
+// print measurements, not sizes.
+const SIZE_OPTION =
+  /^(x?s|m|x{0,3}l|[2-5]xl|small|medium|large|x-?small|x-?large|xx-?large|extra[\s-]?small|extra[\s-]?large)$/;
+
+export function hasSizeVariant(optionNames: string[]): boolean {
+  return optionNames.some(n => SIZE_OPTION.test(n.trim().toLowerCase()));
+}
+
+// Page-size dimensions in a title (8 x 10, 11x14, 14×12) are a strong
+// print/flash signal.
 const DIMENSION = /\b\d{1,3}\s*[x\u00d7]\s*\d{1,3}\b/;
 
+// Store-set BigCartel categories are sparse and inconsistent, so we also
+// keyword-match the name + any categories it carries. First matching rule wins.
 const RULES: { type: ProductType; pattern: RegExp }[] = [
   {
     type: "apparel",
     pattern:
-      /\b(shirt|t-?shirts?|tees?|tank|hoodie|crew[\s-]?neck|sweat(?:shirt|er)?|jacket|hats?|cap|beanies?|clothing|apparel|socks?|shorts|pants|jersey|long[\s-]?sleeve|short[\s-]?sleeve|t)\b/,
+      /\b(shirt|t-?shirts?|tees?|tank|hood|hoodie|crew[\s-]?neck|sweat(?:shirt|er)?|jacket|hats?|cap|beanies?|clothing|apparel|socks?|shorts|pants|jersey|long[\s-]?sleeve|short[\s-]?sleeve|t|small|medium|large|x-?small|x-?large|xx-?large|extra[\s-]?small|extra[\s-]?large|xs|xl|xxl|xxxl|[2-5]xl)\b/,
   },
   {
-    // Prints, flash, and original artwork bucket together as "Art".
     type: "art",
     pattern:
       /\b(prints?|poster|giclee|gicl\u00e9e|lithograph|riso|screenprint|flash|stencil|sheets?|originals?|paintings?|artwork|art|drawings?|sketch|canvas|watercolou?r|illustration)\b/,
@@ -30,10 +38,12 @@ const RULES: { type: ProductType; pattern: RegExp }[] = [
 
 export function classifyProduct(
   name: string,
-  categories: string[]
+  categories: string[],
+  optionNames: string[] = []
 ): ProductType {
+  // A size run in the variants is the strongest apparel signal.
+  if (hasSizeVariant(optionNames)) return "apparel";
   const haystack = [name, ...categories].join(" ").toLowerCase();
-  // A page-size in the title is a strong print/flash signal.
   if (DIMENSION.test(haystack)) return "art";
   for (const rule of RULES) {
     if (rule.pattern.test(haystack)) return rule.type;
