@@ -14,6 +14,14 @@ From the next tagged release onward this file is maintained automatically by
 [Conventional Commits](https://www.conventionalcommits.org/) — do not hand-edit
 released sections.
 
+## [0.4.3](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.4.2...tattoo-directory-v0.4.3) (2026-09-07)
+
+
+### Fixed
+
+* **map:** allow zooming into the 3D globe ([#60](https://github.com/jmanhart/trad-directory/issues/60)) ([93f6241](https://github.com/jmanhart/trad-directory/commit/93f6241c38c74cd1a4e3b30d2ce095af48490ed4))
+* **map:** search bar spans card width, beta tag overlaid on top ([43fd360](https://github.com/jmanhart/trad-directory/commit/43fd36037d4918a1fd97338a57dc7278c6e5aad4))
+
 ## [0.4.2](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.4.1...tattoo-directory-v0.4.2) (2026-09-06)
 
 
