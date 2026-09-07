@@ -693,6 +693,12 @@ function MapInner({
   // Handle map zoom changes
   const handleZoom = useCallback(
     (e: ViewStateChangeEvent) => {
+      // The globe lets wheel/buttons overshoot minZoom, so hard-cap zoom-out
+      // at the default so the opening framing is the most zoomed-out state.
+      if (e.viewState.zoom < DEFAULT_ZOOM) {
+        mapRef.current?.setZoom(DEFAULT_ZOOM);
+        return;
+      }
       // Clear minimum tier override when user zooms out to continent level
       if (minTierRef.current && e.viewState.zoom < ZOOM_CONTINENT) {
         minTierRef.current = null;
@@ -1485,7 +1491,7 @@ function MapInner({
           around: "center",
         }}
         maxZoom={18}
-        minZoom={1}
+        minZoom={DEFAULT_ZOOM}
         attributionControl={false}
         dragRotate={false}
         touchPitch={false}
