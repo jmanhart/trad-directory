@@ -17,6 +17,10 @@ export default function FeedbackButton() {
     return feedback.attachTo(ref.current);
   }, []);
 
+  // Feedback is registered in production only; render nothing when unavailable
+  // (e.g. local dev) so there's never a dead button.
+  if (!getFeedback()) return null;
+
   return (
     <button ref={ref} type="button" className={styles.feedbackButton}>
       Got Feedback?

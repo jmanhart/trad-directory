@@ -56,37 +56,42 @@ export function initSentry() {
       }),
       // Forward console.log/warn/error to Sentry logs (needs enableLogs above)
       Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }),
-      // User Feedback widget (auto-injected floating button) — the beta
-      // feedback channel. Opens a form that ships to Sentry.
-      Sentry.feedbackIntegration({
-        // No floating button — a custom top-right trigger (FeedbackButton) attaches to this.
-        autoInject: false,
-        colorScheme: "light",
-        themeLight: {
-          foreground: "var(--color-text-primary)",
-          background: "var(--color-surface)",
-          accentForeground: "#ffffff",
-          accentBackground: "var(--color-primary)",
-          errorColor: "var(--color-error)",
-          successColor: "var(--color-primary)",
-          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-          outline: "2px solid var(--color-primary)",
-        },
-        showBranding: false,
-        // No name/email — repurpose the "name" field as an optional IG handle.
-        showEmail: false,
-        showName: true,
-        isNameRequired: false,
-        nameLabel: "Instagram handle",
-        namePlaceholder: "@yourhandle (optional)",
-        // No screenshot: it triggers an intrusive screen-share prompt (getDisplayMedia).
-        enableScreenshot: false,
-        formTitle: "Beta feedback",
-        submitButtonLabel: "Send it",
-        messagePlaceholder:
-          "What's working, what's broken, what's weird? All of it helps.",
-        successMessageText: "Got it. Thanks for helping shape this.",
-      }),
+      // User Feedback — the beta feedback channel (opens a form that ships to
+      // Sentry). Registered in production only, so local dev never pollutes the
+      // project. A custom top-right trigger (FeedbackButton) attaches to it.
+      ...(import.meta.env.PROD
+        ? [
+            Sentry.feedbackIntegration({
+              // No floating button — a custom top-right trigger (FeedbackButton) attaches to this.
+              autoInject: false,
+              colorScheme: "light",
+              themeLight: {
+                foreground: "var(--color-text-primary)",
+                background: "var(--color-surface)",
+                accentForeground: "#ffffff",
+                accentBackground: "var(--color-primary)",
+                errorColor: "var(--color-error)",
+                successColor: "var(--color-primary)",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                outline: "2px solid var(--color-primary)",
+              },
+              showBranding: false,
+              // No name/email — repurpose the "name" field as an optional IG handle.
+              showEmail: false,
+              showName: true,
+              isNameRequired: false,
+              nameLabel: "Instagram handle",
+              namePlaceholder: "@yourhandle (optional)",
+              // No screenshot: it triggers an intrusive screen-share prompt (getDisplayMedia).
+              enableScreenshot: false,
+              formTitle: "Beta feedback",
+              submitButtonLabel: "Send it",
+              messagePlaceholder:
+                "What's working, what's broken, what's weird? All of it helps.",
+              successMessageText: "Got it. Thanks for helping shape this.",
+            }),
+          ]
+        : []),
     ],
 
     // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
@@ -99,7 +104,7 @@ export function initSentry() {
         const exceptionValues = event.exception.values;
         if (
           exceptionValues &&
-          exceptionValues.some((ev) => ev.value?.includes("ResizeObserver"))
+          exceptionValues.some(ev => ev.value?.includes("ResizeObserver"))
         ) {
           return null; // Filter out ResizeObserver errors
         }
@@ -108,7 +113,7 @@ export function initSentry() {
         if (import.meta.env.MODE === "production" && exceptionValues) {
           // Filter out hot reload errors
           if (
-            exceptionValues.some((ev) =>
+            exceptionValues.some(ev =>
               ev.value?.includes("Hot Module Replacement")
             )
           ) {
@@ -116,7 +121,7 @@ export function initSentry() {
           }
 
           // Filter out React strict mode warnings
-          if (exceptionValues.some((ev) => ev.value?.includes("StrictMode"))) {
+          if (exceptionValues.some(ev => ev.value?.includes("StrictMode"))) {
             return null;
           }
         }
