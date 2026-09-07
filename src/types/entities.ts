@@ -68,3 +68,41 @@ export interface Country {
   continent?: string | null;
   created_at?: string | null;
 }
+
+export interface BigCartelStore {
+  /** BigCartel store subdomain, e.g. "noahlockhart" for noahlockhart.bigcartel.com */
+  subdomain: string;
+  /** Canonical storefront URL. */
+  storeUrl: string;
+  /** Display name (artist or studio). */
+  name: string;
+  /** Whether the store is linked from an artist or a tattoo shop. */
+  kind: "artist" | "shop";
+  /** Internal directory profile path (/artist/... or /shop/...), if known. */
+  profilePath: string | null;
+}
+
+export type ProductType = "apparel" | "art";
+
+export interface StoreProduct {
+  id: number;
+  name: string;
+  /** Price in the store's currency, major units (e.g. dollars). */
+  price: number;
+  onSale: boolean;
+  imageUrl: string | null;
+  /** Absolute URL to the product page on BigCartel. */
+  productUrl: string;
+  soldOut: boolean;
+  /** ISO timestamp the product was created, for "newest" sorting. */
+  createdAt: string | null;
+  /** Canonical product bucket for cross-store filtering. */
+  type: ProductType;
+}
+
+export interface StoreProductWithStore extends StoreProduct {
+  storeName: string;
+  storeKind: "artist" | "shop";
+  storeSubdomain: string;
+  storeProfilePath: string | null;
+}

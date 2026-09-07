@@ -1,0 +1,138 @@
+.card {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg, 1rem);
+  min-width: 0;
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px
+    color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.cardHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxs, 0.25rem);
+  min-width: 0;
+}
+
+.kind {
+  align-self: flex-start;
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-primary);
+}
+
+.storeName {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-text-primary);
+  word-break: break-word;
+}
+
+.domain {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+}
+
+/* Product preview strip */
+.thumbs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.thumb {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  border-radius: calc(var(--border-radius) * 0.6);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--color-background, #f3f4f6);
+}
+
+.thumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumbPrice {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.soldOut {
+  color: var(--color-text-tertiary);
+}
+
+.thumbSkeleton {
+  aspect-ratio: 1 / 1;
+  border-radius: calc(var(--border-radius) * 0.6);
+  background: color-mix(in srgb, var(--color-text-tertiary) 14%, transparent);
+  animation: thumbPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes thumbPulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: auto;
+}
+
+.visit {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.visit:hover {
+  text-decoration: underline;
+}
+
+.profile {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.profile:hover {
+  text-decoration: underline;
+}

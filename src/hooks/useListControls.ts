@@ -10,6 +10,8 @@ interface UseListControlsOptions<T> {
   defaultPerPage?: number;
   filterFn?: (item: T, filters: Record<string, string>) => boolean;
   sortFn?: (a: T, b: T, filters: Record<string, string>) => number;
+  /** Filters applied on first render (e.g. default an "in stock" toggle on). */
+  initialFilters?: Record<string, string>;
 }
 
 function getStoredViewMode(): ViewMode {
@@ -27,9 +29,12 @@ export function useListControls<T>({
   defaultPerPage = 50,
   filterFn,
   sortFn,
+  initialFilters,
 }: UseListControlsOptions<T>) {
   const [viewMode, setViewModeState] = useState<ViewMode>(getStoredViewMode);
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [filters, setFilters] = useState<Record<string, string>>(
+    initialFilters ?? {}
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPageState] = useState(defaultPerPage);
 

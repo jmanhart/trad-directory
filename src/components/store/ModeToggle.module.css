@@ -1,0 +1,30 @@
+.modeToggle {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.modeBtn {
+  padding: 0.35rem 0.9rem;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.modeBtn:hover {
+  color: var(--color-text-primary);
+}
+
+.modeActive {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.modeActive:hover {
+  color: #fff;
+}
