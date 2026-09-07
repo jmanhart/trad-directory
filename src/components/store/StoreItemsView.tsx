@@ -95,6 +95,7 @@ export default function StoreItemsView({ stores }: StoreItemsViewProps) {
     filterFn: productFilterFn,
     sortFn: productSortFn,
     defaultPerPage: 60,
+    initialFilters: { stock: "in" },
   });
 
   const loading = doneCount < stores.length;
