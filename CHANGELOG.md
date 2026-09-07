@@ -14,6 +14,13 @@ From the next tagged release onward this file is maintained automatically by
 [Conventional Commits](https://www.conventionalcommits.org/) — do not hand-edit
 released sections.
 
+## [0.6.0](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.5.0...tattoo-directory-v0.6.0) (2026-09-07)
+
+
+### Added
+
+* **db:** replace styles catalog with curated tattoo-style set ([#74](https://github.com/jmanhart/trad-directory/issues/74)) ([b8c642e](https://github.com/jmanhart/trad-directory/commit/b8c642e8e4a5daf276171a1393aec4dc1be9eed3))
+
 ## [0.5.0](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.4.3...tattoo-directory-v0.5.0) (2026-09-07)
 
 
