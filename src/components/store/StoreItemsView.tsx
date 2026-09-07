@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchStoreProducts } from "../../services/bigcartel";
 import { useListControls } from "../../hooks/useListControls";
@@ -13,6 +13,13 @@ import type {
   StoreProductWithStore,
 } from "../../types";
 import styles from "./StoreItemsView.module.css";
+
+const SORT_OPTIONS: { value: string; label: string }[] = [
+  { value: "newest", label: "Newest" },
+  { value: "price-desc", label: "Price: high to low" },
+  { value: "price-asc", label: "Price: low to high" },
+  { value: "name", label: "A\u2013Z" },
+];
 
 function formatPrice(n: number): string {
   return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
@@ -37,6 +44,8 @@ function productSortFn(
       return a.price - b.price;
     case "price-desc":
       return b.price - a.price;
+    case "name":
+      return a.name.localeCompare(b.name);
     default: {
       const da = a.createdAt ? Date.parse(a.createdAt) : 0;
       const db = b.createdAt ? Date.parse(b.createdAt) : 0;
@@ -52,6 +61,8 @@ interface StoreItemsViewProps {
 export default function StoreItemsView({ stores }: StoreItemsViewProps) {
   const [items, setItems] = useState<StoreProductWithStore[]>([]);
   const [doneCount, setDoneCount] = useState(0);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   // Progressive aggregate: kick off every store's fetch; the browser throttles
   // concurrency to api.bigcartel.com, so items stream in over a few seconds.
@@ -80,6 +91,18 @@ export default function StoreItemsView({ stores }: StoreItemsViewProps) {
     };
   }, [stores]);
 
+  // Close the filter popover on outside click.
+  useEffect(() => {
+    if (!filterOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setFilterOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [filterOpen]);
+
   const {
     filters,
     setFilter,
@@ -98,6 +121,8 @@ export default function StoreItemsView({ stores }: StoreItemsViewProps) {
 
   const loading = doneCount < stores.length;
   const activeType = filters.type || "";
+  const sortValue = filters.sort || "newest";
+  const filterActive = filters.stock !== "in" || sortValue !== "newest";
 
   // Chip counts reflect the current stock filter (but not the active type) so
   // each chip shows how many items it would reveal.
@@ -112,50 +137,83 @@ export default function StoreItemsView({ stores }: StoreItemsViewProps) {
 
   return (
     <div>
-      <div className={styles.controls}>
-        <select
-          className={styles.select}
-          value={filters.sort || "newest"}
-          onChange={e => setFilter("sort", e.target.value)}
-          aria-label="Sort items"
-        >
-          <option value="newest">Newest</option>
-          <option value="price-asc">Price: low to high</option>
-          <option value="price-desc">Price: high to low</option>
-        </select>
-        <label className={styles.check}>
-          <input
-            type="checkbox"
-            checked={filters.stock === "in"}
-            onChange={e => setFilter("stock", e.target.checked ? "in" : "")}
-          />
-          In stock
-        </label>
-        <span className={styles.count}>
-          {totalFiltered} {totalFiltered === 1 ? "item" : "items"}
-          {loading ? " \u00b7 loading\u2026" : ""}
-        </span>
-      </div>
-
-      <div className={styles.chips} role="group" aria-label="Filter by type">
-        <button
-          type="button"
-          className={`${styles.chip} ${!activeType ? styles.chipActive : ""}`}
-          onClick={() => setFilter("type", "")}
-        >
-          All <span className={styles.chipCount}>{typeInfo.total}</span>
-        </button>
-        {PRODUCT_TYPE_ORDER.filter(t => (typeInfo.counts[t] || 0) > 0).map(t => (
+      <div className={styles.bar}>
+        <div className={styles.chips} role="group" aria-label="Filter by type">
           <button
-            key={t}
             type="button"
-            className={`${styles.chip} ${activeType === t ? styles.chipActive : ""}`}
-            onClick={() => setFilter("type", activeType === t ? "" : t)}
+            className={`${styles.chip} ${!activeType ? styles.chipActive : ""}`}
+            onClick={() => setFilter("type", "")}
           >
-            {PRODUCT_TYPE_LABELS[t]}{" "}
-            <span className={styles.chipCount}>{typeInfo.counts[t]}</span>
+            All <span className={styles.chipCount}>{typeInfo.total}</span>
           </button>
-        ))}
+          {PRODUCT_TYPE_ORDER.filter(t => (typeInfo.counts[t] || 0) > 0).map(
+            t => (
+              <button
+                key={t}
+                type="button"
+                className={`${styles.chip} ${activeType === t ? styles.chipActive : ""}`}
+                onClick={() => setFilter("type", activeType === t ? "" : t)}
+              >
+                {PRODUCT_TYPE_LABELS[t]}{" "}
+                <span className={styles.chipCount}>{typeInfo.counts[t]}</span>
+              </button>
+            )
+          )}
+        </div>
+
+        <div className={styles.filterWrap} ref={filterRef}>
+          <button
+            type="button"
+            className={`${styles.filterBtn} ${filterOpen ? styles.filterBtnOpen : ""}`}
+            onClick={() => setFilterOpen(o => !o)}
+            aria-expanded={filterOpen}
+            aria-haspopup="true"
+          >
+            <svg
+              className={styles.filterIcon}
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <path d="M3 6h18M6 12h12M10 18h4" />
+            </svg>
+            Filter
+            {filterActive && <span className={styles.filterDot} />}
+          </button>
+
+          {filterOpen && (
+            <div className={styles.filterPanel} role="menu">
+              <label className={styles.panelCheck}>
+                <input
+                  type="checkbox"
+                  checked={filters.stock === "in"}
+                  onChange={e =>
+                    setFilter("stock", e.target.checked ? "in" : "")
+                  }
+                />
+                Hide sold out
+              </label>
+              <div className={styles.panelDivider} />
+              <div className={styles.panelLabel}>Sort by</div>
+              {SORT_OPTIONS.map(opt => (
+                <label key={opt.value} className={styles.panelRadio}>
+                  <input
+                    type="radio"
+                    name="storeSort"
+                    checked={sortValue === opt.value}
+                    onChange={() => setFilter("sort", opt.value)}
+                  />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {totalFiltered === 0 ? (
