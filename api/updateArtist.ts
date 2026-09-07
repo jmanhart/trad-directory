@@ -54,8 +54,6 @@ export default async function handler(req: any, res: any) {
     if (data.gender !== undefined) updateData.gender = data.gender || null;
     if (data.url !== undefined) updateData.url = data.url || null;
     if (data.contact !== undefined) updateData.contact = data.contact || null;
-    if (data.city_id !== undefined) updateData.city_id = data.city_id || null;
-    if (data.secondary_city_id !== undefined) updateData.secondary_city_id = data.secondary_city_id || null;
     if (data.is_traveling !== undefined) updateData.is_traveling = data.is_traveling || false;
 
     // Update the artist
@@ -74,26 +72,7 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    // Handle shop relationship update
-    if (data.shop_id !== undefined) {
-      // First, delete existing shop links
-      await supabase.from("artist_shop").delete().eq("artist_id", id);
-
-      // Then add new shop link if provided
-      if (data.shop_id) {
-        const { error: shopError } = await supabase.from("artist_shop").insert({
-          artist_id: id,
-          shop_id: data.shop_id,
-        });
-
-        if (shopError) {
-          console.warn(`Failed to update artist-shop link: ${shopError.message}`);
-          // Don't fail the whole request - artist was updated successfully
-        }
-      }
-    }
-
-    // Dual-write: update artist_location primary row when city_id or shop_id changes
+    // Update artist_location primary row when city_id or shop_id changes
     if (data.city_id !== undefined || data.shop_id !== undefined) {
       const locUpdate: any = {};
       if (data.city_id !== undefined) locUpdate.city_id = data.city_id || null;
@@ -122,7 +101,7 @@ export default async function handler(req: any, res: any) {
           .from("artist_location")
           .insert({
             artist_id: id,
-            city_id: data.city_id || updatedArtist.city_id || null,
+            city_id: data.city_id || null,
             shop_id: data.shop_id || null,
             is_primary: true,
           });

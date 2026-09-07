@@ -252,7 +252,6 @@ export default async function handler(req: any, res: any) {
     // Step 5: Create the artist
     const artistData: any = {
       name: data.name,
-      city_id: cityId,
       // Slug will be set after insert if needed
     };
 
@@ -300,20 +299,7 @@ export default async function handler(req: any, res: any) {
       // Don't throw - the artist was created successfully, just the slug failed
     }
 
-    // Step 7: If shop_id is provided, create the artist-shop relationship
-    if (data.shop_id) {
-      const { error: shopError } = await supabase.from("artist_shop").insert({
-        artist_id: newArtist.id,
-        shop_id: data.shop_id,
-      });
-
-      if (shopError) {
-        console.warn(`Failed to link artist to shop: ${shopError.message}`);
-        // Don't throw - the artist was created successfully, just the link failed
-      }
-    }
-
-    // Step 8: Insert into artist_location (dual-write)
+    // Insert the primary artist_location row
     {
       const locationData: any = {
         artist_id: newArtist.id,

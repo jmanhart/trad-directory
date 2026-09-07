@@ -49,39 +49,7 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    // Check if link already exists
-    const { data: existing, error: checkError } = await supabase
-      .from("artist_shop")
-      .select("artist_id, shop_id")
-      .eq("artist_id", data.artist_id)
-      .eq("shop_id", data.shop_id)
-      .maybeSingle();
-
-    if (existing) {
-      res.status(400).json({
-        error: "This artist-shop link already exists",
-      });
-      return;
-    }
-
-    // Create the artist-shop link
-    const linkData = {
-      artist_id: data.artist_id,
-      shop_id: data.shop_id,
-    };
-
-    const { error: linkError } = await supabase
-      .from("artist_shop")
-      .insert(linkData);
-
-    if (linkError) {
-      throw new Error(
-        `Failed to create link: ${linkError.message}`
-      );
-    }
-
-    // Dual-write: also insert into artist_location
-    // Look up the shop's city_id to use for the location row
+    // Look up the shop's city so we can create the artist_location row.
     const { data: shopData } = await supabase
       .from("tattoo_shops")
       .select("city_id")
@@ -96,9 +64,8 @@ export default async function handler(req: any, res: any) {
       .eq("is_primary", true)
       .maybeSingle();
 
-    // Only dual-write a location when the shop has a city — artist_location
-    // requires a city (P3 constraint). If the shop has none, skip the location
-    // row; the artist_shop link is still created.
+    // Only insert a location when the shop has a city — artist_location
+    // requires a city (P3 constraint). If the shop has none, skip the row.
     if (shopData?.city_id) {
       const { error: locError } = await supabase
         .from("artist_location")

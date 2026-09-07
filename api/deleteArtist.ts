@@ -46,7 +46,6 @@ export default async function handler(req: any, res: any) {
     }
 
     // Clean up child rows first (no reliable FK cascade for these).
-    await supabase.from("artist_shop").delete().eq("artist_id", id);
     await supabase.from("saved_artists").delete().eq("artist_id", id);
     await supabase.from("artist_location").delete().eq("artist_id", id);
 
