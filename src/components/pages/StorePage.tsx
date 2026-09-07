@@ -11,7 +11,7 @@ export default function StorePage() {
   const [stores, setStores] = useState<BigCartelStore[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<StoreMode>("stores");
+  const [mode, setMode] = useState<StoreMode>("items");
   const [showIntro, setShowIntro] = useState(true);
 
   useEffect(() => {
