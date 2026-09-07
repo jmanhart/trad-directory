@@ -6,6 +6,7 @@ import {
   PRODUCT_TYPE_LABELS,
   PRODUCT_TYPE_ORDER,
 } from "../../utils/productType";
+import ModeToggle, { type StoreMode } from "./ModeToggle";
 import Pagination from "../common/Pagination";
 import type {
   BigCartelStore,
@@ -56,9 +57,15 @@ function productSortFn(
 
 interface StoreItemsViewProps {
   stores: BigCartelStore[];
+  mode: StoreMode;
+  onModeChange: (mode: StoreMode) => void;
 }
 
-export default function StoreItemsView({ stores }: StoreItemsViewProps) {
+export default function StoreItemsView({
+  stores,
+  mode,
+  onModeChange,
+}: StoreItemsViewProps) {
   const [items, setItems] = useState<StoreProductWithStore[]>([]);
   const [doneCount, setDoneCount] = useState(0);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -161,58 +168,62 @@ export default function StoreItemsView({ stores }: StoreItemsViewProps) {
           )}
         </div>
 
-        <div className={styles.filterWrap} ref={filterRef}>
-          <button
-            type="button"
-            className={`${styles.filterBtn} ${filterOpen ? styles.filterBtnOpen : ""}`}
-            onClick={() => setFilterOpen(o => !o)}
-            aria-expanded={filterOpen}
-            aria-haspopup="true"
-          >
-            <svg
-              className={styles.filterIcon}
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              aria-hidden="true"
-            >
-              <path d="M3 6h18M6 12h12M10 18h4" />
-            </svg>
-            Filter
-            {filterActive && <span className={styles.filterDot} />}
-          </button>
+        <div className={styles.barRight}>
+          <ModeToggle mode={mode} onChange={onModeChange} />
 
-          {filterOpen && (
-            <div className={styles.filterPanel} role="menu">
-              <label className={styles.panelCheck}>
-                <input
-                  type="checkbox"
-                  checked={filters.stock === "in"}
-                  onChange={e =>
-                    setFilter("stock", e.target.checked ? "in" : "")
-                  }
-                />
-                Hide sold out
-              </label>
-              <div className={styles.panelDivider} />
-              <div className={styles.panelLabel}>Sort by</div>
-              {SORT_OPTIONS.map(opt => (
-                <label key={opt.value} className={styles.panelRadio}>
+          <div className={styles.filterWrap} ref={filterRef}>
+            <button
+              type="button"
+              className={`${styles.filterBtn} ${filterOpen ? styles.filterBtnOpen : ""}`}
+              onClick={() => setFilterOpen(o => !o)}
+              aria-expanded={filterOpen}
+              aria-haspopup="true"
+            >
+              <svg
+                className={styles.filterIcon}
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                <path d="M3 6h18M6 12h12M10 18h4" />
+              </svg>
+              Filter
+              {filterActive && <span className={styles.filterDot} />}
+            </button>
+
+            {filterOpen && (
+              <div className={styles.filterPanel} role="menu">
+                <label className={styles.panelCheck}>
                   <input
-                    type="radio"
-                    name="storeSort"
-                    checked={sortValue === opt.value}
-                    onChange={() => setFilter("sort", opt.value)}
+                    type="checkbox"
+                    checked={filters.stock === "in"}
+                    onChange={e =>
+                      setFilter("stock", e.target.checked ? "in" : "")
+                    }
                   />
-                  {opt.label}
+                  Hide sold out
                 </label>
-              ))}
-            </div>
-          )}
+                <div className={styles.panelDivider} />
+                <div className={styles.panelLabel}>Sort by</div>
+                {SORT_OPTIONS.map(opt => (
+                  <label key={opt.value} className={styles.panelRadio}>
+                    <input
+                      type="radio"
+                      name="storeSort"
+                      checked={sortValue === opt.value}
+                      onChange={() => setFilter("sort", opt.value)}
+                    />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
