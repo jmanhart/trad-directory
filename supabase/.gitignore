@@ -6,3 +6,6 @@
 .env.keys
 .env.local
 .env.*.local
+
+# Local seed data — regenerate with: npm run db:seed:pull
+seed.sql
