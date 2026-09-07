@@ -8,6 +8,7 @@ export default function TopAppBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const isHomePage = location.pathname === "/";
+  const isStorePage = location.pathname === "/store";
   const { suggestions } = useSearchSuggestions();
   const handleSearch = createSearchHandler(navigate);
 
@@ -23,7 +24,7 @@ export default function TopAppBar() {
         )}
       </div>
       <div className={styles.center}>
-        {!isHomePage && (
+        {!isHomePage && !isStorePage && (
           <SearchBar
             size="compact"
             onSearch={handleSearch}
