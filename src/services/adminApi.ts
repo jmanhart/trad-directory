@@ -734,3 +734,61 @@ export const deleteArtist = (id: number) => deleteEntity("deleteArtist", id);
 export const deleteShop = (id: number) => deleteEntity("deleteShop", id);
 export const deleteCity = (id: number) => deleteEntity("deleteCity", id);
 export const deleteCountry = (id: number) => deleteEntity("deleteCountry", id);
+
+// ---- Styles ----
+
+export interface StyleOption {
+  id: number;
+  name: string;
+  slug: string;
+  is_active: boolean;
+  sort_order: number;
+  category?: { id: number; name: string; slug: string } | null;
+}
+
+export async function listStyles(): Promise<StyleOption[]> {
+  const apiUrl = import.meta.env.VITE_API_URL || "/api/listStyles";
+  const response = await fetch(apiUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch styles: ${response.status}`);
+  }
+  const data = await response.json();
+  return data.styles || [];
+}
+
+export async function addArtistStyle(
+  artistId: number,
+  styleId: number,
+  isPrimary = false
+): Promise<void> {
+  const apiUrl = import.meta.env.VITE_API_URL || "/api/addArtistStyle";
+  const response = await fetch(apiUrl, {
+    method: "POST",
+    headers: adminHeaders(),
+    body: JSON.stringify({
+      artist_id: artistId,
+      style_id: styleId,
+      is_primary: isPrimary,
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+  }
+}
+
+export async function deleteArtistStyle(
+  artistId: number,
+  styleId: number
+): Promise<void> {
+  const apiUrl = import.meta.env.VITE_API_URL || "/api/deleteArtistStyle";
+  const response = await fetch(apiUrl, {
+    method: "POST",
+    headers: adminHeaders(),
+    body: JSON.stringify({ artist_id: artistId, style_id: styleId }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+  }
+}
