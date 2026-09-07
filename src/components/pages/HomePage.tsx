@@ -48,57 +48,66 @@ export default function HomePage() {
     handleSearch(s.label);
   };
 
+  const mapBanner = (
+    <Link to="/map" className={styles.mapBanner}>
+      <span className={styles.mapBannerBadge}>Beta</span>
+      <span className={styles.mapBannerText}>
+        Hey, there&rsquo;s a map now. Find trad artists near you. It&rsquo;s a
+        beta, so come kick the tires.
+      </span>
+      <span className={styles.mapBannerCta} aria-hidden="true">
+        Try it &rarr;
+      </span>
+    </Link>
+  );
+
   if (loading) {
     return (
-      <div className={styles.container}>
-        <p>Loading...</p>
-      </div>
+      <>
+        {mapBanner}
+        <div className={styles.container}>
+          <p>Loading...</p>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className={styles.container}>
-      <Link to="/map" className={styles.mapBanner}>
-        <span className={styles.mapBannerBadge}>Beta</span>
-        <span className={styles.mapBannerText}>
-          Hey, there&rsquo;s a map now. Find trad artists near you. It&rsquo;s a
-          beta, so come kick the tires.
-        </span>
-        <span className={styles.mapBannerCta} aria-hidden="true">
-          Try it &rarr;
-        </span>
-      </Link>
-      <div className={styles.heroSection}>
-        <div className={styles.heroContent}>
-          <div className={styles.heroText}>
-            <div className={styles.logo}>
-              <img
-                src="/TRAD-NEW.svg"
-                alt="TRAD DIRECTORY"
-                className={styles.logoSvg}
-              />
-              <img
-                src="/DIRECTORY-NEW.svg"
-                alt="TRAD DIRECTORY"
-                className={styles.logoSvg}
-              />
+    <>
+      {mapBanner}
+      <div className={styles.container}>
+        <div className={styles.heroSection}>
+          <div className={styles.heroContent}>
+            <div className={styles.heroText}>
+              <div className={styles.logo}>
+                <img
+                  src="/TRAD-NEW.svg"
+                  alt="TRAD DIRECTORY"
+                  className={styles.logoSvg}
+                />
+                <img
+                  src="/DIRECTORY-NEW.svg"
+                  alt="TRAD DIRECTORY"
+                  className={styles.logoSvg}
+                />
+              </div>
+              <HeroMessageText />
             </div>
-            <HeroMessageText />
-          </div>
-          <SearchBar
-            onSearch={handleSearch}
-            suggestions={suggestions}
-            onSelectSuggestion={handleSelectSuggestion}
-            size="large"
-            debug={false}
-          />
+            <SearchBar
+              onSearch={handleSearch}
+              suggestions={suggestions}
+              onSelectSuggestion={handleSelectSuggestion}
+              size="large"
+              debug={false}
+            />
 
-          <div className={styles.recentSection}>
-            <RecentlyAdded limit={30} includeLocations={true} />
-            {error && <p className={styles.error}>{error}</p>}
+            <div className={styles.recentSection}>
+              <RecentlyAdded limit={30} includeLocations={true} />
+              {error && <p className={styles.error}>{error}</p>}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
