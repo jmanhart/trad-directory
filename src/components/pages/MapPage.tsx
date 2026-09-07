@@ -764,6 +764,7 @@ export default function MapPage() {
         flyTo={flyTo}
         flyToKey={flyToKey}
         onBackgroundClick={handleBackgroundClick}
+        panelOpen={hasPanel}
       />
 
       {/* Desktop side panel */}

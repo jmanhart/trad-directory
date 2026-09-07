@@ -280,6 +280,8 @@ interface MapViewProps {
   flyTo?: { coordinates: [number, number]; zoom: number } | null;
   flyToKey?: number;
   onBackgroundClick?: () => void;
+  /** Whether any detail panel/card is currently open (drives recenter-on-close). */
+  panelOpen?: boolean;
 }
 
 // Placeholder dots shown while data is loading
@@ -566,6 +568,7 @@ function MapInner({
   flyTo,
   flyToKey = 0,
   onBackgroundClick,
+  panelOpen,
 }: MapViewProps) {
   const isMobile = useIsMobile();
   const mapRef = useRef<MapRef>(null);
@@ -669,6 +672,32 @@ function MapInner({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flyToKey]);
+
+  // Recenter-on-close: while a panel is open the map carries a large left
+  // padding (PANEL_WIDTH) that shifts the globe to the right so it clears the
+  // card. When the last panel closes, glide that padding back to zero so the
+  // globe eases back to center. Kept slow/eased so it reads as a subtle settle,
+  // not a jump.
+  const prevPanelOpenRef = useRef(false);
+  useEffect(() => {
+    if (prevPanelOpenRef.current && !panelOpen && mapRef.current) {
+      const m = mapRef.current;
+      // eslint-disable-next-line no-console
+      console.log("[recenter] fire; padding before =", JSON.stringify(m.getPadding?.()));
+      m.easeTo({
+        padding: { top: 0, bottom: 0, left: 0, right: 0 },
+        duration: 650,
+      });
+      // eslint-disable-next-line no-console
+      console.log("[recenter] easeTo called; padding after =", JSON.stringify(m.getPadding?.()));
+    }
+    prevPanelOpenRef.current = !!panelOpen;
+  }, [panelOpen]);
+
+  // TEMP DEBUG: expose map instance for live easeTo testing
+  useEffect(() => {
+    (window as unknown as { __map?: unknown }).__map = mapRef.current;
+  });
 
   // Helper: compute weighted centroid for a set of city dots
   const weightedCentroid = useCallback(
