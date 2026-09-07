@@ -9,3 +9,6 @@
 
 # Local seed data — regenerate with: npm run db:seed:pull
 seed.sql
+
+# Dashboard SQL snippets synced by the CLI — not tracked
+snippets/
