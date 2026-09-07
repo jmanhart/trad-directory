@@ -66,6 +66,7 @@ export function initSentry() {
           accentForeground: "#ffffff",
           accentBackground: "var(--color-primary)",
           errorColor: "var(--color-error)",
+          successColor: "var(--color-primary)",
           boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
           outline: "2px solid var(--color-primary)",
         },

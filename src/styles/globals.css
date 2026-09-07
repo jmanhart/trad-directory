@@ -85,4 +85,10 @@ button:focus-visible {
 #sentry-feedback {
   --font-family: Inter, system-ui, -apple-system, sans-serif;
   --button-primary-border: none;
+  /* Inputs: site border + radius, clean thin red focus (not the heavy 2px). */
+  --input-border: var(--border-width) solid var(--color-border);
+  --input-border-radius: var(--border-radius);
+  --input-focus-outline: var(--border-width) solid var(--color-primary);
+  /* Success pill: site border (background, shadow, font already themed). */
+  --success-border: var(--border-width) solid var(--color-border);
 }
