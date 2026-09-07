@@ -24,7 +24,6 @@ const TABLES = [
   "tattoo_shops",
   "artists",
   "artist_location",
-  "artist_shop",
   "submissions",
   "profiles",
   "saved_artists",

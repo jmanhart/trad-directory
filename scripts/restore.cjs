@@ -25,7 +25,6 @@ const TABLES = [
   "tattoo_shops",
   "artists",
   "artist_location",
-  "artist_shop",
   "submissions",
   "profiles",
   "saved_artists",
@@ -158,7 +157,7 @@ async function main() {
     const { error } = await supabase.from(table).delete().neq("id", -999999);
 
     if (error) {
-      // Tables without 'id' column (like artist_location, artist_shop)
+      // Tables without 'id' column (like artist_location)
       const { error: retryError } = await supabase
         .from(table)
         .delete()

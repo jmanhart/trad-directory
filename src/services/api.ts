@@ -96,28 +96,6 @@ function mapArtistLocations(rawLocations: any[] | null | undefined): ArtistLocat
 function mapArtistWithLocations(artist: any): any {
   const locations = mapArtistLocations(artist?.artist_location);
 
-  // Merge secondary_city (flat FK on artists table) into locations if present
-  if (artist?.secondary_city) {
-    const { city_name, state_name, country_name } = extractLocationData(
-      artist.secondary_city
-    );
-    const alreadyExists = locations.some(
-      l => !l.is_primary && l.city_name === city_name
-    );
-    if (!alreadyExists && city_name && city_name !== "N/A") {
-      locations.push({
-        city_name,
-        state_name,
-        country_name,
-        shop_id: null,
-        shop_name: null,
-        shop_slug: null,
-        shop_instagram_handle: null,
-        is_primary: false,
-      });
-    }
-  }
-
   const primary = locations.find(l => l.is_primary) || locations[0];
 
   return {
@@ -154,11 +132,6 @@ export async function fetchTattooShopsWithArtists(): Promise<Artist[]> {
           instagram_handle,
           created_at,
           is_traveling,
-          secondary_city: cities!secondary_city_id (
-            city_name,
-            state: states (state_name),
-            country: countries (country_name)
-          ),
           artist_location (
             is_primary,
             city: cities (
@@ -229,11 +202,6 @@ export async function fetchArtistById(id: number): Promise<Artist> {
         slug,
         instagram_handle,
         is_traveling,
-        secondary_city: cities!secondary_city_id (
-          city_name,
-          state: states (state_name),
-          country: countries (country_name)
-        ),
         artist_location (
           is_primary,
           city: cities (
@@ -277,12 +245,8 @@ export async function fetchShopById(id: number): Promise<ShopWithArtists> {
           state: states (state_name),
           country: countries (country_name)
         ),
-        artists: artist_shop (
-          artist: artists (id, name, slug, instagram_handle, is_traveling, secondary_city: cities!secondary_city_id (
-            city_name,
-            state: states (state_name),
-            country: countries (country_name)
-          ), artist_location (
+        artists: artist_location (
+          artist: artists (id, name, slug, instagram_handle, is_traveling, artist_location (
             is_primary,
             city: cities (
               city_name,
@@ -461,11 +425,6 @@ export async function fetchRecentArtists(limit: number = 6): Promise<Artist[]> {
         instagram_handle,
         created_at,
         is_traveling,
-        secondary_city: cities!secondary_city_id (
-          city_name,
-          state: states (state_name),
-          country: countries (country_name)
-        ),
         artist_location (
           is_primary,
           city: cities (

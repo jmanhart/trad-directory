@@ -45,13 +45,12 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    // Count and remove artist links. artist_location.shop_id auto-nulls via its
-    // ON DELETE SET NULL foreign key, so only artist_shop needs cleanup.
+    // Count linked artists. artist_location.shop_id auto-nulls via its
+    // ON DELETE SET NULL foreign key when the shop is deleted.
     const { count: linkCount } = await supabase
-      .from("artist_shop")
-      .select("shop_id", { count: "exact", head: true })
+      .from("artist_location")
+      .select("id", { count: "exact", head: true })
       .eq("shop_id", id);
-    await supabase.from("artist_shop").delete().eq("shop_id", id);
 
     const { error: deleteError } = await supabase
       .from("tattoo_shops")

@@ -18,23 +18,7 @@ const ARTIST_SELECT = `
   gender,
   url,
   contact,
-  city_id,
-  secondary_city_id,
-  is_traveling,
-  city: cities!artists_city_id_fkey (
-    id,
-    city_name,
-    state: states (state_name),
-    country: countries (country_name)
-  ),
-  secondary_city: cities!secondary_city_id (
-    city_name,
-    state: states (state_name),
-    country: countries (country_name)
-  ),
-  artist_shop (
-    shop: tattoo_shops (id, shop_name, instagram_handle)
-  )
+  is_traveling
 `;
 
 export default async function handler(req: any, res: any) {
@@ -140,7 +124,7 @@ export default async function handler(req: any, res: any) {
 
       const result = formatArtist(artistById);
       result.locations = formatLocations(locationsById || []);
-      mergeSecondaryCity(result, artistById);
+      applyPrimaryFlat(result);
       res.status(200).json({ result });
       return;
     }
@@ -179,7 +163,7 @@ export default async function handler(req: any, res: any) {
 
     const result = formatArtist(artistData);
     result.locations = formatLocations(locations || []);
-    mergeSecondaryCity(result, artistData);
+    applyPrimaryFlat(result);
     res.status(200).json({ result });
   } catch (error: any) {
     console.error("Unexpected error in /api/artists/[id]:", error);
@@ -210,30 +194,22 @@ function formatLocations(rows: any[]): any[] {
   });
 }
 
-function mergeSecondaryCity(result: any, rawData: any) {
-  const sc = Array.isArray(rawData.secondary_city)
-    ? rawData.secondary_city[0]
-    : rawData.secondary_city;
-  if (!sc?.city_name) return;
-
-  const alreadyExists = (result.locations || []).some(
-    (l: any) => !l.is_primary && l.city_name === sc.city_name
-  );
-  if (alreadyExists) return;
-
-  const state = Array.isArray(sc.state) ? sc.state[0] : sc.state;
-  const country = Array.isArray(sc.country) ? sc.country[0] : sc.country;
-
-  result.locations.push({
-    city_name: sc.city_name,
-    state_name: state?.state_name || null,
-    country_name: country?.country_name || null,
-    shop_id: null,
-    shop_name: null,
-    shop_slug: null,
-    shop_instagram_handle: null,
-    is_primary: false,
-  });
+function applyPrimaryFlat(result: any) {
+  const locs = result.locations || [];
+  const primary = locs.find((l: any) => l.is_primary) || locs[0] || null;
+  result.city_id = primary?.city_id ?? null;
+  result.city_name = primary?.city_name ?? null;
+  result.state_name = primary?.state_name ?? null;
+  result.country_name = primary?.country_name ?? null;
+  result.shop_id = primary?.shop_id ?? null;
+  result.shop = primary?.shop_id
+    ? {
+        id: primary.shop_id,
+        shop_name: primary.shop_name ?? null,
+        slug: primary.shop_slug ?? null,
+        instagram_handle: primary.shop_instagram_handle ?? null,
+      }
+    : null;
 }
 
 function formatArtist(data: any): Artist & Record<string, any> {
@@ -243,20 +219,8 @@ function formatArtist(data: any): Artist & Record<string, any> {
     slug: data.slug || null,
     instagram_handle: data.instagram_handle || null,
     is_traveling: data.is_traveling || false,
-    city_id: data.city_id || null,
     gender: data.gender || null,
     url: data.url || null,
     contact: data.contact || null,
-    city_name: Array.isArray(data.city)
-      ? data.city[0]?.city_name
-      : (data.city as any)?.city_name || null,
-    state_name: Array.isArray((data.city as any)?.state)
-      ? (data.city as any).state[0]?.state_name
-      : (data.city as any)?.state?.state_name || null,
-    country_name: Array.isArray((data.city as any)?.country)
-      ? (data.city as any).country[0]?.country_name
-      : (data.city as any)?.country?.country_name || null,
-    shop: data.artist_shop?.[0]?.shop || null,
-    shop_id: data.artist_shop?.[0]?.shop?.id || null,
   };
 }
