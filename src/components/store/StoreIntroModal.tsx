@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import styles from "./StoreIntroModal.module.css";
 
 interface StoreIntroModalProps {
@@ -10,25 +9,15 @@ export default function StoreIntroModal({
   open,
   onClose,
 }: StoreIntroModalProps) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
   if (!open) return null;
 
   return (
-    <div className={styles.overlay} onClick={onClose} role="presentation">
+    <div className={styles.overlay}>
       <div
         className={styles.modal}
         role="dialog"
         aria-modal="true"
         aria-labelledby="store-intro-title"
-        onClick={e => e.stopPropagation()}
       >
         <h2 id="store-intro-title" className={styles.title}>
           I make no money from this
@@ -43,7 +32,7 @@ export default function StoreIntroModal({
           through Instagram bios to find where to buy.
         </p>
         <button type="button" className={styles.button} onClick={onClose}>
-          Enter and buy something rad
+          Now buy something rad
         </button>
       </div>
     </div>
