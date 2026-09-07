@@ -5,25 +5,6 @@
   min-height: 100vh;
 }
 
-.header {
-  padding: 1rem 0 0.5rem;
-}
-
-.title {
-  font-size: var(--font-size-2xl, 2rem);
-  font-weight: 700;
-  margin: 0 0 0.5rem;
-  color: var(--color-text-primary);
-}
-
-.tagline {
-  margin: 0;
-  max-width: 48ch;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-base);
-  line-height: 1.5;
-}
-
 .count {
   margin: 0;
   color: var(--color-text-tertiary);

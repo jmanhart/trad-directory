@@ -32,14 +32,6 @@ export default function StorePage() {
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>Store</h1>
-        <p className={styles.tagline}>
-          One place to find trad tattoo goods &mdash; flash, prints, and merch
-          from artists and studios in the directory.
-        </p>
-      </header>
-
       {isLoading && <div className={styles.state}>Loading stores&hellip;</div>}
       {error && (
         <div className={`${styles.state} ${styles.error}`}>{error}</div>

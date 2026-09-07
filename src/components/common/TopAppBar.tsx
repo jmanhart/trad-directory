@@ -22,6 +22,7 @@ export default function TopAppBar() {
             <img src="/TRAD-NEW-SMALL.svg" alt="TRAD" className={styles.logo} />
           </Link>
         )}
+        {isStorePage && <span className={styles.pageTitle}>Store</span>}
       </div>
       <div className={styles.center}>
         {!isHomePage && !isStorePage && (
