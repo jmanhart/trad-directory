@@ -14,6 +14,14 @@ From the next tagged release onward this file is maintained automatically by
 [Conventional Commits](https://www.conventionalcommits.org/) — do not hand-edit
 released sections.
 
+## [0.5.0](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.4.3...tattoo-directory-v0.5.0) (2026-09-07)
+
+
+### Added
+
+* **db:** artist styles bones (styles, categories, artist_styles) ([#70](https://github.com/jmanhart/trad-directory/issues/70)) ([e37ad81](https://github.com/jmanhart/trad-directory/commit/e37ad819126516bf0a04bc8d159afd7cf8d0ea03))
+* **db:** contract — drop artist_shop + artists.city_id/secondary_city_id ([#72](https://github.com/jmanhart/trad-directory/issues/72)) ([10812fb](https://github.com/jmanhart/trad-directory/commit/10812fbf7985708b3092867069742fcf93437682))
+
 ## [0.4.3](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.4.2...tattoo-directory-v0.4.3) (2026-09-07)
 
 
