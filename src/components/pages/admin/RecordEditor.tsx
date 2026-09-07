@@ -16,6 +16,10 @@ import {
   updateCountry,
   addArtistLocation,
   deleteArtistLocation,
+  listStyles,
+  addArtistStyle,
+  deleteArtistStyle,
+  type StyleOption,
   deleteArtist,
   deleteShop,
   deleteCity,
@@ -121,6 +125,14 @@ export default function RecordEditor({
   const [newLocationShopId, setNewLocationShopId] = useState("");
   const [locationError, setLocationError] = useState<string | null>(null);
 
+  // Styles state
+  const [styleOptions, setStyleOptions] = useState<StyleOption[]>([]);
+  const [artistStyles, setArtistStyles] = useState<any[]>([]);
+  const [newStyleId, setNewStyleId] = useState("");
+  const [addingStyle, setAddingStyle] = useState(false);
+  const [deletingStyleId, setDeletingStyleId] = useState<number | null>(null);
+  const [styleError, setStyleError] = useState<string | null>(null);
+
   const { cities, shops, states, refetch } = useAdminData({
     loadCities: true,
     loadShops: true,
@@ -136,6 +148,10 @@ export default function RecordEditor({
     fetchLinkStatuses().then(setLinkStatuses).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    listStyles().then(setStyleOptions).catch(() => {});
+  }, []);
+
   const clearPanelSelection = () => {
     setEditingArtistId(null);
     setEditingShopId(null);
@@ -146,6 +162,9 @@ export default function RecordEditor({
     setCityFormData(null);
     setCountryFormData(null);
     setArtistLocations([]);
+    setArtistStyles([]);
+    setNewStyleId("");
+    setStyleError(null);
     setConfirmingDelete(false);
   };
 
@@ -239,6 +258,48 @@ export default function RecordEditor({
     }
   };
 
+  const refreshArtistStyles = async (artistId: number) => {
+    try {
+      const artist = await fetchArtistById(artistId);
+      setArtistStyles(artist.styles || []);
+    } catch {
+      // Non-blocking
+    }
+  };
+
+  const handleAddStyle = async () => {
+    if (!editingArtistId || !newStyleId) return;
+    try {
+      setAddingStyle(true);
+      setStyleError(null);
+      await addArtistStyle(editingArtistId, parseInt(newStyleId));
+      setNewStyleId("");
+      await refreshArtistStyles(editingArtistId);
+    } catch (err) {
+      setStyleError(
+        err instanceof Error ? err.message : "Failed to add style"
+      );
+    } finally {
+      setAddingStyle(false);
+    }
+  };
+
+  const handleDeleteStyle = async (styleId: number) => {
+    if (!editingArtistId) return;
+    try {
+      setDeletingStyleId(styleId);
+      setStyleError(null);
+      await deleteArtistStyle(editingArtistId, styleId);
+      await refreshArtistStyles(editingArtistId);
+    } catch (err) {
+      setStyleError(
+        err instanceof Error ? err.message : "Failed to delete style"
+      );
+    } finally {
+      setDeletingStyleId(null);
+    }
+  };
+
   const loadArtist = async (artistId: number) => {
     setSaveError(null);
     clearPanelSelection();
@@ -260,6 +321,7 @@ export default function RecordEditor({
       setFormData(formData);
       setOriginalFormData(JSON.parse(JSON.stringify(formData)));
       setArtistLocations(artist.locations || []);
+      setArtistStyles(artist.styles || []);
     } catch (err) {
       setSaveError(
         err instanceof Error ? err.message : "Failed to load artist data"
@@ -289,6 +351,9 @@ export default function RecordEditor({
     setNewLocationCityId("");
     setNewLocationShopId("");
     setLocationError(null);
+    setArtistStyles([]);
+    setNewStyleId("");
+    setStyleError(null);
     onClose();
   };
 
@@ -931,6 +996,73 @@ export default function RecordEditor({
                           disabled={!newLocationCityId || addingLocation}
                         >
                           {addingLocation ? "..." : "Add"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Styles */}
+                    <div className={styles.secondaryLocations}>
+                      <h3 className={styles.secondaryLocationsTitle}>
+                        Styles
+                      </h3>
+
+                      {styleError && (
+                        <Message type="error" text={styleError} />
+                      )}
+
+                      {artistStyles.map(row => (
+                        <div
+                          key={row.style_id}
+                          className={styles.locationRow}
+                        >
+                          <span className={styles.locationText}>
+                            {row.name}
+                            {row.is_primary ? " (primary)" : ""}
+                          </span>
+                          <button
+                            type="button"
+                            className={styles.locationDeleteButton}
+                            onClick={() => handleDeleteStyle(row.style_id)}
+                            disabled={deletingStyleId === row.style_id}
+                            title="Remove style"
+                          >
+                            {deletingStyleId === row.style_id ? "..." : "×"}
+                          </button>
+                        </div>
+                      ))}
+
+                      {artistStyles.length === 0 && (
+                        <div className={styles.locationEmpty}>
+                          No styles yet
+                        </div>
+                      )}
+
+                      <div className={styles.addLocationRow}>
+                        <Select
+                          value={newStyleId}
+                          onChange={e => setNewStyleId(e.target.value)}
+                        >
+                          <option value="">Style...</option>
+                          {styleOptions
+                            .filter(
+                              style =>
+                                !artistStyles.some(
+                                  row => row.style_id === style.id
+                                )
+                            )
+                            .map(style => (
+                              <option key={style.id} value={style.id}>
+                                {style.name}
+                              </option>
+                            ))}
+                        </Select>
+                        <button
+                          type="button"
+                          className={styles.addLocationButton}
+                          onClick={handleAddStyle}
+                          disabled={!newStyleId || addingStyle}
+                        >
+                          {addingStyle ? "..." : "Add"}
                         </button>
                       </div>
                     </div>

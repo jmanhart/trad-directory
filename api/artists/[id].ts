@@ -125,6 +125,7 @@ export default async function handler(req: any, res: any) {
       const result = formatArtist(artistById);
       result.locations = formatLocations(locationsById || []);
       applyPrimaryFlat(result);
+      result.styles = await fetchArtistStyles(supabase, artistById.id);
       res.status(200).json({ result });
       return;
     }
@@ -164,6 +165,7 @@ export default async function handler(req: any, res: any) {
     const result = formatArtist(artistData);
     result.locations = formatLocations(locations || []);
     applyPrimaryFlat(result);
+    result.styles = await fetchArtistStyles(supabase, artistData.id);
     res.status(200).json({ result });
   } catch (error: any) {
     console.error("Unexpected error in /api/artists/[id]:", error);
@@ -223,4 +225,23 @@ function formatArtist(data: any): Artist & Record<string, any> {
     url: data.url || null,
     contact: data.contact || null,
   };
+}
+
+async function fetchArtistStyles(supabase: any, artistId: number) {
+  const { data } = await supabase
+    .from("artist_styles")
+    .select("style_id, is_primary, sort_order, style: styles (id, name, slug)")
+    .eq("artist_id", artistId)
+    .order("is_primary", { ascending: false })
+    .order("sort_order");
+  return (data || []).map((row: any) => {
+    const s = Array.isArray(row.style) ? row.style[0] : row.style;
+    return {
+      style_id: row.style_id,
+      name: s?.name || null,
+      slug: s?.slug || null,
+      is_primary: row.is_primary,
+      sort_order: row.sort_order,
+    };
+  });
 }
