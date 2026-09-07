@@ -61,6 +61,12 @@ export function initSentry() {
       Sentry.feedbackIntegration({
         colorScheme: "system",
         showBranding: false,
+        // No name/email — repurpose the "name" field as an optional IG handle.
+        showEmail: false,
+        showName: true,
+        isNameRequired: false,
+        nameLabel: "Instagram handle",
+        namePlaceholder: "@yourhandle (optional)",
         triggerLabel: "Feedback",
         formTitle: "Beta feedback",
         submitButtonLabel: "Send it",
