@@ -13,7 +13,7 @@ const RULES: { type: ProductType; pattern: RegExp }[] = [
   {
     type: "apparel",
     pattern:
-      /\b(shirt|t-?shirts?|tee|tees|hoodie|crewneck|sweat(?:shirt|er)?|jacket|hats?|cap|beanie|clothing|apparel|sock|shorts|pants|jersey)\b/,
+      /\b(shirt|t-?shirts?|tees?|tank|hoodie|crew[\s-]?neck|sweat(?:shirt|er)?|jacket|hats?|cap|beanies?|clothing|apparel|socks?|shorts|pants|jersey|long[\s-]?sleeve|short[\s-]?sleeve|t)\b/,
   },
   {
     // Prints, flash, and original artwork bucket together as "Art".
