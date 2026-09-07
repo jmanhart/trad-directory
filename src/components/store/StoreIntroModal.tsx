@@ -31,12 +31,11 @@ export default function StoreIntroModal({
         onClick={e => e.stopPropagation()}
       >
         <h2 id="store-intro-title" className={styles.title}>
-          I&rsquo;m just the hype man
+          Not my work, not my money
         </h2>
         <p className={styles.body}>
-          I don&rsquo;t make a dime off this, and none of this work is mine.
-          It&rsquo;s just a jumping-off point to buy straight from the artist
-          &mdash; no tracking links, no data grabbing, none of that bullshit.
+          This is just a jumping off point to buy straight from the artist. No
+          tracking links, no data grabbing, none of that bullshit.
         </p>
         <button type="button" className={styles.button} onClick={onClose}>
           Hell Yeah
