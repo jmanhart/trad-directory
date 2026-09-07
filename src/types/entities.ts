@@ -82,6 +82,14 @@ export interface BigCartelStore {
   profilePath: string | null;
 }
 
+export type ProductType =
+  | "apparel"
+  | "prints"
+  | "flash"
+  | "original"
+  | "accessories"
+  | "other";
+
 export interface StoreProduct {
   id: number;
   name: string;
@@ -94,6 +102,8 @@ export interface StoreProduct {
   soldOut: boolean;
   /** ISO timestamp the product was created, for "newest" sorting. */
   createdAt: string | null;
+  /** Canonical product bucket for cross-store filtering. */
+  type: ProductType;
 }
 
 export interface StoreProductWithStore extends StoreProduct {

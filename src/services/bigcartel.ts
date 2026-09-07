@@ -1,4 +1,5 @@
 import type { StoreProduct } from "../types";
+import { classifyProduct } from "../utils/productType";
 
 // BigCartel V0 public API (no auth, CORS-open) — read a store's products
 // directly from the browser. Results are cached in-memory per subdomain for
@@ -48,15 +49,21 @@ function mapProducts(raw: unknown, subdomain: string): StoreProduct[] {
         ? asString(get(imagesRaw[0], "secure_url")) ||
           asString(get(imagesRaw[0], "url"))
         : null;
+    const name = asString(get(product, "name")) ?? "";
+    const categoriesRaw = get(product, "categories");
+    const categoryNames = Array.isArray(categoriesRaw)
+      ? categoriesRaw.map(c => asString(get(c, "name")) ?? "").filter(Boolean)
+      : [];
     return {
       id: asNumber(get(product, "id")),
-      name: asString(get(product, "name")) ?? "",
+      name,
       price: asNumber(get(product, "price")),
       onSale: get(product, "on_sale") === true,
       imageUrl: firstImage,
       productUrl: origin + (asString(get(product, "url")) ?? ""),
       soldOut,
       createdAt: asString(get(product, "created_at")),
+      type: classifyProduct(name, categoryNames),
     };
   });
 }

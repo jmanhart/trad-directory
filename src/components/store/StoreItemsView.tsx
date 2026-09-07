@@ -1,9 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchStoreProducts } from "../../services/bigcartel";
 import { useListControls } from "../../hooks/useListControls";
+import {
+  PRODUCT_TYPE_LABELS,
+  PRODUCT_TYPE_ORDER,
+} from "../../utils/productType";
 import Pagination from "../common/Pagination";
-import type { BigCartelStore, StoreProductWithStore } from "../../types";
+import type {
+  BigCartelStore,
+  ProductType,
+  StoreProductWithStore,
+} from "../../types";
 import styles from "./StoreItemsView.module.css";
 
 function formatPrice(n: number): string {
@@ -15,6 +23,7 @@ function productFilterFn(
   filters: Record<string, string>
 ): boolean {
   if (filters.stock === "in" && p.soldOut) return false;
+  if (filters.type && p.type !== filters.type) return false;
   const q = (filters.q || "").trim().toLowerCase();
   if (q && !`${p.name} ${p.storeName}`.toLowerCase().includes(q)) return false;
   return true;
@@ -89,6 +98,18 @@ export default function StoreItemsView({ stores }: StoreItemsViewProps) {
   });
 
   const loading = doneCount < stores.length;
+  const activeType = filters.type || "";
+
+  // Chip counts reflect the current search + stock filters (but not the active
+  // type) so each chip shows how many items it would reveal.
+  const typeInfo = useMemo(() => {
+    const base = items.filter(p =>
+      productFilterFn(p, { q: filters.q || "", stock: filters.stock || "" })
+    );
+    const counts = {} as Record<ProductType, number>;
+    for (const p of base) counts[p.type] = (counts[p.type] || 0) + 1;
+    return { counts, total: base.length };
+  }, [items, filters.q, filters.stock]);
 
   return (
     <div>
@@ -122,6 +143,27 @@ export default function StoreItemsView({ stores }: StoreItemsViewProps) {
           {totalFiltered} {totalFiltered === 1 ? "item" : "items"}
           {loading ? " \u00b7 loading\u2026" : ""}
         </span>
+      </div>
+
+      <div className={styles.chips} role="group" aria-label="Filter by type">
+        <button
+          type="button"
+          className={`${styles.chip} ${!activeType ? styles.chipActive : ""}`}
+          onClick={() => setFilter("type", "")}
+        >
+          All <span className={styles.chipCount}>{typeInfo.total}</span>
+        </button>
+        {PRODUCT_TYPE_ORDER.filter(t => (typeInfo.counts[t] || 0) > 0).map(t => (
+          <button
+            key={t}
+            type="button"
+            className={`${styles.chip} ${activeType === t ? styles.chipActive : ""}`}
+            onClick={() => setFilter("type", activeType === t ? "" : t)}
+          >
+            {PRODUCT_TYPE_LABELS[t]}{" "}
+            <span className={styles.chipCount}>{typeInfo.counts[t]}</span>
+          </button>
+        ))}
       </div>
 
       {totalFiltered === 0 ? (
