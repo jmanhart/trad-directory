@@ -28,17 +28,24 @@
 }
 
 .body {
+  margin: 0 0 1.5rem 0;
+}
+
+.body p {
   margin: 0 0 0.85rem 0;
   color: var(--color-text-secondary);
   font-size: 0.95rem;
   line-height: 1.55;
 }
 
-.note {
-  margin: 0 0 1.5rem 0;
+/* Secondary paragraphs (e.g. a "how it's made" note) read smaller/dimmer. */
+.body p:not(:first-child) {
   color: var(--color-text-tertiary);
   font-size: 0.85rem;
-  line-height: 1.55;
+}
+
+.body p:last-child {
+  margin-bottom: 0;
 }
 
 .button {
