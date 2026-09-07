@@ -56,6 +56,18 @@ export function initSentry() {
       }),
       // Forward console.log/warn/error to Sentry logs (needs enableLogs above)
       Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }),
+      // User Feedback widget (auto-injected floating button) — the beta
+      // feedback channel. Opens a form that ships to Sentry.
+      Sentry.feedbackIntegration({
+        colorScheme: "system",
+        showBranding: false,
+        triggerLabel: "Feedback",
+        formTitle: "Beta feedback",
+        submitButtonLabel: "Send it",
+        messagePlaceholder:
+          "What's working, what's broken, what's weird? All of it helps.",
+        successMessageText: "Got it. Thanks for helping shape this.",
+      }),
     ],
 
     // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
