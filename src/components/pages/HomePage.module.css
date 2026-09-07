@@ -145,3 +145,53 @@
     width: 100%;
   }
 }
+
+/* Beta map announcement banner (top of home page) */
+.mapBanner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0.6rem 1rem;
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-primary) 22%, transparent);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  transition: background 0.15s ease;
+}
+
+.mapBanner:hover {
+  background: color-mix(in srgb, var(--color-primary) 16%, var(--color-surface));
+}
+
+.mapBannerBadge {
+  flex-shrink: 0;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #fff;
+  background: var(--color-primary);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.mapBannerText {
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.mapBannerCta {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--color-primary);
+  white-space: nowrap;
+}

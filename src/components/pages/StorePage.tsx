@@ -4,7 +4,7 @@ import type { BigCartelStore } from "../../types";
 import StoreCard from "../store/StoreCard";
 import StoreItemsView from "../store/StoreItemsView";
 import ModeToggle, { type StoreMode } from "../store/ModeToggle";
-import StoreIntroModal from "../store/StoreIntroModal";
+import IntroModal from "../common/IntroModal";
 import styles from "./StorePage.module.css";
 
 export default function StorePage() {
@@ -34,7 +34,22 @@ export default function StorePage() {
 
   return (
     <div className={styles.container}>
-      <StoreIntroModal open={showIntro} onClose={() => setShowIntro(false)} />
+      <IntroModal
+        open={showIntro}
+        onClose={() => setShowIntro(false)}
+        title="I make no money from this"
+        buttonLabel="Now buy something rad"
+      >
+        <p>
+          This is just a jumping off point to buy straight from the artist. No
+          tracking links, no data grabbing, none of that bullshit.
+        </p>
+        <p>
+          Every store here is pulled straight from the artists&rsquo; own
+          BigCartel shops and collected in one spot, so you&rsquo;re not digging
+          through Instagram bios to find where to buy.
+        </p>
+      </IntroModal>
       {isLoading && <div className={styles.state}>Loading stores&hellip;</div>}
       {error && (
         <div className={`${styles.state} ${styles.error}`}>{error}</div>

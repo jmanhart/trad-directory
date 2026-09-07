@@ -16,6 +16,7 @@ import type { MapShopData } from "../../components/map/MapShopPanel";
 import SearchBar from "../../components/common/SearchBar";
 import Tag from "../../components/common/Tag";
 import Tooltip from "../../components/common/Tooltip";
+import IntroModal from "../../components/common/IntroModal";
 import { formatArtistLocation } from "../../utils/formatArtistLocation";
 import styles from "./MapPage.module.css";
 
@@ -46,6 +47,21 @@ export default function MapPage() {
     zoom: number;
   } | null>(null);
   const [flyToKey, setFlyToKey] = useState(0);
+  const [showMapIntro, setShowMapIntro] = useState(() => {
+    try {
+      return !localStorage.getItem("map_intro_seen");
+    } catch {
+      return true;
+    }
+  });
+  const dismissMapIntro = useCallback(() => {
+    setShowMapIntro(false);
+    try {
+      localStorage.setItem("map_intro_seen", "1");
+    } catch {
+      // ignore (private mode / storage disabled)
+    }
+  }, []);
 
   // Lazily loaded full artist data for city detail card
   const [allArtists, setAllArtists] = useState<Artist[] | null>(null);
@@ -734,6 +750,17 @@ export default function MapPage() {
 
   return (
     <div className={styles.container}>
+      <IntroModal
+        open={showMapIntro}
+        onClose={dismissMapIntro}
+        title="The map's still a beta"
+        buttonLabel="Let's go"
+      >
+        <p>
+          Hey, this thing&rsquo;s still a beta and I&rsquo;m working out the
+          kinks. Poke around, and cut it some slack if something&rsquo;s janky.
+        </p>
+      </IntroModal>
       <div className={styles.mapOverlay}>
         <div className={styles.overlaySearch}>
           <SearchBar

@@ -27,9 +27,14 @@ import useIsMobile from "../../hooks/useIsMobile";
 import styles from "./MapView.module.css";
 
 // 4-tier zoom thresholds (MapLibre zoom levels 0-22)
-const ZOOM_CONTINENT = 2.5;
+const ZOOM_CONTINENT = 2.75;
 const ZOOM_COUNTRY = 4.5;
 const ZOOM_CITY = 6.5;
+
+// Default opening camera for the 3D globe (US-centered overview). Geo may
+// rotate it to the visitor's region at the same zoom.
+const DEFAULT_CENTER: [number, number] = [-97, 39];
+const DEFAULT_ZOOM = 2.6;
 
 // Minimum cities for a non-US country to get state-level clustering
 const STATE_CLUSTER_MIN_CITIES = 5;
@@ -573,6 +578,47 @@ function MapInner({
   const isMobile = useIsMobile();
   const mapRef = useRef<MapRef>(null);
 
+  // Approximate visitor location (Vercel edge geo, no permission prompt) used
+  // to rotate the opening globe to the user's region at the same overview zoom.
+  const geoTargetRef = useRef<[number, number] | null>(null);
+  const geoAppliedRef = useRef(false);
+  const mapLoadedRef = useRef(false);
+
+  const applyGeoStart = useCallback(() => {
+    if (
+      geoAppliedRef.current ||
+      !geoTargetRef.current ||
+      !mapLoadedRef.current ||
+      !mapRef.current
+    )
+      return;
+    geoAppliedRef.current = true;
+    mapRef.current.easeTo({
+      center: geoTargetRef.current,
+      zoom: DEFAULT_ZOOM,
+      duration: 1400,
+    });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const base = import.meta.env.VITE_API_URL || "/api";
+    fetch(`${base}/geo`)
+      .then(r => (r.ok ? r.json() : null))
+      .then((geo: unknown) => {
+        if (cancelled || !geo || typeof geo !== "object") return;
+        const g = geo as { lat?: unknown; lng?: unknown };
+        if (typeof g.lat !== "number" || typeof g.lng !== "number") return;
+        const lat = Math.max(-55, Math.min(65, g.lat));
+        geoTargetRef.current = [g.lng, lat];
+        applyGeoStart();
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [applyGeoStart]);
+
   // Tooltip
   const tooltipRef = useRef<HTMLDivElement>(null);
   const tooltipDataRef = useRef<{
@@ -647,6 +693,12 @@ function MapInner({
   // Handle map zoom changes
   const handleZoom = useCallback(
     (e: ViewStateChangeEvent) => {
+      // The globe lets wheel/buttons overshoot minZoom, so hard-cap zoom-out
+      // at the default so the opening framing is the most zoomed-out state.
+      if (e.viewState.zoom < DEFAULT_ZOOM) {
+        mapRef.current?.setZoom(DEFAULT_ZOOM);
+        return;
+      }
       // Clear minimum tier override when user zooms out to continent level
       if (minTierRef.current && e.viewState.zoom < ZOOM_CONTINENT) {
         minTierRef.current = null;
@@ -986,11 +1038,11 @@ function MapInner({
   const handleReset = useCallback(() => {
     minTierRef.current = null;
     mapRef.current?.flyTo({
-      center: [0, 30],
-      zoom: 1.5,
+      center: DEFAULT_CENTER,
+      zoom: DEFAULT_ZOOM,
       duration: 800,
     });
-    syncTier(1.5);
+    syncTier(DEFAULT_ZOOM);
     setSelectedStateName(null);
     onCountrySelect?.(null);
   }, [onCountrySelect, syncTier]);
@@ -1416,12 +1468,16 @@ function MapInner({
       <MapGL
         ref={mapRef}
         initialViewState={{
-          longitude: 0,
-          latitude: 30,
-          zoom: 1.5,
+          longitude: DEFAULT_CENTER[0],
+          latitude: DEFAULT_CENTER[1],
+          zoom: DEFAULT_ZOOM,
         }}
         style={{ width: "100%", height: "100%" }}
         mapStyle={MAP_STYLE}
+        onLoad={() => {
+          mapLoadedRef.current = true;
+          applyGeoStart();
+        }}
         onZoom={handleZoom}
         onClick={handleMapClick}
         onMouseMove={handleMapMouseMove}
@@ -1435,7 +1491,7 @@ function MapInner({
           around: "center",
         }}
         maxZoom={18}
-        minZoom={1}
+        minZoom={DEFAULT_ZOOM}
         attributionControl={false}
         dragRotate={false}
         touchPitch={false}
