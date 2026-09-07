@@ -6,22 +6,6 @@
   padding: 8px 0 16px;
 }
 
-.search {
-  flex: 1;
-  min-width: 180px;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  background: var(--color-surface);
-  color: var(--color-text-primary);
-  font-size: var(--font-size-sm);
-}
-
-.search:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
 .select {
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--color-border);

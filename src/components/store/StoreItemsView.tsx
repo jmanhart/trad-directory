@@ -24,8 +24,6 @@ function productFilterFn(
 ): boolean {
   if (filters.stock === "in" && p.soldOut) return false;
   if (filters.type && p.type !== filters.type) return false;
-  const q = (filters.q || "").trim().toLowerCase();
-  if (q && !`${p.name} ${p.storeName}`.toLowerCase().includes(q)) return false;
   return true;
 }
 
@@ -101,27 +99,20 @@ export default function StoreItemsView({ stores }: StoreItemsViewProps) {
   const loading = doneCount < stores.length;
   const activeType = filters.type || "";
 
-  // Chip counts reflect the current search + stock filters (but not the active
-  // type) so each chip shows how many items it would reveal.
+  // Chip counts reflect the current stock filter (but not the active type) so
+  // each chip shows how many items it would reveal.
   const typeInfo = useMemo(() => {
     const base = items.filter(p =>
-      productFilterFn(p, { q: filters.q || "", stock: filters.stock || "" })
+      productFilterFn(p, { stock: filters.stock || "" })
     );
     const counts = {} as Record<ProductType, number>;
     for (const p of base) counts[p.type] = (counts[p.type] || 0) + 1;
     return { counts, total: base.length };
-  }, [items, filters.q, filters.stock]);
+  }, [items, filters.stock]);
 
   return (
     <div>
       <div className={styles.controls}>
-        <input
-          className={styles.search}
-          type="search"
-          placeholder="Search items or artists&hellip;"
-          value={filters.q || ""}
-          onChange={e => setFilter("q", e.target.value)}
-        />
         <select
           className={styles.select}
           value={filters.sort || "newest"}
