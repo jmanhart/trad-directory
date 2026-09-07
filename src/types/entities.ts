@@ -84,9 +84,7 @@ export interface BigCartelStore {
 
 export type ProductType =
   | "apparel"
-  | "prints"
-  | "flash"
-  | "original"
+  | "art"
   | "accessories"
   | "other";
 

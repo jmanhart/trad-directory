@@ -11,17 +11,10 @@ const RULES: { type: ProductType; pattern: RegExp }[] = [
       /\b(shirt|t-?shirts?|tee|tees|hoodie|crewneck|sweat(?:shirt|er)?|jacket|hats?|cap|beanie|clothing|apparel|sock|shorts|pants|jersey)\b/,
   },
   {
-    type: "prints",
-    pattern: /\b(prints?|poster|giclee|gicl\u00e9e|lithograph|riso|screenprint)\b/,
-  },
-  {
-    type: "flash",
-    pattern: /\b(flash|stencil)\b/,
-  },
-  {
-    type: "original",
+    // Prints, flash, and original artwork all bucket together as "Art".
+    type: "art",
     pattern:
-      /\b(original|paintings?|artwork|drawing|sketch|canvas|watercolou?r)\b/,
+      /\b(prints?|poster|giclee|gicl\u00e9e|lithograph|riso|screenprint|flash|stencil|original|paintings?|artwork|art|drawing|sketch|canvas|watercolou?r|illustration)\b/,
   },
   {
     type: "accessories",
@@ -43,18 +36,14 @@ export function classifyProduct(
 
 export const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
   apparel: "Apparel",
-  prints: "Prints",
-  flash: "Flash",
-  original: "Original art",
+  art: "Art",
   accessories: "Accessories",
   other: "Other",
 };
 
 export const PRODUCT_TYPE_ORDER: ProductType[] = [
   "apparel",
-  "prints",
-  "flash",
-  "original",
+  "art",
   "accessories",
   "other",
 ];
