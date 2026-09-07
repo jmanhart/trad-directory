@@ -21,9 +21,6 @@ export default function Footer({ onOpenSuggestModal }: FooterProps) {
         <Link to="/about" className={styles.link}>
           About
         </Link>
-        <Link to="/store" className={styles.link}>
-          Store
-        </Link>
       </nav>
     </footer>
   );
