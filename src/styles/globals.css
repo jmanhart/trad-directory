@@ -80,3 +80,9 @@ button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
+
+/* Match the Sentry User Feedback widget to the app's modal styling. */
+#sentry-feedback {
+  --font-family: Inter, system-ui, -apple-system, sans-serif;
+  --button-primary-border: none;
+}

@@ -59,7 +59,16 @@ export function initSentry() {
       // User Feedback widget (auto-injected floating button) — the beta
       // feedback channel. Opens a form that ships to Sentry.
       Sentry.feedbackIntegration({
-        colorScheme: "system",
+        colorScheme: "light",
+        themeLight: {
+          foreground: "var(--color-text-primary)",
+          background: "var(--color-surface)",
+          accentForeground: "#ffffff",
+          accentBackground: "var(--color-primary)",
+          errorColor: "var(--color-error)",
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+          outline: "2px solid var(--color-primary)",
+        },
         showBranding: false,
         // No name/email — repurpose the "name" field as an optional IG handle.
         showEmail: false,
