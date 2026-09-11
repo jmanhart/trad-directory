@@ -94,6 +94,7 @@ export interface CityDot {
   lng: number;
   artistCount: number;
   shopCount: number;
+  unshoppedCount: number;
 }
 
 interface Cluster {
@@ -289,6 +290,7 @@ export interface ShopPin {
   shopName: string;
   lat: number;
   lng: number;
+  artistCount: number;
 }
 
 interface MapViewProps {
@@ -410,7 +412,7 @@ const CityMarker = memo(function CityMarker({
   onMouseEnter?: (city: CityDot, e: React.MouseEvent) => void;
   onMouseLeave?: () => void;
 }) {
-  const screenPx = getClusterSize(city.artistCount, isMobile);
+  const screenPx = getClusterSize(city.unshoppedCount, isMobile);
   const halfPx = screenPx / 2;
   const fontSize = isMobile ? 11 : 10;
 
@@ -484,7 +486,7 @@ const CityMarker = memo(function CityMarker({
               fontWeight={700}
               style={{ pointerEvents: "none", userSelect: "none" }}
             >
-              {city.artistCount}
+              {city.unshoppedCount}
             </text>
           </svg>
         </div>
@@ -595,8 +597,15 @@ const ShopMarker = memo(function ShopMarker({
   shop: ShopPin;
   onClick: (shop: ShopPin) => void;
 }) {
+  const size = 20;
+  const halfPx = size / 2;
   return (
-    <Marker longitude={shop.lng} latitude={shop.lat} anchor="top" offset={[0, -7]}>
+    <Marker
+      longitude={shop.lng}
+      latitude={shop.lat}
+      anchor="top"
+      offset={[0, -halfPx]}
+    >
       <div
         className={styles.cityMarker}
         onClick={e => {
@@ -605,19 +614,31 @@ const ShopMarker = memo(function ShopMarker({
         }}
       >
         <svg
-          width={14}
-          height={14}
-          viewBox="0 0 14 14"
+          width={size}
+          height={size}
+          viewBox={`0 0 ${size} ${size}`}
           style={{ overflow: "visible" }}
         >
           <circle
-            cx={7}
-            cy={7}
-            r={5}
+            cx={halfPx}
+            cy={halfPx}
+            r={halfPx - 1}
             fill="var(--map-shop-bg)"
             stroke="var(--color-surface)"
             strokeWidth={1.5}
           />
+          <text
+            x={halfPx}
+            y={halfPx}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill="var(--map-marker-text)"
+            fontSize={10}
+            fontWeight={700}
+            style={{ pointerEvents: "none", userSelect: "none" }}
+          >
+            {shop.artistCount}
+          </text>
         </svg>
         <span className={styles.cityLabel}>{shop.shopName}</span>
       </div>
@@ -1822,6 +1843,7 @@ function MapInner({
         {/* Tier 4: Individual city dots */}
         {tier === "city" &&
           cityData.map((city, i) => {
+            if (city.unshoppedCount <= 0) return null;
             const selected = isSelected(city);
             return (
               <CityMarker
