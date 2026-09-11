@@ -30,7 +30,7 @@ export default function MapPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { suggestions } = useSearchSuggestions();
-  const { cityDots, loading: loadingMap } = useMapCityDots();
+  const { cityDots, shopDots, loading: loadingMap } = useMapCityDots();
   const [selectedCountry, setSelectedCountry] = useState<string | null>(
     null
   );
@@ -792,6 +792,8 @@ export default function MapPage() {
         flyToKey={flyToKey}
         onBackgroundClick={handleBackgroundClick}
         panelOpen={hasPanel}
+        shops={shopDots}
+        onShopClick={handleShopClick}
       />
 
       {/* Desktop side panel */}
