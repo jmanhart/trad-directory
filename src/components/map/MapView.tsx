@@ -60,6 +60,18 @@ function redForArtistCount(count: number): string {
   return "#f3d9cf";
 }
 
+// Choropleth fill opacity by zoom — full at overview, faded to a light tint at
+// city zoom so the street basemap reads through. Module-level so the paint
+// memos stay stable across renders.
+const FILL_OPACITY_BY_ZOOM = [
+  "interpolate",
+  ["linear"],
+  ["zoom"],
+  7, 1,
+  10, 0.55,
+  13, 0.2,
+] as unknown as number;
+
 function getMapPadding(opensPanel = true) {
   const isDesktop = window.innerWidth > 767;
   if (isDesktop) {
@@ -1382,10 +1394,12 @@ function MapInner({
   }, [cityData]);
 
   // Fills encode data only (artist count); hover/selected live on the borders.
+  // Fills encode density; opacity fades on zoom (FILL_OPACITY_BY_ZOOM) so the
+  // street basemap reads through at city level.
   const countryFillPaint = useMemo(
     () => ({
       "fill-color": countriesFillColor,
-      "fill-opacity": 1,
+      "fill-opacity": FILL_OPACITY_BY_ZOOM,
     }),
     [countriesFillColor]
   );
@@ -1393,7 +1407,7 @@ function MapInner({
   const statesFillPaint = useMemo(
     () => ({
       "fill-color": statesFillColor,
-      "fill-opacity": 1,
+      "fill-opacity": FILL_OPACITY_BY_ZOOM,
     }),
     [statesFillColor]
   );
@@ -1550,6 +1564,81 @@ function MapInner({
           type="vector"
           url="https://tiles.openfreemap.org/planet"
         >
+          {/* Water — replaces flat white with a soft tint, fading in on zoom */}
+          <Layer
+            id="water"
+            type="fill"
+            source-layer="water"
+            paint={{
+              "fill-color": "#dbe5eb",
+              "fill-opacity": [
+                "interpolate", ["linear"], ["zoom"], 4, 0, 7, 0.9,
+              ] as unknown as number,
+            }}
+          />
+          {/* Green land cover (woods/grass/parks) — muted sage, city context */}
+          <Layer
+            id="landcover-green"
+            type="fill"
+            source-layer="landcover"
+            filter={["match", ["get", "class"], ["wood", "grass", "scrub", "farmland"], true, false]}
+            paint={{
+              "fill-color": "#d0d4b6",
+              "fill-opacity": [
+                "interpolate", ["linear"], ["zoom"], 8, 0, 11, 0.5,
+              ] as unknown as number,
+            }}
+          />
+          {/* Rivers / streams */}
+          <Layer
+            id="waterways"
+            type="line"
+            source-layer="waterway"
+            paint={{
+              "line-color": "#bcccd4",
+              "line-width": [
+                "interpolate", ["linear"], ["zoom"], 9, 0.3, 14, 1.5,
+              ] as unknown as number,
+              "line-opacity": [
+                "interpolate", ["linear"], ["zoom"], 8, 0, 10, 1,
+              ] as unknown as number,
+            }}
+          />
+          {/* Minor / residential streets — appear at street zoom */}
+          <Layer
+            id="roads-minor"
+            type="line"
+            source-layer="transportation"
+            filter={["match", ["get", "class"], ["minor", "service", "tertiary"], true, false]}
+            layout={{ "line-join": "round", "line-cap": "round" }}
+            paint={{
+              "line-color": "#cbcdcf",
+              "line-width": [
+                "interpolate", ["linear"], ["zoom"], 12, 0.3, 16, 2.5,
+              ] as unknown as number,
+              "line-opacity": [
+                "interpolate", ["linear"], ["zoom"], 11, 0, 13, 1,
+              ] as unknown as number,
+            }}
+          />
+          {/* Primary / secondary roads */}
+          <Layer
+            id="roads-major"
+            type="line"
+            source-layer="transportation"
+            filter={["match", ["get", "class"], ["primary", "secondary"], true, false]}
+            layout={{ "line-join": "round", "line-cap": "round" }}
+            paint={{
+              "line-color": "#bfc2c5",
+              "line-width": [
+                "interpolate", ["linear"], ["zoom"], 8, 0.4, 12, 2, 16, 4,
+              ] as unknown as number,
+              "line-opacity": [
+                "interpolate", ["linear"], ["zoom"], 7, 0, 9, 1,
+              ] as unknown as number,
+            }}
+          />
+          {/* Motorways / trunk */}
           <Layer
             id="highways"
             type="line"
@@ -1559,13 +1648,48 @@ function MapInner({
             paint={{
               "line-color": "#b0b6be",
               "line-width": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                4, 0.4,
-                8, 1,
-                12, 2.5,
-              ],
+                "interpolate", ["linear"], ["zoom"], 4, 0.4, 8, 1, 12, 2.5, 16, 5,
+              ] as unknown as number,
+            }}
+          />
+          {/* Place labels — surrounding towns/suburbs/neighborhoods for map
+              context (artist cities already get their own count pins). */}
+          <Layer
+            id="place-labels"
+            type="symbol"
+            source-layer="place"
+            filter={["match", ["get", "class"], ["town", "village", "suburb", "neighbourhood", "hamlet", "quarter"], true, false]}
+            layout={{
+              "text-field": ["coalesce", ["get", "name:en"], ["get", "name"]] as unknown as string,
+              "text-font": ["Noto Sans Regular"],
+              "text-size": ["interpolate", ["linear"], ["zoom"], 9, 10, 14, 14] as unknown as number,
+              "text-max-width": 7,
+              "text-padding": 4,
+            }}
+            paint={{
+              "text-color": "#6b5744",
+              "text-halo-color": "#f5efe9",
+              "text-halo-width": 1.3,
+              "text-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0, 10, 1] as unknown as number,
+            }}
+          />
+          {/* Street names — appear at street zoom, placed along the road line */}
+          <Layer
+            id="street-labels"
+            type="symbol"
+            source-layer="transportation_name"
+            filter={["match", ["get", "class"], ["primary", "secondary", "tertiary", "minor", "residential"], true, false]}
+            layout={{
+              "symbol-placement": "line",
+              "text-field": ["coalesce", ["get", "name:en"], ["get", "name"]] as unknown as string,
+              "text-font": ["Noto Sans Regular"],
+              "text-size": 11,
+            }}
+            paint={{
+              "text-color": "#8a7a68",
+              "text-halo-color": "#ffffff",
+              "text-halo-width": 1.2,
+              "text-opacity": ["interpolate", ["linear"], ["zoom"], 13, 0, 14, 1] as unknown as number,
             }}
           />
         </Source>
