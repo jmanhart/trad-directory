@@ -19,8 +19,11 @@ released sections.
 
 ### Added
 
-* keep own/local traffic out of Sentry replays + Vercel Analytics ([35f440b](https://github.com/jmanhart/trad-directory/commit/35f440b7d45d818e4c54a4fbd77c278a0f4464a4))
+* **map:** shop location pins across the US, with an admin geocoded flag ([#81](https://github.com/jmanhart/trad-directory/issues/81)) ([f82321f](https://github.com/jmanhart/trad-directory/commit/f82321f7465f56a00546b84aa793d97020b1db6b))
+* **map:** warm street basemap with labels that fade in on zoom ([#79](https://github.com/jmanhart/trad-directory/issues/79)) ([a93d1fb](https://github.com/jmanhart/trad-directory/commit/a93d1fbaec5b7e01664294bd8d43df25393a635f))
 * **map:** high-fidelity boundaries via self-hosted PMTiles vector tiles ([#78](https://github.com/jmanhart/trad-directory/issues/78)) ([45f95f7](https://github.com/jmanhart/trad-directory/commit/45f95f78c92e85aeb2e9594450cfc54b09dd3a32))
+* **map:** softer choropleth palette + restyled count markers ([#77](https://github.com/jmanhart/trad-directory/issues/77)) ([6576aa3](https://github.com/jmanhart/trad-directory/commit/6576aa3e0719b84f7ed22265df37d01a978e7c6e))
+* keep own/local traffic out of Sentry replays + Vercel Analytics ([35f440b](https://github.com/jmanhart/trad-directory/commit/35f440b7d45d818e4c54a4fbd77c278a0f4464a4))
 
 ## [0.6.0](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.5.0...tattoo-directory-v0.6.0) (2026-09-07)
 
