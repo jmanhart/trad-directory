@@ -3,6 +3,13 @@ import { Source, Layer } from "react-map-gl/maplibre";
 import { feature } from "topojson-client";
 import type { Topology } from "topojson-specification";
 import type { FeatureCollection, Geometry } from "geojson";
+import maplibregl from "maplibre-gl";
+import { Protocol } from "pmtiles";
+
+// Register the PMTiles protocol once so vector sources can load `pmtiles://`
+// URLs (self-hosted, token-free boundary tiles served via HTTP range requests).
+const pmtilesProtocol = new Protocol();
+maplibregl.addProtocol("pmtiles", pmtilesProtocol.tile);
 
 // Shared map primitives used by both the full MapView (/map) and the scoped
 // SearchResultMapPreview (search results). Keeping these in one module avoids
@@ -10,6 +17,8 @@ import type { FeatureCollection, Geometry } from "geojson";
 
 export const WORLD_GEO_URL =
   "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json";
+// US states for the small non-interactive previews (MapBorders). The full
+// interactive /map uses a higher-fidelity PMTiles vector tileset instead.
 export const US_STATES_GEO_URL =
   "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
 export const CANADA_PROVINCES_GEO_URL = "/geo/canada-provinces.geojson";
