@@ -91,6 +91,8 @@ interface Shop {
   city_name?: string | null;
   state_name?: string | null;
   country_name?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 type TabType =
@@ -115,7 +117,8 @@ type ShopSortColumn =
   | "instagram_handle"
   | "location"
   | "address"
-  | "shop_artist_count";
+  | "shop_artist_count"
+  | "geocoded";
 type CitySortColumn =
   | "city_name"
   | "state"
@@ -642,6 +645,10 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
           bValue =
             artistCountByShop.get((b.shop_name || "").trim().toLowerCase()) || 0;
           break;
+        case "geocoded":
+          aValue = a.latitude != null && a.longitude != null ? 1 : 0;
+          bValue = b.latitude != null && b.longitude != null ? 1 : 0;
+          break;
         default:
           return 0;
       }
@@ -1165,6 +1172,12 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                       >
                         Artists {getSortIcon("shop_artist_count")}
                       </th>
+                      <th
+                        className={styles.sortableHeader}
+                        onClick={() => handleSort("geocoded")}
+                      >
+                        Geocoded {getSortIcon("geocoded")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1220,6 +1233,21 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                             {artistCountByShop.get(
                               (shop.shop_name || "").trim().toLowerCase()
                             ) || 0}
+                          </td>
+                          <td className={styles.numCell}>
+                            {shop.latitude != null &&
+                            shop.longitude != null ? (
+                              "Yes"
+                            ) : (
+                              <span
+                                style={{
+                                  color: "var(--color-error)",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                No
+                              </span>
+                            )}
                           </td>
                         </tr>
                       ))

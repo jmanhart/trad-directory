@@ -35,6 +35,8 @@ export default async function handler(req: any, res: any) {
         shop_name,
         instagram_handle,
         address,
+        latitude,
+        longitude,
         city: cities (
           city_name,
           state: states (state_name),
@@ -57,6 +59,8 @@ export default async function handler(req: any, res: any) {
       shop_name: shop.shop_name,
       instagram_handle: shop.instagram_handle || null,
       address: shop.address || null,
+      latitude: shop.latitude ?? null,
+      longitude: shop.longitude ?? null,
       city_name: Array.isArray(shop.city)
         ? shop.city[0]?.city_name
         : shop.city?.city_name || null,
