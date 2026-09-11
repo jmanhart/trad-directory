@@ -51,15 +51,17 @@ export const STATE_HAVING_COUNTRIES = new Set([
 // Panel-aware padding for map zoom/fit operations
 const PANEL_WIDTH = 400; // 340px panel + gap + breathing room
 
-// Artist-count -> red ramp for the choropleth country/state fills: more
-// artists = deeper red = more visual weight. Empty places fall back to gray.
+// Artist-count -> warm terracotta ramp for the choropleth country/state fills:
+// more artists = deeper/warmer = more visual weight. Muted + hue-shifted off the
+// app's error red (#d9534f) so density reads as "ink/heat", not "something broke".
+// Empty places fall back to gray.
 function redForArtistCount(count: number): string {
-  if (count >= 75) return "#9c0101";
-  if (count >= 40) return "#ac2015";
-  if (count >= 20) return "#c33f30";
-  if (count >= 8) return "#d9635a";
-  if (count >= 3) return "#e78980";
-  return "#f0a9a4";
+  if (count >= 75) return "#8f4a2e";
+  if (count >= 40) return "#b05f3c";
+  if (count >= 20) return "#c77a55";
+  if (count >= 8) return "#d99878";
+  if (count >= 3) return "#e8b9a3";
+  return "#f3d9cf";
 }
 
 function getMapPadding(opensPanel = true) {
@@ -348,7 +350,7 @@ const LoadingMarker = memo(function LoadingMarker({
           cx={size / 2}
           cy={size / 2}
           r={size / 2 - 2}
-          fill="var(--color-primary)"
+          fill="var(--map-marker-bg)"
           fillOpacity={0.5}
           stroke="var(--color-surface)"
           strokeWidth={1.5}
@@ -358,7 +360,7 @@ const LoadingMarker = memo(function LoadingMarker({
           y={size / 2}
           textAnchor="middle"
           dominantBaseline="central"
-          fill="var(--color-surface)"
+          fill="var(--map-marker-text)"
           fontSize={isMobile ? 9 : 8}
           fontWeight={600}
           style={{ pointerEvents: "none", userSelect: "none" }}
@@ -443,10 +445,10 @@ const CityMarker = memo(function CityMarker({
               r={halfPx}
               fill={
                 selected
-                  ? "var(--color-primary-hover)"
-                  : "var(--color-primary)"
+                  ? "var(--map-marker-bg-active)"
+                  : "var(--map-marker-bg)"
               }
-              fillOpacity={selected ? 1 : 0.85}
+              fillOpacity={1}
               stroke="var(--color-surface)"
               strokeWidth={1.5}
             />
@@ -455,7 +457,7 @@ const CityMarker = memo(function CityMarker({
               y={halfPx}
               textAnchor="middle"
               dominantBaseline="central"
-              fill="var(--color-surface)"
+              fill="var(--map-marker-text)"
               fontSize={fontSize}
               fontWeight={700}
               style={{ pointerEvents: "none", userSelect: "none" }}
@@ -534,8 +536,8 @@ const ClusterMarker = memo(function ClusterMarker({
               cx={r}
               cy={r}
               r={r}
-              fill="var(--color-primary)"
-              fillOpacity={0.85}
+              fill="var(--map-marker-bg)"
+              fillOpacity={1}
               stroke="var(--color-surface)"
               strokeWidth={1.5}
             />
@@ -544,7 +546,7 @@ const ClusterMarker = memo(function ClusterMarker({
               y={r}
               textAnchor="middle"
               dominantBaseline="central"
-              fill="var(--color-surface)"
+              fill="var(--map-marker-text)"
               fontSize={fontSize}
               fontWeight={700}
               style={{ pointerEvents: "none", userSelect: "none" }}

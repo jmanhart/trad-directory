@@ -111,11 +111,27 @@
   cursor: pointer;
 }
 
+.cityMarker:hover {
+  /* active: swap the marker token — the SVG fill + pulse ring both read it */
+  --map-marker-bg: var(--map-marker-bg-active);
+}
+
+/* Smooth the rest -> active color change */
+.cityMarker svg circle {
+  transition: fill 0.15s ease-out;
+}
+
 .cityDotWrapper {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.15s ease-out;
+}
+
+/* active: lift the pin on hover */
+.cityMarker:hover .cityDotWrapper {
+  transform: scale(1.12);
 }
 
 .tapTarget {
@@ -166,7 +182,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 2px solid var(--color-primary);
+  border: 2px solid var(--map-marker-bg-active);
   animation: pulse 2s ease-in-out infinite;
 }
 
