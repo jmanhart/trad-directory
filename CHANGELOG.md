@@ -14,6 +14,14 @@ From the next tagged release onward this file is maintained automatically by
 [Conventional Commits](https://www.conventionalcommits.org/) — do not hand-edit
 released sections.
 
+## [0.7.0](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.6.0...tattoo-directory-v0.7.0) (2026-09-11)
+
+
+### Added
+
+* keep own/local traffic out of Sentry replays + Vercel Analytics ([35f440b](https://github.com/jmanhart/trad-directory/commit/35f440b7d45d818e4c54a4fbd77c278a0f4464a4))
+* **map:** high-fidelity boundaries via self-hosted PMTiles vector tiles ([#78](https://github.com/jmanhart/trad-directory/issues/78)) ([45f95f7](https://github.com/jmanhart/trad-directory/commit/45f95f78c92e85aeb2e9594450cfc54b09dd3a32))
+
 ## [0.6.0](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.5.0...tattoo-directory-v0.6.0) (2026-09-07)
 
 
