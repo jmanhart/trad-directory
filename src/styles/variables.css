@@ -126,6 +126,13 @@
   --color-primary-hover: var(--red-300);
   --color-primary-soft: color-mix(in srgb, var(--red-300) 14%, white);
 
+  /* Map count markers (map-scoped, independent of brand red).
+     rest = deep warm red (legible on any fill, not the cool alarm oxblood);
+     active = brighter sienna (hover/selected, ignites + lifts). */
+  --map-marker-bg: #7a1f1a;
+  --map-marker-bg-active: #c2410c;
+  --map-marker-text: #ffffff;
+
   /* Status */
   --color-error: var(--red-300);
   --color-warning: var(--yellow-300);
