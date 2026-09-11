@@ -124,6 +124,11 @@
   transform: scale(1.12);
 }
 
+/* region-driven hover: lift the cluster dot when its whole region is hovered */
+.dotWrapperHovered {
+  transform: scale(1.12);
+}
+
 .tapTarget {
   position: absolute;
   top: 50%;

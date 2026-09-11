@@ -500,6 +500,8 @@ const ClusterMarker = memo(function ClusterMarker({
   onClick,
   onMouseEnter,
   onMouseLeave,
+  selected,
+  hovered,
 }: {
   cluster: Cluster;
   label?: string;
@@ -507,6 +509,8 @@ const ClusterMarker = memo(function ClusterMarker({
   onClick: (cluster: Cluster, e: React.MouseEvent) => void;
   onMouseEnter?: (cluster: Cluster, e: React.MouseEvent) => void;
   onMouseLeave?: () => void;
+  selected?: boolean;
+  hovered?: boolean;
 }) {
   const screenPx = getClusterSize(cluster.totalArtists, isMobile);
   const fontSize = isMobile ? 11 : 10;
@@ -534,7 +538,7 @@ const ClusterMarker = memo(function ClusterMarker({
         onMouseLeave={isMobile ? undefined : onMouseLeave}
       >
         <div
-          className={styles.cityDotWrapper}
+          className={`${styles.cityDotWrapper}${hovered ? " " + styles.dotWrapperHovered : ""}`}
           style={{ width: screenPx, height: screenPx }}
         >
           {isMobile && (
@@ -544,6 +548,12 @@ const ClusterMarker = memo(function ClusterMarker({
                 width: Math.max(40, screenPx),
                 height: Math.max(40, screenPx),
               }}
+            />
+          )}
+          {selected && (
+            <div
+              className={styles.pulseRing}
+              style={{ width: screenPx + 6, height: screenPx + 6 }}
             />
           )}
           <svg
@@ -1213,8 +1223,8 @@ function MapInner({
   );
 
   // Hover state for countries and states
-  const [hoveredCountryId, setHoveredCountryId] = useState<
-    number | null
+  const [hoveredCountryName, setHoveredCountryName] = useState<
+    string | null
   >(null);
   const [hoveredStateName, setHoveredStateName] = useState<
     string | null
@@ -1227,55 +1237,82 @@ function MapInner({
 
   const handleMapMouseMove = useCallback(
     (e: MapLayerMouseEvent) => {
-      if (e.features && e.features.length > 0) {
-        const feat = e.features[0];
-        // At city tier, ignore country fill hover — only city dots matter
-        if (
-          feat.layer?.id === "countries-fill" &&
-          tierRef.current === "city"
-        ) {
-          if (mapRef.current) {
-            mapRef.current.getCanvas().style.cursor = "";
-          }
-          setHoveredCountryId(null);
-          return;
-        }
-        if (
-          feat.layer?.id === "countries-fill" ||
-          feat.layer?.id === "states-fill"
-        ) {
-          if (mapRef.current) {
-            mapRef.current.getCanvas().style.cursor = "pointer";
-          }
-          if (feat.layer?.id === "states-fill") {
-            setHoveredStateName(
-              (feat.properties?.name as string) || null
-            );
-            setHoveredCountryId(null);
-          } else {
-            setHoveredCountryId(
-              feat.id != null ? (feat.id as number) : null
-            );
-            setHoveredStateName(null);
-          }
-        }
-      } else {
-        if (mapRef.current) {
-          mapRef.current.getCanvas().style.cursor = "";
-        }
-        setHoveredCountryId(null);
+      const clearHover = () => {
+        if (mapRef.current) mapRef.current.getCanvas().style.cursor = "";
+        setHoveredCountryName(null);
         setHoveredStateName(null);
+        if (tooltipDataRef.current) {
+          tooltipDataRef.current = null;
+          setTooltipData(null);
+        }
+      };
+      if (!e.features || e.features.length === 0) {
+        clearHover();
+        return;
+      }
+      const feat = e.features[0];
+      // At city tier, ignore country fill hover — only city dots matter
+      if (feat.layer?.id === "countries-fill" && tierRef.current === "city") {
+        clearHover();
+        return;
+      }
+      if (
+        feat.layer?.id === "countries-fill" ||
+        feat.layer?.id === "states-fill"
+      ) {
+        if (mapRef.current) {
+          mapRef.current.getCanvas().style.cursor = "pointer";
+        }
+        let cl: Cluster | undefined;
+        if (feat.layer?.id === "states-fill") {
+          const name = (feat.properties?.name as string) || null;
+          setHoveredStateName(name);
+          setHoveredCountryName(null);
+          cl = name ? stateClusters.find(c => c.name === name) : undefined;
+        } else {
+          const geoName = (feat.properties?.name as string) || "";
+          const dbName = REVERSE_COUNTRY_MAP[geoName] || geoName || null;
+          setHoveredCountryName(dbName);
+          setHoveredStateName(null);
+          cl = dbName
+            ? countryClusters.find(c => c.name === dbName) ||
+              continentClusters.find(c => c.name === dbName)
+            : undefined;
+        }
+        // Tooltip tracks the hovered region, but only when it has data
+        if (cl) {
+          if (tooltipDataRef.current?.name !== cl.name) {
+            const data = {
+              name: cl.name,
+              artistCount: cl.totalArtists,
+              shopCount: cl.totalShops,
+            };
+            tooltipDataRef.current = data;
+            setTooltipData(data);
+          }
+          if (tooltipRef.current && e.originalEvent) {
+            tooltipRef.current.style.left = `${e.originalEvent.clientX + 12}px`;
+            tooltipRef.current.style.top = `${e.originalEvent.clientY - 12}px`;
+          }
+        } else if (tooltipDataRef.current) {
+          tooltipDataRef.current = null;
+          setTooltipData(null);
+        }
       }
     },
-    []
+    [stateClusters, countryClusters, continentClusters]
   );
 
   const handleMapMouseLeave = useCallback(() => {
     if (mapRef.current) {
       mapRef.current.getCanvas().style.cursor = "";
     }
-    setHoveredCountryId(null);
+    setHoveredCountryName(null);
     setHoveredStateName(null);
+    if (tooltipDataRef.current) {
+      tooltipDataRef.current = null;
+      setTooltipData(null);
+    }
   }, []);
 
   const handleDotClick = useCallback(
@@ -1578,12 +1615,7 @@ function MapInner({
               type="line"
               paint={{
                 "line-color": "#ffffff",
-                "line-width": [
-                  "case",
-                  ["==", ["id"], hoveredCountryId ?? -1],
-                  1.5,
-                  0.5,
-                ] as unknown as number,
+                "line-width": 0.5,
               }}
               filter={["match", ["get", "name"], ["United States of America", "Canada", "Australia"], false, true]}
             />
@@ -1609,20 +1641,8 @@ function MapInner({
             type="line"
             source-layer="states"
             paint={{
-              "line-color": [
-                "case",
-                ["==", ["get", "name"], selectedStateName ?? ""],
-                "#5c0000",
-                "#ffffff",
-              ] as unknown as string,
-              "line-width": [
-                "case",
-                ["==", ["get", "name"], selectedStateName ?? ""],
-                3,
-                ["==", ["get", "name"], hoveredStateName ?? ""],
-                2,
-                0.3,
-              ] as unknown as number,
+              "line-color": "#ffffff",
+              "line-width": 0.3,
             }}
           />
         </Source>
@@ -1786,6 +1806,7 @@ function MapInner({
               cluster={cluster}
               label={cluster.name}
               isMobile={isMobile}
+              hovered={cluster.name === hoveredCountryName}
               onClick={
                 cluster.kind === "country"
                   ? handleCountryClusterClick
@@ -1808,6 +1829,7 @@ function MapInner({
               cluster={cluster}
               label={cluster.name}
               isMobile={isMobile}
+              hovered={cluster.name === hoveredCountryName}
               onClick={handleCountryClusterClick}
               onMouseEnter={
                 isMobile ? undefined : handleClusterEnter
@@ -1826,6 +1848,8 @@ function MapInner({
               cluster={cluster}
               label={cluster.name.split(",")[0]}
               isMobile={isMobile}
+              selected={cluster.name === selectedStateName}
+              hovered={cluster.name === hoveredStateName}
               onClick={handleStateClusterClick}
               onMouseEnter={
                 isMobile ? undefined : handleClusterEnter
