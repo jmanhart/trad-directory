@@ -586,8 +586,8 @@ const ClusterMarker = memo(function ClusterMarker({
 });
 
 // Inner component with map logic
-// Shop marker — a distinct location pin (vs the artist-count circles) that
-// drops at a shop's geocoded address when zoomed into a city.
+// Shop marker — a small red dot at a shop's geocoded address (vs the
+// artist-count circles), shown at city zoom.
 const ShopMarker = memo(function ShopMarker({
   shop,
   onClick,
@@ -596,7 +596,7 @@ const ShopMarker = memo(function ShopMarker({
   onClick: (shop: ShopPin) => void;
 }) {
   return (
-    <Marker longitude={shop.lng} latitude={shop.lat} anchor="bottom">
+    <Marker longitude={shop.lng} latitude={shop.lat} anchor="top" offset={[0, -7]}>
       <div
         className={styles.cityMarker}
         onClick={e => {
@@ -605,18 +605,19 @@ const ShopMarker = memo(function ShopMarker({
         }}
       >
         <svg
-          width={20}
-          height={24}
-          viewBox="0 0 24 24"
+          width={14}
+          height={14}
+          viewBox="0 0 14 14"
           style={{ overflow: "visible" }}
         >
-          <path
-            d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+          <circle
+            cx={7}
+            cy={7}
+            r={5}
             fill="var(--map-shop-bg)"
             stroke="var(--color-surface)"
             strokeWidth={1.5}
           />
-          <circle cx={12} cy={9} r={3} fill="var(--color-surface)" />
         </svg>
         <span className={styles.cityLabel}>{shop.shopName}</span>
       </div>
