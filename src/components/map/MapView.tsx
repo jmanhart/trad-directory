@@ -467,11 +467,7 @@ const CityMarker = memo(function CityMarker({
               cx={halfPx}
               cy={halfPx}
               r={halfPx}
-              fill={
-                selected
-                  ? "var(--map-marker-bg-active)"
-                  : "var(--map-marker-bg)"
-              }
+              fill="var(--map-marker-bg)"
               fillOpacity={1}
               stroke="var(--color-surface)"
               strokeWidth={1.5}

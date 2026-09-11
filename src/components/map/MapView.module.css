@@ -182,7 +182,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 2px solid var(--map-marker-bg-active);
+  border: 2px solid var(--color-primary);
   animation: pulse 2s ease-in-out infinite;
 }
 
