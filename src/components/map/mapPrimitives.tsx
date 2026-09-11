@@ -31,6 +31,7 @@ export const MAP_STYLE = {
   version: 8 as const,
   projection: { type: "globe" as const },
   sources: {},
+  glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
   layers: [
     {
       id: "background",

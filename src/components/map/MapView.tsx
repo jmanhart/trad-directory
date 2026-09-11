@@ -1652,6 +1652,46 @@ function MapInner({
               ] as unknown as number,
             }}
           />
+          {/* Place labels — surrounding towns/suburbs/neighborhoods for map
+              context (artist cities already get their own count pins). */}
+          <Layer
+            id="place-labels"
+            type="symbol"
+            source-layer="place"
+            filter={["match", ["get", "class"], ["town", "village", "suburb", "neighbourhood", "hamlet", "quarter"], true, false]}
+            layout={{
+              "text-field": ["coalesce", ["get", "name:en"], ["get", "name"]] as unknown as string,
+              "text-font": ["Noto Sans Regular"],
+              "text-size": ["interpolate", ["linear"], ["zoom"], 9, 10, 14, 14] as unknown as number,
+              "text-max-width": 7,
+              "text-padding": 4,
+            }}
+            paint={{
+              "text-color": "#6b5744",
+              "text-halo-color": "#f5efe9",
+              "text-halo-width": 1.3,
+              "text-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0, 10, 1] as unknown as number,
+            }}
+          />
+          {/* Street names — appear at street zoom, placed along the road line */}
+          <Layer
+            id="street-labels"
+            type="symbol"
+            source-layer="transportation_name"
+            filter={["match", ["get", "class"], ["primary", "secondary", "tertiary", "minor", "residential"], true, false]}
+            layout={{
+              "symbol-placement": "line",
+              "text-field": ["coalesce", ["get", "name:en"], ["get", "name"]] as unknown as string,
+              "text-font": ["Noto Sans Regular"],
+              "text-size": 11,
+            }}
+            paint={{
+              "text-color": "#8a7a68",
+              "text-halo-color": "#ffffff",
+              "text-halo-width": 1.2,
+              "text-opacity": ["interpolate", ["linear"], ["zoom"], 13, 0, 14, 1] as unknown as number,
+            }}
+          />
         </Source>
         )}
 
