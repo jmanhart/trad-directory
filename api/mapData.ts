@@ -115,7 +115,7 @@ export default async function handler(req: any, res: any) {
 
     // 3. Count artists per city via artist_location (paginated)
     const artistLocs = await fetchAll(
-      sb => sb.from("artist_location").select("artist_id, city_id"),
+      sb => sb.from("artist_location").select("artist_id, city_id, shop_id"),
       supabase
     );
 
@@ -141,6 +141,28 @@ export default async function handler(req: any, res: any) {
       shopCountMap.set(s.city_id, (shopCountMap.get(s.city_id) || 0) + 1);
     });
 
+    // Artists at each shop, and (per city) artists whose shop has a rendered
+    // pin. The city dot shows the remainder: artists not shown at any shop pin
+    // (shopless, or at a shop that isn't geocoded yet).
+    const geocodedShopIds = new Set<number>(
+      shops
+        .filter((s: any) => s.latitude != null && s.longitude != null)
+        .map((s: any) => s.id)
+    );
+    const shopArtistMap = new Map<number, Set<number>>();
+    const cityPinnedShopArtists = new Map<number, Set<number>>();
+    artistLocs.forEach((al: any) => {
+      if (al.shop_id == null) return;
+      if (!shopArtistMap.has(al.shop_id)) shopArtistMap.set(al.shop_id, new Set());
+      shopArtistMap.get(al.shop_id)!.add(al.artist_id);
+      if (geocodedShopIds.has(al.shop_id)) {
+        if (!cityPinnedShopArtists.has(al.city_id)) {
+          cityPinnedShopArtists.set(al.city_id, new Set());
+        }
+        cityPinnedShopArtists.get(al.city_id)!.add(al.artist_id);
+      }
+    });
+
     // Shops with geocoded coordinates get an individual map pin (drops in at
     // city zoom). Shops without coords (not yet backfilled) are omitted.
     const shopsWithCoords = shops
@@ -151,6 +173,7 @@ export default async function handler(req: any, res: any) {
         city_id: s.city_id,
         latitude: s.latitude,
         longitude: s.longitude,
+        artist_count: shopArtistMap.get(s.id)?.size || 0,
       }));
 
     // 5. Build response - only cities that have artists
@@ -164,6 +187,9 @@ export default async function handler(req: any, res: any) {
             : null;
         const artistCount = artistCountMap.get(city.id)?.size || 0;
         const shopCount = shopCountMap.get(city.id) || 0;
+        const pinnedShopArtists =
+          cityPinnedShopArtists.get(city.id)?.size || 0;
+        const unshoppedCount = artistCount - pinnedShopArtists;
 
         if (artistCount === 0) return null;
 
@@ -179,6 +205,7 @@ export default async function handler(req: any, res: any) {
           longitude: city.longitude,
           artist_count: artistCount,
           shop_count: shopCount,
+          unshopped_count: unshoppedCount,
         };
       })
       .filter(Boolean);

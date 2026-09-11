@@ -11,6 +11,7 @@ interface MapCity {
   longitude: number;
   artist_count: number;
   shop_count: number;
+  unshopped_count: number;
 }
 
 interface MapShop {
@@ -19,6 +20,7 @@ interface MapShop {
   city_id: number;
   latitude: number;
   longitude: number;
+  artist_count: number;
 }
 
 export interface ShopDot {
@@ -26,6 +28,7 @@ export interface ShopDot {
   shopName: string;
   lat: number;
   lng: number;
+  artistCount: number;
 }
 
 // Session-level cache: /api/mapData is the sole geo source and rarely changes,
@@ -48,12 +51,14 @@ async function loadMapData() {
       lng: c.longitude,
       artistCount: c.artist_count,
       shopCount: c.shop_count,
+      unshoppedCount: c.unshopped_count,
     }));
     const shopDots: ShopDot[] = (data.shops || []).map((s: MapShop) => ({
       id: s.id,
       shopName: s.shop_name,
       lat: s.latitude,
       lng: s.longitude,
+      artistCount: s.artist_count,
     }));
     cache = { cityDots, shopDots };
     return cache;
