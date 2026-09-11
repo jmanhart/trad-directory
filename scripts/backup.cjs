@@ -15,7 +15,12 @@ const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
 
-require("dotenv").config();
+// Load env from .env.local first (holds the prod SUPABASE_URL / SERVICE_KEY,
+// gitignored), then .env as a fallback. dotenv won't override already-set vars,
+// and a missing file is a harmless no-op.
+const dotenv = require("dotenv");
+dotenv.config({ path: path.resolve(__dirname, "..", ".env.local") });
+dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
 
 const TABLES = [
   "countries",
