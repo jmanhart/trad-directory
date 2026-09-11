@@ -16,11 +16,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import {
   MAP_STYLE,
   WORLD_GEO_URL,
-  US_STATES_GEO_URL,
-  CANADA_PROVINCES_GEO_URL,
-  AUSTRALIA_STATES_GEO_URL,
   useGeoJSON,
-  useGeoJSONFile,
 } from "./mapPrimitives";
 import type { MapLayerMouseEvent, ViewStateChangeEvent } from "react-map-gl";
 import useIsMobile from "../../hooks/useIsMobile";
@@ -649,22 +645,21 @@ function MapInner({
 
   // Load GeoJSON data
   const worldGeoJSON = useGeoJSON(WORLD_GEO_URL, "countries");
-  const usStatesGeoJSON = useGeoJSON(US_STATES_GEO_URL, "states");
-  const caProvincesGeoJSON = useGeoJSONFile(CANADA_PROVINCES_GEO_URL);
-  const auStatesGeoJSON = useGeoJSONFile(AUSTRALIA_STATES_GEO_URL);
-
-  // US states + Canada provinces + Australia states share one polygon layer.
-  // The choropleth fill keys off the feature name (unique across all three),
-  // so every region colors by its own artist count.
-  const allStatesGeoJSON = useMemo(() => {
-    const features = [
-      usStatesGeoJSON,
-      caProvincesGeoJSON,
-      auStatesGeoJSON,
-    ].flatMap(fc => (fc ? fc.features : []));
-    if (features.length === 0) return null;
-    return { type: "FeatureCollection" as const, features };
-  }, [usStatesGeoJSON, caProvincesGeoJSON, auStatesGeoJSON]);
+  // State/province boundaries render from a self-hosted PMTiles vector tileset
+  // (US states + Canada + Australia, one "states" layer) — per-zoom LOD keeps
+  // coastlines crisp on zoom-in while only loading visible tiles. Choropleth
+  // still keys off the feature `name`. Drill-in fitBounds uses a tiny
+  // precomputed name->bbox lookup, since tile geometry is clipped client-side.
+  const [stateBounds, setStateBounds] = useState<Record<
+    string,
+    [number, number, number, number]
+  > | null>(null);
+  useEffect(() => {
+    fetch("/geo/state-bounds.json")
+      .then(r => r.json())
+      .then(setStateBounds)
+      .catch(() => {});
+  }, []);
 
   // Minimum tier override — when set, tier won't drop below this level
   // Used when fitBounds zooms to a level below the desired tier (e.g. country click)
@@ -782,34 +777,13 @@ function MapInner({
         minLat = Infinity,
         maxLat = -Infinity;
 
-      const feat = allStatesGeoJSON?.features.find(
-        f => f.properties?.name === stateName
-      );
+      const bbox = stateBounds?.[stateName];
 
-      if (feat) {
-        // Walk all polygon coordinates to find the bounding box.
-        const walkCoords = (coords: unknown) => {
-          if (
-            Array.isArray(coords) &&
-            coords.length >= 2 &&
-            typeof coords[0] === "number"
-          ) {
-            const [lng, lat] = coords as [number, number];
-            if (lng < minLng) minLng = lng;
-            if (lng > maxLng) maxLng = lng;
-            if (lat < minLat) minLat = lat;
-            if (lat > maxLat) maxLat = lat;
-          } else if (Array.isArray(coords)) {
-            for (const c of coords) walkCoords(c);
-          }
-        };
-        const geom = feat.geometry;
-        if (geom && "coordinates" in geom) {
-          walkCoords(geom.coordinates);
-        }
+      if (bbox) {
+        [minLng, minLat, maxLng, maxLat] = bbox;
       } else {
-        // No polygon — derive bounds from the state's city dots, padded so a
-        // single city or tight cluster doesn't over-zoom.
+        // No precomputed bounds — derive from the state's city dots, padded so
+        // a single city or tight cluster doesn't over-zoom.
         const dots = cityData.filter(d => d.stateName === stateName);
         if (dots.length === 0) return;
         dots.forEach(d => {
@@ -826,7 +800,7 @@ function MapInner({
 
       if (!isFinite(minLng)) return;
 
-      const fitOpts = feat
+      const fitOpts = bbox
         ? { padding: getMapPadding(), duration: 1000 }
         : { padding: getMapPadding(), duration: 1000, maxZoom: ZOOM_CITY + 1 };
       mapRef.current.fitBounds(
@@ -844,7 +818,7 @@ function MapInner({
       const estimatedZoom = Math.log2(360 / span) + 0.5;
       syncTier(Math.max(estimatedZoom, ZOOM_CITY));
     },
-    [allStatesGeoJSON, cityData, syncTier]
+    [stateBounds, cityData, syncTier]
   );
 
   // Tier 1: Continent clusters. Continents that contain a state-having country
@@ -1532,45 +1506,45 @@ function MapInner({
 
         {/* State / province borders: US states, Canada provinces, Australia
             states — one layer, choropleth-filled by artist count. */}
-        {allStatesGeoJSON && (
-          <Source
-            id="us-states"
-            type="geojson"
-            data={allStatesGeoJSON}
-            promoteId="name"
-          >
-            <Layer
-              id="states-fill"
-              type="fill"
-              paint={statesFillPaint}
-            />
-            <Layer
-              id="states-line"
-              type="line"
-              paint={{
-                "line-color": [
-                  "case",
-                  ["==", ["get", "name"], selectedStateName ?? ""],
-                  "#5c0000",
-                  "#ffffff",
-                ] as unknown as string,
-                "line-width": [
-                  "case",
-                  ["==", ["get", "name"], selectedStateName ?? ""],
-                  3,
-                  ["==", ["get", "name"], hoveredStateName ?? ""],
-                  2,
-                  0.3,
-                ] as unknown as number,
-              }}
-            />
-          </Source>
-        )}
+        <Source
+          id="us-states"
+          type="vector"
+          url="pmtiles:///geo/states.pmtiles"
+          promoteId="name"
+        >
+          <Layer
+            id="states-fill"
+            type="fill"
+            source-layer="states"
+            paint={statesFillPaint}
+          />
+          <Layer
+            id="states-line"
+            type="line"
+            source-layer="states"
+            paint={{
+              "line-color": [
+                "case",
+                ["==", ["get", "name"], selectedStateName ?? ""],
+                "#5c0000",
+                "#ffffff",
+              ] as unknown as string,
+              "line-width": [
+                "case",
+                ["==", ["get", "name"], selectedStateName ?? ""],
+                3,
+                ["==", ["get", "name"], hoveredStateName ?? ""],
+                2,
+                0.3,
+              ] as unknown as number,
+            }}
+          />
+        </Source>
 
         {/* Limited road network from open vector tiles (OpenFreeMap, keyless):
             motorway + trunk, solid light gray with round joins so overlapping
             segments read as one smooth color (no opacity stacking). */}
-        {worldGeoJSON && usStatesGeoJSON && (
+        {worldGeoJSON && (
         <Source
           id="osm-vector"
           type="vector"
