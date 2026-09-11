@@ -284,6 +284,13 @@ Object.entries(COUNTRY_NAME_MAP).forEach(([db, geo]) => {
   if (!(geo in REVERSE_COUNTRY_MAP)) REVERSE_COUNTRY_MAP[geo] = db;
 });
 
+export interface ShopPin {
+  id: number;
+  shopName: string;
+  lat: number;
+  lng: number;
+}
+
 interface MapViewProps {
   cityData: CityDot[];
   loading?: boolean;
@@ -297,6 +304,13 @@ interface MapViewProps {
   onBackgroundClick?: () => void;
   /** Whether any detail panel/card is currently open (drives recenter-on-close). */
   panelOpen?: boolean;
+  /** Shops with geocoded coordinates — dropped as pins at city zoom. */
+  shops?: ShopPin[];
+  onShopClick?: (shop: {
+    id: number;
+    shop_name: string;
+    slug?: string | null;
+  }) => void;
 }
 
 // Placeholder dots shown while data is loading
@@ -572,6 +586,45 @@ const ClusterMarker = memo(function ClusterMarker({
 });
 
 // Inner component with map logic
+// Shop marker — a small red dot at a shop's geocoded address (vs the
+// artist-count circles), shown at city zoom.
+const ShopMarker = memo(function ShopMarker({
+  shop,
+  onClick,
+}: {
+  shop: ShopPin;
+  onClick: (shop: ShopPin) => void;
+}) {
+  return (
+    <Marker longitude={shop.lng} latitude={shop.lat} anchor="top" offset={[0, -7]}>
+      <div
+        className={styles.cityMarker}
+        onClick={e => {
+          e.stopPropagation();
+          onClick(shop);
+        }}
+      >
+        <svg
+          width={14}
+          height={14}
+          viewBox="0 0 14 14"
+          style={{ overflow: "visible" }}
+        >
+          <circle
+            cx={7}
+            cy={7}
+            r={5}
+            fill="var(--map-shop-bg)"
+            stroke="var(--color-surface)"
+            strokeWidth={1.5}
+          />
+        </svg>
+        <span className={styles.cityLabel}>{shop.shopName}</span>
+      </div>
+    </Marker>
+  );
+});
+
 function MapInner({
   cityData,
   loading,
@@ -584,6 +637,8 @@ function MapInner({
   flyToKey = 0,
   onBackgroundClick,
   panelOpen,
+  shops = [],
+  onShopClick,
 }: MapViewProps) {
   const isMobile = useIsMobile();
   const mapRef = useRef<MapRef>(null);
@@ -1658,7 +1713,7 @@ function MapInner({
             id="place-labels"
             type="symbol"
             source-layer="place"
-            filter={["match", ["get", "class"], ["town", "village", "suburb", "neighbourhood", "hamlet", "quarter"], true, false]}
+            filter={["match", ["get", "class"], ["city", "town"], true, false]}
             layout={{
               "text-field": ["coalesce", ["get", "name:en"], ["get", "name"]] as unknown as string,
               "text-font": ["Noto Sans Regular"],
@@ -1784,6 +1839,15 @@ function MapInner({
               />
             );
           })}
+        {/* Shop pins — individual shops with geocoded coordinates */}
+        {tier === "city" &&
+          shops.map(shop => (
+            <ShopMarker
+              key={`shop-${shop.id}`}
+              shop={shop}
+              onClick={s => onShopClick?.({ id: s.id, shop_name: s.shopName })}
+            />
+          ))}
       </MapGL>
 
       {!isMobile && tooltipData && (

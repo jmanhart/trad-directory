@@ -13,18 +13,33 @@ interface MapCity {
   shop_count: number;
 }
 
+interface MapShop {
+  id: number;
+  shop_name: string;
+  city_id: number;
+  latitude: number;
+  longitude: number;
+}
+
+export interface ShopDot {
+  id: number;
+  shopName: string;
+  lat: number;
+  lng: number;
+}
+
 // Session-level cache: /api/mapData is the sole geo source and rarely changes,
 // so both /map and the search-results preview share a single fetch per session.
-let cache: CityDot[] | null = null;
-let inflight: Promise<CityDot[]> | null = null;
+let cache: { cityDots: CityDot[]; shopDots: ShopDot[] } | null = null;
+let inflight: Promise<{ cityDots: CityDot[]; shopDots: ShopDot[] }> | null = null;
 
-async function loadCityDots(): Promise<CityDot[]> {
+async function loadMapData() {
   if (cache) return cache;
   if (inflight) return inflight;
   inflight = (async () => {
     const res = await fetch("/api/mapData");
     const data = await res.json();
-    const dots: CityDot[] = (data.cities || []).map((c: MapCity) => ({
+    const cityDots: CityDot[] = (data.cities || []).map((c: MapCity) => ({
       cityName: c.city_name,
       stateName: c.state_name,
       countryName: c.country_name,
@@ -34,8 +49,14 @@ async function loadCityDots(): Promise<CityDot[]> {
       artistCount: c.artist_count,
       shopCount: c.shop_count,
     }));
-    cache = dots;
-    return dots;
+    const shopDots: ShopDot[] = (data.shops || []).map((s: MapShop) => ({
+      id: s.id,
+      shopName: s.shop_name,
+      lat: s.latitude,
+      lng: s.longitude,
+    }));
+    cache = { cityDots, shopDots };
+    return cache;
   })();
   try {
     return await inflight;
@@ -45,24 +66,30 @@ async function loadCityDots(): Promise<CityDot[]> {
 }
 
 /**
- * Shared accessor for the map city dots (coordinates + per-city counts).
- * Returns cached data synchronously on subsequent mounts within a session.
+ * Shared accessor for map data: city dots (coords + per-city counts) and
+ * shop pins (shops with geocoded coordinates). Cached per session.
  */
-export function useMapCityDots(): { cityDots: CityDot[]; loading: boolean } {
-  const [cityDots, setCityDots] = useState<CityDot[]>(cache || []);
+export function useMapCityDots(): {
+  cityDots: CityDot[];
+  shopDots: ShopDot[];
+  loading: boolean;
+} {
+  const [data, setData] = useState<{ cityDots: CityDot[]; shopDots: ShopDot[] }>(
+    cache || { cityDots: [], shopDots: [] }
+  );
   const [loading, setLoading] = useState(!cache);
 
   useEffect(() => {
     if (cache) {
-      setCityDots(cache);
+      setData(cache);
       setLoading(false);
       return;
     }
     let cancelled = false;
-    loadCityDots()
-      .then(dots => {
+    loadMapData()
+      .then(d => {
         if (cancelled) return;
-        setCityDots(dots);
+        setData(d);
         setLoading(false);
       })
       .catch(err => {
@@ -74,5 +101,5 @@ export function useMapCityDots(): { cityDots: CityDot[]; loading: boolean } {
     };
   }, []);
 
-  return { cityDots, loading };
+  return { cityDots: data.cityDots, shopDots: data.shopDots, loading };
 }

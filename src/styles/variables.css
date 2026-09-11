@@ -132,6 +132,7 @@
   --map-marker-bg: #7a1f1a;
   --map-marker-bg-active: #c2410c;
   --map-marker-text: #ffffff;
+  --map-shop-bg: #c0392b; /* shop location dots — red */
 
   /* Status */
   --color-error: var(--red-300);

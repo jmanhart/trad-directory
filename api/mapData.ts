@@ -129,7 +129,10 @@ export default async function handler(req: any, res: any) {
 
     // 4. Count shops per city (paginated)
     const shops = await fetchAll(
-      sb => sb.from("tattoo_shops").select("id, city_id"),
+      sb =>
+        sb
+          .from("tattoo_shops")
+          .select("id, shop_name, city_id, latitude, longitude"),
       supabase
     );
 
@@ -137,6 +140,18 @@ export default async function handler(req: any, res: any) {
     shops.forEach((s: any) => {
       shopCountMap.set(s.city_id, (shopCountMap.get(s.city_id) || 0) + 1);
     });
+
+    // Shops with geocoded coordinates get an individual map pin (drops in at
+    // city zoom). Shops without coords (not yet backfilled) are omitted.
+    const shopsWithCoords = shops
+      .filter((s: any) => s.latitude != null && s.longitude != null)
+      .map((s: any) => ({
+        id: s.id,
+        shop_name: s.shop_name,
+        city_id: s.city_id,
+        latitude: s.latitude,
+        longitude: s.longitude,
+      }));
 
     // 5. Build response - only cities that have artists
     const results = cities
@@ -168,7 +183,7 @@ export default async function handler(req: any, res: any) {
       })
       .filter(Boolean);
 
-    res.status(200).json({ cities: results });
+    res.status(200).json({ cities: results, shops: shopsWithCoords });
   } catch (error) {
     console.error("Unexpected error:", error);
     res.status(500).json({ error: "Internal server error" });
