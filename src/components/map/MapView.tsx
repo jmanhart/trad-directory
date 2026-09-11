@@ -1712,7 +1712,7 @@ function MapInner({
             id="place-labels"
             type="symbol"
             source-layer="place"
-            filter={["match", ["get", "class"], ["town", "village", "suburb", "neighbourhood", "hamlet", "quarter"], true, false]}
+            filter={["match", ["get", "class"], ["city", "town"], true, false]}
             layout={{
               "text-field": ["coalesce", ["get", "name:en"], ["get", "name"]] as unknown as string,
               "text-font": ["Noto Sans Regular"],
