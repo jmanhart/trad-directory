@@ -1890,7 +1890,9 @@ function MapInner({
         onMouseLeave={handleMapMouseLeave}
         interactiveLayerIds={
           USE_DOT_DENSITY
-            ? ["clusters", "unclustered", "shop-clusters", "shop-unclustered"]
+            ? zoom >= 9.5
+              ? ["clusters", "unclustered", "shop-clusters", "shop-unclustered"]
+              : ["clusters", "unclustered"]
             : tier === "city"
               ? ["states-fill"]
               : ["countries-fill", "states-fill"]
