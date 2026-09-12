@@ -1240,12 +1240,10 @@ export default function AdminAllData({ embeddedTab }: AdminAllDataProps = {}) {
                               "Yes"
                             ) : (
                               <span
-                                style={{
-                                  color: "var(--color-error)",
-                                  fontWeight: 600,
-                                }}
+                                className={styles.statusBadge}
+                                data-status="broken"
                               >
-                                No
+                                Not geocoded
                               </span>
                             )}
                           </td>
