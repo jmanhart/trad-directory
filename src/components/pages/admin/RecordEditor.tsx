@@ -32,6 +32,7 @@ import type { City } from "./adminTypes";
 import { getCityDisplayName } from "./adminUtils";
 import styles from "./AdminAllData.module.css";
 import AdminDetailPanel from "./AdminDetailPanel";
+import AddressGeocodeField from "./AddressGeocodeField";
 import { StatusPill, fmtHealthDate } from "./StatusPill";
 
 interface ArtistFormData {
@@ -610,6 +611,9 @@ export default function RecordEditor({
     const c = cities.find(x => String(x.id) === id);
     return c ? getCityDisplayName(c) : "";
   };
+  const shopCity = shopFormData
+    ? (cities.find(c => String(c.id) === shopFormData.city_id) ?? null)
+    : null;
   const shopLabel = (id: string) =>
     shops.find(x => String(x.id) === id)?.shop_name || "";
   const stateLabel = (id: string) =>
@@ -1105,18 +1109,14 @@ export default function RecordEditor({
                         />
                       </FormGroup>
 
-                      <FormGroup>
-                        <Label htmlFor="shop_address">Address</Label>
-                        <Input
-                          type="text"
-                          id="shop_address"
-                          value={shopFormData.address}
-                          onChange={e =>
-                            handleShopFormChange("address", e.target.value)
-                          }
-                          placeholder="Street address"
-                        />
-                      </FormGroup>
+                      <AddressGeocodeField
+                        id="shop_address"
+                        value={shopFormData.address}
+                        onChange={v => handleShopFormChange("address", v)}
+                        cityName={shopCity?.city_name ?? null}
+                        stateName={shopCity?.state_name ?? null}
+                        countryName={shopCity?.country_name ?? null}
+                      />
 
                       <FormGroup>
                         <Label htmlFor="shop_contact">Contact</Label>
