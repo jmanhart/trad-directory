@@ -352,6 +352,39 @@ function getClusterSize(
   return minPx + t * (maxPx - minPx);
 }
 
+// SPIKE: proportional-symbol / dot-density rendering. When true, the choropleth
+// fills are hidden and city points render as a single clustered GeoJSON source
+// (circles sized + colored by artist count) instead of the tier HTML markers.
+const USE_DOT_DENSITY = true;
+
+// Perceptual (~sqrt) radius ramp — area grows with count but with diminishing
+// returns so a mega-cluster doesn't swallow the map. `prop` is the summed count
+// field ("artists" on clusters, "artistCount" on individual city points).
+const dotRadius = (prop: string) =>
+  [
+    "interpolate",
+    ["linear"],
+    ["sqrt", ["max", ["get", prop], 1]],
+    1, 7,
+    2.5, 11,
+    5, 16,
+    9, 22,
+    16, 30,
+    26, 40,
+  ] as unknown as number;
+
+// Subtle warm ramp: light terracotta -> burnt orange -> deep sienna as count rises.
+const dotColor = (prop: string) =>
+  [
+    "interpolate",
+    ["linear"],
+    ["get", prop],
+    1, "#e0a487",
+    8, "#d07a4e",
+    30, "#c2410c",
+    120, "#7a1f1a",
+  ] as unknown as string;
+
 // Memoized loading placeholder marker
 const LoadingMarker = memo(function LoadingMarker({
   continent,
@@ -1255,13 +1288,69 @@ function MapInner({
   // Handle clicks on the map layers (countries, states)
   const handleMapClick = useCallback(
     (e: MapLayerMouseEvent) => {
-      if (!e.features || e.features.length === 0) {
+      const feat = e.features?.[0];
+
+      // Dot-density: cluster click expands to the next zoom; city point opens
+      // the panel and fits the viewport to that city's shops.
+      if (feat?.layer?.id === "clusters") {
+        const clusterId = feat.properties?.cluster_id;
+        const geom = feat.geometry;
+        if (geom.type !== "Point") return;
+        const coords: [number, number] = [
+          geom.coordinates[0],
+          geom.coordinates[1],
+        ];
+        // maplibre types getSource as the Source union; narrow to the clustered
+        // GeoJSON source's runtime clustering API.
+        const src = mapRef.current?.getSource("city-points") as
+          | { getClusterExpansionZoom: (id: number) => Promise<number> }
+          | undefined;
+        if (src && clusterId != null) {
+          src
+            .getClusterExpansionZoom(clusterId)
+            .then(z => {
+              mapRef.current?.easeTo({
+                center: coords,
+                zoom: z + 0.3,
+                duration: 600,
+              });
+              syncTier(z + 0.3);
+            })
+            .catch(() => {});
+        }
+        return;
+      }
+      if (feat?.layer?.id === "unclustered") {
+        const p = feat.properties || {};
+        const geom = feat.geometry;
+        if (geom.type !== "Point") return;
+        const coords: [number, number] = [
+          geom.coordinates[0],
+          geom.coordinates[1],
+        ];
+        const city: CityDot = {
+          id: p.cityId,
+          cityName: p.cityName,
+          stateName: p.stateName ?? null,
+          countryName: p.countryName ?? null,
+          continent: null,
+          lat: coords[1],
+          lng: coords[0],
+          artistCount: p.artistCount,
+          shopCount: p.shopCount,
+          unshoppedCount: 0,
+        };
+        fitCityShops(city.id, coords);
+        onCityClick?.(city);
+        return;
+      }
+
+      if (!feat) {
         setSelectedStateName(null);
         onBackgroundClick?.();
         return;
       }
 
-      const feat = e.features[0];
       if (feat.layer?.id === "countries-fill") {
         setSelectedStateName(null);
         const geoName = feat.properties?.name || "";
@@ -1275,7 +1364,15 @@ function MapInner({
         }
       }
     },
-    [handleCountryClick, onStateClick, onBackgroundClick, flyToStateBounds]
+    [
+      handleCountryClick,
+      onStateClick,
+      onBackgroundClick,
+      flyToStateBounds,
+      fitCityShops,
+      onCityClick,
+      syncTier,
+    ]
   );
 
   // Hover state for countries and states
@@ -1307,6 +1404,39 @@ function MapInner({
         return;
       }
       const feat = e.features[0];
+      // Dot-density hover: pointer + tooltip on clusters and city points.
+      if (feat.layer?.id === "clusters" || feat.layer?.id === "unclustered") {
+        if (mapRef.current) mapRef.current.getCanvas().style.cursor = "pointer";
+        const p = feat.properties || {};
+        const data =
+          feat.layer.id === "clusters"
+            ? {
+                name: "",
+                stateName: null,
+                countryName: null,
+                artistCount: p.artists || 0,
+                shopCount: 0,
+              }
+            : {
+                name: p.cityName,
+                stateName: p.stateName ?? null,
+                countryName: p.countryName ?? null,
+                artistCount: p.artistCount || 0,
+                shopCount: p.shopCount || 0,
+              };
+        if (
+          tooltipDataRef.current?.name !== data.name ||
+          tooltipDataRef.current?.artistCount !== data.artistCount
+        ) {
+          tooltipDataRef.current = data;
+          setTooltipData(data);
+        }
+        if (tooltipRef.current && e.originalEvent) {
+          tooltipRef.current.style.left = `${e.originalEvent.clientX + 12}px`;
+          tooltipRef.current.style.top = `${e.originalEvent.clientY - 12}px`;
+        }
+        return;
+      }
       // At city tier, ignore country fill hover — only city dots matter
       if (feat.layer?.id === "countries-fill" && tierRef.current === "city") {
         clearHover();
@@ -1556,18 +1686,43 @@ function MapInner({
   // street basemap reads through at city level.
   const countryFillPaint = useMemo(
     () => ({
-      "fill-color": countriesFillColor,
-      "fill-opacity": FILL_OPACITY_BY_ZOOM,
+      "fill-color": USE_DOT_DENSITY ? "#e7ded2" : countriesFillColor,
+      "fill-opacity": USE_DOT_DENSITY ? 0.9 : FILL_OPACITY_BY_ZOOM,
     }),
     [countriesFillColor]
   );
 
   const statesFillPaint = useMemo(
     () => ({
-      "fill-color": statesFillColor,
-      "fill-opacity": FILL_OPACITY_BY_ZOOM,
+      "fill-color": USE_DOT_DENSITY ? "#e7ded2" : statesFillColor,
+      "fill-opacity": USE_DOT_DENSITY ? 0.9 : FILL_OPACITY_BY_ZOOM,
     }),
     [statesFillColor]
+  );
+
+  // SPIKE: city points as a single clustered GeoJSON source (dot-density view).
+  const cityGeoJSON = useMemo(
+    () => ({
+      type: "FeatureCollection" as const,
+      features: cityData
+        .filter(d => d.artistCount > 0)
+        .map(d => ({
+          type: "Feature" as const,
+          geometry: {
+            type: "Point" as const,
+            coordinates: [d.lng, d.lat],
+          },
+          properties: {
+            cityId: d.id ?? -1,
+            cityName: d.cityName,
+            stateName: d.stateName,
+            countryName: d.countryName,
+            artistCount: d.artistCount,
+            shopCount: d.shopCount,
+          },
+        })),
+    }),
+    [cityData]
   );
 
   return (
@@ -1631,9 +1786,11 @@ function MapInner({
         onMouseMove={handleMapMouseMove}
         onMouseLeave={handleMapMouseLeave}
         interactiveLayerIds={
-          tier === "city"
-            ? ["states-fill"]
-            : ["countries-fill", "states-fill"]
+          USE_DOT_DENSITY
+            ? ["clusters", "unclustered"]
+            : tier === "city"
+              ? ["states-fill"]
+              : ["countries-fill", "states-fill"]
         }
         scrollZoom={{
           around: "center",
@@ -1836,6 +1993,73 @@ function MapInner({
         </Source>
         )}
 
+        {/* SPIKE: dot-density — all city points in one clustered GeoJSON source.
+            Circles sized + colored by artist count; clusters aggregate by
+            proximity and split into individual city dots as you zoom. */}
+        {USE_DOT_DENSITY && cityData.length > 0 && (
+          <Source
+            id="city-points"
+            type="geojson"
+            data={cityGeoJSON}
+            cluster
+            clusterMaxZoom={12}
+            clusterRadius={48}
+            clusterProperties={{ artists: ["+", ["get", "artistCount"]] }}
+          >
+            <Layer
+              id="clusters"
+              type="circle"
+              filter={["has", "point_count"]}
+              paint={{
+                "circle-radius": dotRadius("artists"),
+                "circle-color": dotColor("artists"),
+                "circle-opacity": 0.9,
+                "circle-stroke-width": 1.5,
+                "circle-stroke-color": "#ffffff",
+              }}
+            />
+            <Layer
+              id="cluster-count"
+              type="symbol"
+              filter={["has", "point_count"]}
+              layout={{
+                "text-field": ["to-string", ["get", "artists"]] as unknown as string,
+                "text-font": ["Noto Sans Regular"],
+                "text-size": 11,
+                "text-allow-overlap": true,
+              }}
+              paint={{ "text-color": "#ffffff" }}
+            />
+            <Layer
+              id="unclustered"
+              type="circle"
+              filter={["!", ["has", "point_count"]]}
+              paint={{
+                "circle-radius": dotRadius("artistCount"),
+                "circle-color": dotColor("artistCount"),
+                "circle-opacity": 0.9,
+                "circle-stroke-width": 1.5,
+                "circle-stroke-color": "#ffffff",
+              }}
+            />
+            <Layer
+              id="unclustered-count"
+              type="symbol"
+              filter={["!", ["has", "point_count"]]}
+              layout={{
+                "text-field": ["to-string", ["get", "artistCount"]] as unknown as string,
+                "text-font": ["Noto Sans Regular"],
+                "text-size": 10,
+                "text-allow-overlap": true,
+              }}
+              paint={{ "text-color": "#ffffff" }}
+            />
+          </Source>
+        )}
+
+        {!USE_DOT_DENSITY && (
+          <>
+
         {/* Tier 1: Continent clusters (or loading placeholders) */}
         {tier === "continent" &&
           (loading || cityData.length === 0) &&
@@ -1930,6 +2154,8 @@ function MapInner({
               />
             );
           })}
+          </>
+        )}
         {/* Shop pins — individual shops with geocoded coordinates */}
         {tier === "city" &&
           shops.map(shop => (
