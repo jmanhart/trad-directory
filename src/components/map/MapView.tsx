@@ -2172,8 +2172,10 @@ function MapInner({
                 ] as unknown as string,
                 "text-font": ["Noto Sans Regular"],
                 "text-size": 11,
-                "text-anchor": "top",
-                "text-offset": [0, 1.1],
+                "text-variable-anchor": ["top", "bottom", "left", "right"],
+                "text-radial-offset": 1.1,
+                "text-justify": "auto",
+                "text-padding": 1,
                 "symbol-sort-key": ["-", 0, ["get", "artists"]] as unknown as number,
               }}
               paint={{
@@ -2215,8 +2217,10 @@ function MapInner({
                 "text-field": ["get", "cityName"] as unknown as string,
                 "text-font": ["Noto Sans Regular"],
                 "text-size": 10,
-                "text-anchor": "top",
-                "text-offset": [0, 1.0],
+                "text-variable-anchor": ["top", "bottom", "left", "right"],
+                "text-radial-offset": 0.9,
+                "text-justify": "auto",
+                "text-padding": 1,
                 "symbol-sort-key": ["-", 0, ["get", "artistCount"]] as unknown as number,
               }}
               paint={{
