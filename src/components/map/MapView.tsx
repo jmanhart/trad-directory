@@ -379,11 +379,21 @@ const dotColor = (prop: string) =>
     "interpolate",
     ["linear"],
     ["get", prop],
-    1, "#e0a487",
-    8, "#d07a4e",
-    30, "#c2410c",
-    120, "#7a1f1a",
+    1, "#f0cdb8",
+    5, "#e0a487",
+    15, "#d07a4e",
+    35, "#c2410c",
+    70, "#9a3412",
+    140, "#7a1f1a",
   ] as unknown as string;
+
+// Single-artist city dots fade out at continental zoom to cut low-signal noise.
+const FADE_SINGLES_OPACITY = [
+  "case",
+  ["<", ["get", "artistCount"], 2],
+  ["interpolate", ["linear"], ["zoom"], 4, 0, 6.5, 0.9],
+  0.9,
+] as unknown as number;
 
 // Memoized loading placeholder marker
 const LoadingMarker = memo(function LoadingMarker({
@@ -2003,8 +2013,33 @@ function MapInner({
             data={cityGeoJSON}
             cluster
             clusterMaxZoom={12}
-            clusterRadius={48}
-            clusterProperties={{ artists: ["+", ["get", "artistCount"]] }}
+            clusterRadius={34}
+            clusterProperties={
+              {
+                artists: ["+", ["get", "artistCount"]],
+                // Track the highest-count member so a cluster can label itself
+                // with its dominant metro. Packed "0042|City" (zero-padded count
+                // so string-max picks the biggest city); the label layer unpacks it.
+                dominant: [
+                  [
+                    "case",
+                    [">", ["get", "dominant"], ["accumulated"]],
+                    ["get", "dominant"],
+                    ["accumulated"],
+                  ],
+                  [
+                    "concat",
+                    [
+                      "slice",
+                      ["concat", "0000", ["to-string", ["get", "artistCount"]]],
+                      -4,
+                    ],
+                    "|",
+                    ["get", "cityName"],
+                  ],
+                ],
+              } as unknown as Record<string, unknown>
+            }
           >
             <Layer
               id="clusters"
@@ -2013,7 +2048,7 @@ function MapInner({
               paint={{
                 "circle-radius": dotRadius("artists"),
                 "circle-color": dotColor("artists"),
-                "circle-opacity": 0.9,
+                "circle-opacity": 0.92,
                 "circle-stroke-width": 1.5,
                 "circle-stroke-color": "#ffffff",
               }}
@@ -2031,13 +2066,34 @@ function MapInner({
               paint={{ "text-color": "#ffffff" }}
             />
             <Layer
+              id="cluster-label"
+              type="symbol"
+              filter={["has", "point_count"]}
+              layout={{
+                "text-field": [
+                  "slice",
+                  ["get", "dominant"],
+                  ["+", ["index-of", "|", ["get", "dominant"]], 1],
+                ] as unknown as string,
+                "text-font": ["Noto Sans Regular"],
+                "text-size": 11,
+                "text-anchor": "top",
+                "text-offset": [0, 1.1],
+              }}
+              paint={{
+                "text-color": "#5c4a3a",
+                "text-halo-color": "#f3efe9",
+                "text-halo-width": 1.4,
+              }}
+            />
+            <Layer
               id="unclustered"
               type="circle"
               filter={["!", ["has", "point_count"]]}
               paint={{
                 "circle-radius": dotRadius("artistCount"),
                 "circle-color": dotColor("artistCount"),
-                "circle-opacity": 0.9,
+                "circle-opacity": FADE_SINGLES_OPACITY,
                 "circle-stroke-width": 1.5,
                 "circle-stroke-color": "#ffffff",
               }}
@@ -2052,7 +2108,28 @@ function MapInner({
                 "text-size": 10,
                 "text-allow-overlap": true,
               }}
-              paint={{ "text-color": "#ffffff" }}
+              paint={{
+                "text-color": "#ffffff",
+                "text-opacity": FADE_SINGLES_OPACITY,
+              }}
+            />
+            <Layer
+              id="unclustered-label"
+              type="symbol"
+              filter={["!", ["has", "point_count"]]}
+              layout={{
+                "text-field": ["get", "cityName"] as unknown as string,
+                "text-font": ["Noto Sans Regular"],
+                "text-size": 10,
+                "text-anchor": "top",
+                "text-offset": [0, 1.0],
+              }}
+              paint={{
+                "text-color": "#5c4a3a",
+                "text-halo-color": "#f3efe9",
+                "text-halo-width": 1.4,
+                "text-opacity": FADE_SINGLES_OPACITY,
+              }}
             />
           </Source>
         )}
