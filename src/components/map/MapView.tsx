@@ -379,12 +379,11 @@ const dotColor = (prop: string) =>
     "interpolate",
     ["linear"],
     ["get", prop],
-    1, "#f0cdb8",
-    5, "#e0a487",
-    15, "#d07a4e",
-    35, "#c2410c",
-    70, "#9a3412",
-    140, "#7a1f1a",
+    1, "#dd9b76",
+    6, "#d07a4e",
+    18, "#c2410c",
+    45, "#9a3412",
+    120, "#7a1f1a",
   ] as unknown as string;
 
 // Shops fade in as you zoom into a metro (city dots stay); shop labels only at
@@ -397,6 +396,15 @@ const SHOP_FADE_TEXT = [
 ] as unknown as number;
 const SHOP_LABEL_OPACITY = [
   "interpolate", ["linear"], ["zoom"], 12, 0, 13.5, 1,
+] as unknown as number;
+
+// City aggregate dots cross-fade out at close zoom *only where the city has
+// shops*, so its shop circles take over without shopless cities vanishing.
+const CITY_FADE_WHEN_SHOPPED = [
+  "case",
+  [">", ["get", "shopCount"], 0],
+  ["interpolate", ["linear"], ["zoom"], 10, 0.92, 12, 0],
+  0.92,
 ] as unknown as number;
 
 // Memoized loading placeholder marker
@@ -2046,6 +2054,7 @@ function MapInner({
           />
           {/* Place labels — surrounding towns/suburbs/neighborhoods for map
               context (artist cities already get their own count pins). */}
+          {!USE_DOT_DENSITY && (
           <Layer
             id="place-labels"
             type="symbol"
@@ -2065,6 +2074,7 @@ function MapInner({
               "text-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0, 10, 1] as unknown as number,
             }}
           />
+          )}
           {/* Street names — appear at street zoom, placed along the road line */}
           <Layer
             id="street-labels"
@@ -2133,8 +2143,6 @@ function MapInner({
                 "circle-radius": dotRadius("artists"),
                 "circle-color": dotColor("artists"),
                 "circle-opacity": 0.92,
-                "circle-stroke-width": 1.5,
-                "circle-stroke-color": "#ffffff",
               }}
             />
             <Layer
@@ -2178,9 +2186,7 @@ function MapInner({
               paint={{
                 "circle-radius": dotRadius("artistCount"),
                 "circle-color": dotColor("artistCount"),
-                "circle-opacity": 0.92,
-                "circle-stroke-width": 1.5,
-                "circle-stroke-color": "#ffffff",
+                "circle-opacity": CITY_FADE_WHEN_SHOPPED,
               }}
             />
             <Layer
@@ -2193,7 +2199,10 @@ function MapInner({
                 "text-size": 10,
                 "text-allow-overlap": true,
               }}
-              paint={{ "text-color": "#ffffff" }}
+              paint={{
+                "text-color": "#ffffff",
+                "text-opacity": CITY_FADE_WHEN_SHOPPED,
+              }}
             />
             <Layer
               id="unclustered-label"
@@ -2211,6 +2220,7 @@ function MapInner({
                 "text-color": "#5c4a3a",
                 "text-halo-color": "#f3efe9",
                 "text-halo-width": 1.4,
+                "text-opacity": CITY_FADE_WHEN_SHOPPED,
               }}
             />
           </Source>
@@ -2242,8 +2252,6 @@ function MapInner({
                 ] as unknown as number,
                 "circle-color": "#c0392b",
                 "circle-opacity": SHOP_FADE_CIRCLE,
-                "circle-stroke-width": 1.5,
-                "circle-stroke-color": "#ffffff",
               }}
             />
             <Layer
@@ -2266,8 +2274,6 @@ function MapInner({
                 "circle-radius": 7,
                 "circle-color": "#c0392b",
                 "circle-opacity": SHOP_FADE_CIRCLE,
-                "circle-stroke-width": 1.5,
-                "circle-stroke-color": "#ffffff",
               }}
             />
             <Layer
