@@ -181,6 +181,8 @@ Protected by `_middleware/auth.ts` which checks `Authorization: Bearer ${ADMIN_A
 | `addArtistShopLink` | Link artist to shop |
 | `listSubmissions` / `updateSubmission` | Manage public suggestions |
 | `listBrokenLinks` | Broken Instagram link report |
+| `addShop` / `updateShop` | Create/edit shop; geocodes the street address → `latitude`/`longitude` on save |
+| `geocodeAddress` | Preview-geocode an address (powers the admin "Check address" tool) |
 
 ### Cron Endpoints (GET, CRON_SECRET auth)
 

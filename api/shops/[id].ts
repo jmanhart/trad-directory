@@ -18,6 +18,8 @@ const SHOP_SELECT = `
   contact,
   phone_number,
   website_url,
+  latitude,
+  longitude,
   city_id,
   city: cities (
     id,
@@ -142,6 +144,8 @@ function formatShop(data: any) {
     contact: data.contact || null,
     phone_number: data.phone_number || null,
     website_url: data.website_url || null,
+    latitude: data.latitude ?? null,
+    longitude: data.longitude ?? null,
     city_id: data.city_id || null,
     city_name: Array.isArray(data.city)
       ? data.city[0]?.city_name

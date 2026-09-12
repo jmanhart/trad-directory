@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { requireAdminAuth } from "./_middleware/auth";
+import { geocodeShopByCity } from "./_utils/geocode";
 
 interface AddShopData {
   shop_name: string;
@@ -8,6 +9,8 @@ interface AddShopData {
   contact?: string;
   phone_number?: string;
   website_url?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   city_id: number;
 }
 
@@ -86,6 +89,28 @@ export default async function handler(req: any, res: any) {
 
     if (data.address) {
       shopData.address = data.address;
+    }
+
+    // Prefer explicit coordinates from the admin "Check address" / manual-entry
+    // tool; otherwise geocode the street address. Non-fatal — a miss just leaves
+    // the shop uncoded (flagged in the admin table).
+    if (data.latitude != null && data.longitude != null) {
+      shopData.latitude = data.latitude;
+      shopData.longitude = data.longitude;
+    } else if (data.address) {
+      try {
+        const coords = await geocodeShopByCity(
+          supabase,
+          data.city_id,
+          data.address
+        );
+        if (coords) {
+          shopData.latitude = coords.lat;
+          shopData.longitude = coords.lng;
+        }
+      } catch (geoErr) {
+        console.warn("Shop geocode failed:", geoErr);
+      }
     }
 
     if (data.contact) {

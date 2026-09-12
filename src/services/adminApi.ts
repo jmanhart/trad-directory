@@ -132,6 +132,8 @@ interface AddShopData {
   contact?: string;
   phone_number?: string;
   website_url?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   city_id: number;
 }
 
@@ -163,6 +165,30 @@ export async function addShop(data: AddShopData): Promise<number> {
     console.error("Error adding shop:", error);
     throw error;
   }
+}
+
+/**
+ * Preview where a street address geocodes to — powers the admin "Check
+ * address" tool. Returns {lat,lng}, or nulls when it can't be resolved.
+ */
+export async function geocodeAddressPreview(input: {
+  address: string;
+  city_name?: string | null;
+  state_name?: string | null;
+  country_name?: string | null;
+}): Promise<{ lat: number | null; lng: number | null }> {
+  const response = await fetch("/api/geocodeAddress", {
+    method: "POST",
+    headers: adminHeaders(),
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.error || `HTTP error! status: ${response.status}`
+    );
+  }
+  return response.json();
 }
 
 /**
@@ -356,6 +382,8 @@ interface UpdateShopData {
   contact?: string;
   phone_number?: string;
   website_url?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   city_id?: number;
 }
 

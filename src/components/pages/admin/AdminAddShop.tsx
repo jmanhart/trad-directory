@@ -5,6 +5,7 @@ import { useAdminData } from "./useAdminData";
 import { useAdminForm } from "./useAdminForm";
 import { getCityDisplayName } from "./adminUtils";
 import styles from "./AdminForm.module.css";
+import AddressGeocodeField from "./AddressGeocodeField";
 
 interface ShopFormData {
   shop_name: string;
@@ -13,6 +14,8 @@ interface ShopFormData {
   contact: string;
   phone_number: string;
   website_url: string;
+  latitude: number | null;
+  longitude: number | null;
   city_id: string;
 }
 
@@ -23,6 +26,7 @@ export default function AdminAddShop() {
 
   const {
     formData,
+    setFormData,
     loading,
     message,
     handleChange,
@@ -35,6 +39,8 @@ export default function AdminAddShop() {
       contact: "",
       phone_number: "",
       website_url: "",
+      latitude: null,
+      longitude: null,
       city_id: "",
     },
     onSubmit: async (data) => {
@@ -47,6 +53,8 @@ export default function AdminAddShop() {
       contact: formData.contact || undefined,
       phone_number: formData.phone_number || undefined,
       website_url: formData.website_url || undefined,
+      latitude: formData.latitude,
+      longitude: formData.longitude,
       city_id: parseInt(formData.city_id),
     }),
     validateData: (formData) => {
@@ -63,6 +71,8 @@ export default function AdminAddShop() {
     },
     autoDismissSuccess: true,
   });
+
+  const selectedCity = cities.find(c => String(c.id) === formData.city_id);
 
   // Use data loading error if present, otherwise use form message
   const displayMessage = dataError || message;
@@ -96,17 +106,19 @@ export default function AdminAddShop() {
           />
         </FormGroup>
 
-        <FormGroup>
-          <Label htmlFor="address">Address</Label>
-          <Input
-            type="text"
-            id="address"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            placeholder="Street address"
-          />
-        </FormGroup>
+        <AddressGeocodeField
+          id="address"
+          value={formData.address}
+          onChange={v => setFormData(prev => ({ ...prev, address: v }))}
+          latitude={formData.latitude}
+          longitude={formData.longitude}
+          onCoordsChange={(lat, lng) =>
+            setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }))
+          }
+          cityName={selectedCity?.city_name ?? null}
+          stateName={selectedCity?.state_name ?? null}
+          countryName={selectedCity?.country_name ?? null}
+        />
 
         <FormGroup>
           <Label htmlFor="contact">Contact</Label>
