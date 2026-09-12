@@ -401,10 +401,11 @@ const SHOP_LABEL_OPACITY = [
 // City aggregate dots cross-fade out at close zoom *only where the city has
 // shops*, so its shop circles take over without shopless cities vanishing.
 const CITY_FADE_WHEN_SHOPPED = [
-  "case",
-  [">", ["get", "shopCount"], 0],
-  ["interpolate", ["linear"], ["zoom"], 10, 0.92, 12, 0],
-  0.92,
+  "interpolate",
+  ["linear"],
+  ["zoom"],
+  10, 0.92,
+  12, ["case", [">", ["get", "shopCount"], 0], 0, 0.92],
 ] as unknown as number;
 
 // Memoized loading placeholder marker
