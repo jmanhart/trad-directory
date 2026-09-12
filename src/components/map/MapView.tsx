@@ -86,6 +86,7 @@ function getMapPadding(opensPanel = true) {
 }
 
 export interface CityDot {
+  id?: number;
   cityName: string;
   stateName: string | null;
   countryName: string | null;
@@ -287,6 +288,7 @@ Object.entries(COUNTRY_NAME_MAP).forEach(([db, geo]) => {
 
 export interface ShopPin {
   id: number;
+  cityId: number;
   shopName: string;
   lat: number;
   lng: number;
@@ -301,7 +303,11 @@ interface MapViewProps {
   onStateClick?: (stateName: string) => void;
   selectedCity?: CityDot | null;
   highlightedCity?: CityDot | null;
-  flyTo?: { coordinates: [number, number]; zoom: number } | null;
+  flyTo?: {
+    coordinates: [number, number];
+    zoom: number;
+    fitCityId?: number;
+  } | null;
   flyToKey?: number;
   onBackgroundClick?: () => void;
   /** Whether any detail panel/card is currently open (drives recenter-on-close). */
@@ -467,11 +473,7 @@ const CityMarker = memo(function CityMarker({
               cx={halfPx}
               cy={halfPx}
               r={halfPx}
-              fill={
-                selected
-                  ? "var(--map-marker-bg-active)"
-                  : "var(--map-marker-bg)"
-              }
+              fill="var(--map-marker-bg)"
               fillOpacity={1}
               stroke="var(--color-surface)"
               strokeWidth={1.5}
@@ -504,6 +506,8 @@ const ClusterMarker = memo(function ClusterMarker({
   onClick,
   onMouseEnter,
   onMouseLeave,
+  selected,
+  hovered,
 }: {
   cluster: Cluster;
   label?: string;
@@ -511,6 +515,8 @@ const ClusterMarker = memo(function ClusterMarker({
   onClick: (cluster: Cluster, e: React.MouseEvent) => void;
   onMouseEnter?: (cluster: Cluster, e: React.MouseEvent) => void;
   onMouseLeave?: () => void;
+  selected?: boolean;
+  hovered?: boolean;
 }) {
   const screenPx = getClusterSize(cluster.totalArtists, isMobile);
   const fontSize = isMobile ? 11 : 10;
@@ -538,7 +544,7 @@ const ClusterMarker = memo(function ClusterMarker({
         onMouseLeave={isMobile ? undefined : onMouseLeave}
       >
         <div
-          className={styles.cityDotWrapper}
+          className={`${styles.cityDotWrapper}${hovered ? " " + styles.dotWrapperHovered : ""}`}
           style={{ width: screenPx, height: screenPx }}
         >
           {isMobile && (
@@ -548,6 +554,12 @@ const ClusterMarker = memo(function ClusterMarker({
                 width: Math.max(40, screenPx),
                 height: Math.max(40, screenPx),
               }}
+            />
+          )}
+          {selected && (
+            <div
+              className={styles.pulseRing}
+              style={{ width: screenPx + 6, height: screenPx + 6 }}
             />
           )}
           <svg
@@ -793,19 +805,69 @@ function MapInner({
     [syncTier]
   );
 
+  // Fit the viewport to a city's shop pins so the individual dots are framed
+  // (used by both map-dot clicks and search/deep-link selection). Falls back to
+  // a fixed city-detail zoom when the city has no geocoded shops.
+  const fitCityShops = useCallback(
+    (cityId: number | null | undefined, center: [number, number]) => {
+      if (!mapRef.current) return;
+      // Keep city dots + shop pins rendering after the move even if fitBounds
+      // lands a hair below the city-tier zoom threshold.
+      minTierRef.current = "city";
+      const cityShops =
+        cityId != null ? shops.filter(s => s.cityId === cityId) : [];
+      if (cityShops.length > 0) {
+        let minLng = center[0],
+          maxLng = center[0],
+          minLat = center[1],
+          maxLat = center[1];
+        cityShops.forEach(s => {
+          if (s.lng < minLng) minLng = s.lng;
+          if (s.lng > maxLng) maxLng = s.lng;
+          if (s.lat < minLat) minLat = s.lat;
+          if (s.lat > maxLat) maxLat = s.lat;
+        });
+        mapRef.current.fitBounds(
+          [
+            [minLng, minLat],
+            [maxLng, maxLat],
+          ],
+          { padding: getMapPadding(), duration: 1000, maxZoom: 13 }
+        );
+        const span = Math.max(maxLng - minLng, maxLat - minLat, 0.02);
+        const estimatedZoom = Math.min(Math.log2(360 / span) + 0.5, 13);
+        syncTier(Math.max(estimatedZoom, ZOOM_CITY));
+      } else {
+        const zoom = 10.5;
+        mapRef.current.flyTo({
+          center,
+          zoom,
+          duration: 1000,
+          padding: getMapPadding(),
+        });
+        syncTier(zoom);
+      }
+    },
+    [shops, syncTier]
+  );
+
   // Fly-to effect
   useEffect(() => {
     if (flyToKey > 0 && flyTo && mapRef.current) {
-      // Convert old d3-zoom levels to MapLibre zoom levels
-      // Old zoom 6 ≈ MapLibre zoom 6.5, old zoom 1 ≈ MapLibre 1.5
-      const mlZoom = flyTo.zoom * 1.1;
-      mapRef.current.flyTo({
-        center: flyTo.coordinates,
-        zoom: mlZoom,
-        duration: 1200,
-        padding: getMapPadding(),
-      });
-      syncTier(mlZoom);
+      if (flyTo.fitCityId != null) {
+        fitCityShops(flyTo.fitCityId, flyTo.coordinates);
+      } else {
+        // Convert old d3-zoom levels to MapLibre zoom levels
+        // Old zoom 6 ≈ MapLibre zoom 6.5, old zoom 1 ≈ MapLibre 1.5
+        const mlZoom = flyTo.zoom * 1.1;
+        mapRef.current.flyTo({
+          center: flyTo.coordinates,
+          zoom: mlZoom,
+          duration: 1200,
+          padding: getMapPadding(),
+        });
+        syncTier(mlZoom);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flyToKey]);
@@ -1217,8 +1279,8 @@ function MapInner({
   );
 
   // Hover state for countries and states
-  const [hoveredCountryId, setHoveredCountryId] = useState<
-    number | null
+  const [hoveredCountryName, setHoveredCountryName] = useState<
+    string | null
   >(null);
   const [hoveredStateName, setHoveredStateName] = useState<
     string | null
@@ -1231,72 +1293,92 @@ function MapInner({
 
   const handleMapMouseMove = useCallback(
     (e: MapLayerMouseEvent) => {
-      if (e.features && e.features.length > 0) {
-        const feat = e.features[0];
-        // At city tier, ignore country fill hover — only city dots matter
-        if (
-          feat.layer?.id === "countries-fill" &&
-          tierRef.current === "city"
-        ) {
-          if (mapRef.current) {
-            mapRef.current.getCanvas().style.cursor = "";
-          }
-          setHoveredCountryId(null);
-          return;
-        }
-        if (
-          feat.layer?.id === "countries-fill" ||
-          feat.layer?.id === "states-fill"
-        ) {
-          if (mapRef.current) {
-            mapRef.current.getCanvas().style.cursor = "pointer";
-          }
-          if (feat.layer?.id === "states-fill") {
-            setHoveredStateName(
-              (feat.properties?.name as string) || null
-            );
-            setHoveredCountryId(null);
-          } else {
-            setHoveredCountryId(
-              feat.id != null ? (feat.id as number) : null
-            );
-            setHoveredStateName(null);
-          }
-        }
-      } else {
-        if (mapRef.current) {
-          mapRef.current.getCanvas().style.cursor = "";
-        }
-        setHoveredCountryId(null);
+      const clearHover = () => {
+        if (mapRef.current) mapRef.current.getCanvas().style.cursor = "";
+        setHoveredCountryName(null);
         setHoveredStateName(null);
+        if (tooltipDataRef.current) {
+          tooltipDataRef.current = null;
+          setTooltipData(null);
+        }
+      };
+      if (!e.features || e.features.length === 0) {
+        clearHover();
+        return;
+      }
+      const feat = e.features[0];
+      // At city tier, ignore country fill hover — only city dots matter
+      if (feat.layer?.id === "countries-fill" && tierRef.current === "city") {
+        clearHover();
+        return;
+      }
+      if (
+        feat.layer?.id === "countries-fill" ||
+        feat.layer?.id === "states-fill"
+      ) {
+        if (mapRef.current) {
+          mapRef.current.getCanvas().style.cursor = "pointer";
+        }
+        let cl: Cluster | undefined;
+        if (feat.layer?.id === "states-fill") {
+          const name = (feat.properties?.name as string) || null;
+          setHoveredStateName(name);
+          setHoveredCountryName(null);
+          cl = name ? stateClusters.find(c => c.name === name) : undefined;
+        } else {
+          const geoName = (feat.properties?.name as string) || "";
+          const dbName = REVERSE_COUNTRY_MAP[geoName] || geoName || null;
+          setHoveredCountryName(dbName);
+          setHoveredStateName(null);
+          cl = dbName
+            ? countryClusters.find(c => c.name === dbName) ||
+              continentClusters.find(c => c.name === dbName)
+            : undefined;
+        }
+        // Tooltip tracks the hovered region, but only when it has data
+        if (cl) {
+          if (tooltipDataRef.current?.name !== cl.name) {
+            const data = {
+              name: cl.name,
+              artistCount: cl.totalArtists,
+              shopCount: cl.totalShops,
+            };
+            tooltipDataRef.current = data;
+            setTooltipData(data);
+          }
+          if (tooltipRef.current && e.originalEvent) {
+            tooltipRef.current.style.left = `${e.originalEvent.clientX + 12}px`;
+            tooltipRef.current.style.top = `${e.originalEvent.clientY - 12}px`;
+          }
+        } else if (tooltipDataRef.current) {
+          tooltipDataRef.current = null;
+          setTooltipData(null);
+        }
       }
     },
-    []
+    [stateClusters, countryClusters, continentClusters]
   );
 
   const handleMapMouseLeave = useCallback(() => {
     if (mapRef.current) {
       mapRef.current.getCanvas().style.cursor = "";
     }
-    setHoveredCountryId(null);
+    setHoveredCountryName(null);
     setHoveredStateName(null);
+    if (tooltipDataRef.current) {
+      tooltipDataRef.current = null;
+      setTooltipData(null);
+    }
   }, []);
 
   const handleDotClick = useCallback(
     (city: CityDot) => {
-      const newZoom = Math.max(zoomRef.current, ZOOM_CITY);
-      mapRef.current?.flyTo({
-        center: [city.lng, city.lat],
-        zoom: newZoom,
-        duration: 800,
-        padding: getMapPadding(),
-      });
-      syncTier(newZoom);
+      fitCityShops(city.id, [city.lng, city.lat]);
       tooltipDataRef.current = null;
       setTooltipData(null);
       onCityClick?.(city);
     },
-    [onCityClick, syncTier]
+    [onCityClick, fitCityShops]
   );
 
   const handleMarkerClick = useCallback(
@@ -1582,12 +1664,7 @@ function MapInner({
               type="line"
               paint={{
                 "line-color": "#ffffff",
-                "line-width": [
-                  "case",
-                  ["==", ["id"], hoveredCountryId ?? -1],
-                  1.5,
-                  0.5,
-                ] as unknown as number,
+                "line-width": 0.5,
               }}
               filter={["match", ["get", "name"], ["United States of America", "Canada", "Australia"], false, true]}
             />
@@ -1613,20 +1690,8 @@ function MapInner({
             type="line"
             source-layer="states"
             paint={{
-              "line-color": [
-                "case",
-                ["==", ["get", "name"], selectedStateName ?? ""],
-                "#5c0000",
-                "#ffffff",
-              ] as unknown as string,
-              "line-width": [
-                "case",
-                ["==", ["get", "name"], selectedStateName ?? ""],
-                3,
-                ["==", ["get", "name"], hoveredStateName ?? ""],
-                2,
-                0.3,
-              ] as unknown as number,
+              "line-color": "#ffffff",
+              "line-width": 0.3,
             }}
           />
         </Source>
@@ -1790,6 +1855,7 @@ function MapInner({
               cluster={cluster}
               label={cluster.name}
               isMobile={isMobile}
+              hovered={cluster.name === hoveredCountryName}
               onClick={
                 cluster.kind === "country"
                   ? handleCountryClusterClick
@@ -1812,6 +1878,7 @@ function MapInner({
               cluster={cluster}
               label={cluster.name}
               isMobile={isMobile}
+              hovered={cluster.name === hoveredCountryName}
               onClick={handleCountryClusterClick}
               onMouseEnter={
                 isMobile ? undefined : handleClusterEnter
@@ -1830,6 +1897,8 @@ function MapInner({
               cluster={cluster}
               label={cluster.name.split(",")[0]}
               isMobile={isMobile}
+              selected={cluster.name === selectedStateName}
+              hovered={cluster.name === hoveredStateName}
               onClick={handleStateClusterClick}
               onMouseEnter={
                 isMobile ? undefined : handleClusterEnter

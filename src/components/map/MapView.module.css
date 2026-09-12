@@ -111,16 +111,6 @@
   cursor: pointer;
 }
 
-.cityMarker:hover {
-  /* active: swap the marker token — the SVG fill + pulse ring both read it */
-  --map-marker-bg: var(--map-marker-bg-active);
-}
-
-/* Smooth the rest -> active color change */
-.cityMarker svg circle {
-  transition: fill 0.15s ease-out;
-}
-
 .cityDotWrapper {
   position: relative;
   display: flex;
@@ -131,6 +121,11 @@
 
 /* active: lift the pin on hover */
 .cityMarker:hover .cityDotWrapper {
+  transform: scale(1.12);
+}
+
+/* region-driven hover: lift the cluster dot when its whole region is hovered */
+.dotWrapperHovered {
   transform: scale(1.12);
 }
 
@@ -153,7 +148,6 @@
   font-weight: 500;
   color: var(--color-text-secondary);
   white-space: nowrap;
-  pointer-events: none;
   user-select: none;
   text-shadow:
     -1px -1px 0 var(--color-surface),
@@ -182,7 +176,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 2px solid var(--map-marker-bg-active);
+  border: 2px solid var(--color-primary);
   animation: pulse 2s ease-in-out infinite;
 }
 

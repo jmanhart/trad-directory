@@ -25,6 +25,7 @@ interface MapShop {
 
 export interface ShopDot {
   id: number;
+  cityId: number;
   shopName: string;
   lat: number;
   lng: number;
@@ -43,6 +44,7 @@ async function loadMapData() {
     const res = await fetch("/api/mapData");
     const data = await res.json();
     const cityDots: CityDot[] = (data.cities || []).map((c: MapCity) => ({
+      id: c.id,
       cityName: c.city_name,
       stateName: c.state_name,
       countryName: c.country_name,
@@ -55,6 +57,7 @@ async function loadMapData() {
     }));
     const shopDots: ShopDot[] = (data.shops || []).map((s: MapShop) => ({
       id: s.id,
+      cityId: s.city_id,
       shopName: s.shop_name,
       lat: s.latitude,
       lng: s.longitude,
