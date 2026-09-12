@@ -86,6 +86,7 @@ function getMapPadding(opensPanel = true) {
 }
 
 export interface CityDot {
+  id?: number;
   cityName: string;
   stateName: string | null;
   countryName: string | null;
@@ -287,6 +288,7 @@ Object.entries(COUNTRY_NAME_MAP).forEach(([db, geo]) => {
 
 export interface ShopPin {
   id: number;
+  cityId: number;
   shopName: string;
   lat: number;
   lng: number;
@@ -301,7 +303,11 @@ interface MapViewProps {
   onStateClick?: (stateName: string) => void;
   selectedCity?: CityDot | null;
   highlightedCity?: CityDot | null;
-  flyTo?: { coordinates: [number, number]; zoom: number } | null;
+  flyTo?: {
+    coordinates: [number, number];
+    zoom: number;
+    fitCityId?: number;
+  } | null;
   flyToKey?: number;
   onBackgroundClick?: () => void;
   /** Whether any detail panel/card is currently open (drives recenter-on-close). */
@@ -799,19 +805,69 @@ function MapInner({
     [syncTier]
   );
 
+  // Fit the viewport to a city's shop pins so the individual dots are framed
+  // (used by both map-dot clicks and search/deep-link selection). Falls back to
+  // a fixed city-detail zoom when the city has no geocoded shops.
+  const fitCityShops = useCallback(
+    (cityId: number | null | undefined, center: [number, number]) => {
+      if (!mapRef.current) return;
+      // Keep city dots + shop pins rendering after the move even if fitBounds
+      // lands a hair below the city-tier zoom threshold.
+      minTierRef.current = "city";
+      const cityShops =
+        cityId != null ? shops.filter(s => s.cityId === cityId) : [];
+      if (cityShops.length > 0) {
+        let minLng = center[0],
+          maxLng = center[0],
+          minLat = center[1],
+          maxLat = center[1];
+        cityShops.forEach(s => {
+          if (s.lng < minLng) minLng = s.lng;
+          if (s.lng > maxLng) maxLng = s.lng;
+          if (s.lat < minLat) minLat = s.lat;
+          if (s.lat > maxLat) maxLat = s.lat;
+        });
+        mapRef.current.fitBounds(
+          [
+            [minLng, minLat],
+            [maxLng, maxLat],
+          ],
+          { padding: getMapPadding(), duration: 1000, maxZoom: 13 }
+        );
+        const span = Math.max(maxLng - minLng, maxLat - minLat, 0.02);
+        const estimatedZoom = Math.min(Math.log2(360 / span) + 0.5, 13);
+        syncTier(Math.max(estimatedZoom, ZOOM_CITY));
+      } else {
+        const zoom = 10.5;
+        mapRef.current.flyTo({
+          center,
+          zoom,
+          duration: 1000,
+          padding: getMapPadding(),
+        });
+        syncTier(zoom);
+      }
+    },
+    [shops, syncTier]
+  );
+
   // Fly-to effect
   useEffect(() => {
     if (flyToKey > 0 && flyTo && mapRef.current) {
-      // Convert old d3-zoom levels to MapLibre zoom levels
-      // Old zoom 6 ≈ MapLibre zoom 6.5, old zoom 1 ≈ MapLibre 1.5
-      const mlZoom = flyTo.zoom * 1.1;
-      mapRef.current.flyTo({
-        center: flyTo.coordinates,
-        zoom: mlZoom,
-        duration: 1200,
-        padding: getMapPadding(),
-      });
-      syncTier(mlZoom);
+      if (flyTo.fitCityId != null) {
+        fitCityShops(flyTo.fitCityId, flyTo.coordinates);
+      } else {
+        // Convert old d3-zoom levels to MapLibre zoom levels
+        // Old zoom 6 ≈ MapLibre zoom 6.5, old zoom 1 ≈ MapLibre 1.5
+        const mlZoom = flyTo.zoom * 1.1;
+        mapRef.current.flyTo({
+          center: flyTo.coordinates,
+          zoom: mlZoom,
+          duration: 1200,
+          padding: getMapPadding(),
+        });
+        syncTier(mlZoom);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flyToKey]);
@@ -1317,19 +1373,12 @@ function MapInner({
 
   const handleDotClick = useCallback(
     (city: CityDot) => {
-      const newZoom = Math.max(zoomRef.current, ZOOM_CITY);
-      mapRef.current?.flyTo({
-        center: [city.lng, city.lat],
-        zoom: newZoom,
-        duration: 800,
-        padding: getMapPadding(),
-      });
-      syncTier(newZoom);
+      fitCityShops(city.id, [city.lng, city.lat]);
       tooltipDataRef.current = null;
       setTooltipData(null);
       onCityClick?.(city);
     },
-    [onCityClick, syncTier]
+    [onCityClick, fitCityShops]
   );
 
   const handleMarkerClick = useCallback(

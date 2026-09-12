@@ -45,6 +45,7 @@ export default function MapPage() {
   const [flyTo, setFlyTo] = useState<{
     coordinates: [number, number];
     zoom: number;
+    fitCityId?: number;
   } | null>(null);
   const [flyToKey, setFlyToKey] = useState(0);
   const [showMapIntro, setShowMapIntro] = useState(() => {
@@ -99,7 +100,7 @@ export default function MapPage() {
       if (match) {
         setSelectedCity(match);
         setSelectedRegion(null);
-        setFlyTo({ coordinates: [match.lng, match.lat], zoom: 6 });
+        setFlyTo({ coordinates: [match.lng, match.lat], zoom: 6, fitCityId: match.id });
         setFlyToKey(k => k + 1);
         ensureArtistsLoaded();
       }
@@ -178,6 +179,7 @@ export default function MapPage() {
         setFlyTo({
           coordinates: [partial.lng, partial.lat],
           zoom: 6,
+          fitCityId: partial.id,
         });
         setFlyToKey(k => k + 1);
         ensureArtistsLoaded();
@@ -432,6 +434,7 @@ export default function MapPage() {
     setFlyTo({
       coordinates: [city.lng, city.lat],
       zoom: Math.max(6, 8),
+      fitCityId: city.id,
     });
     setFlyToKey(k => k + 1);
   }, []);
@@ -549,7 +552,7 @@ export default function MapPage() {
     (dot: CityDot) => {
       setSelectedCity(dot);
       setSelectedRegion(null);
-      setFlyTo({ coordinates: [dot.lng, dot.lat], zoom: 6 });
+      setFlyTo({ coordinates: [dot.lng, dot.lat], zoom: 6, fitCityId: dot.id });
       setFlyToKey(k => k + 1);
       ensureArtistsLoaded();
     },
@@ -640,7 +643,7 @@ export default function MapPage() {
             setSelectedRegion(null);
             setSelectedShop(null);
             setSelectedArtist(artist);
-            setFlyTo({ coordinates: [dot.lng, dot.lat], zoom: 6 });
+            setFlyTo({ coordinates: [dot.lng, dot.lat], zoom: 6, fitCityId: dot.id });
             setFlyToKey(k => k + 1);
             return true;
           }
