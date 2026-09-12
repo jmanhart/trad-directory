@@ -387,12 +387,16 @@ const dotColor = (prop: string) =>
     140, "#7a1f1a",
   ] as unknown as string;
 
-// Single-artist city dots fade out at continental zoom to cut low-signal noise.
-const FADE_SINGLES_OPACITY = [
-  "case",
-  ["<", ["get", "artistCount"], 2],
-  ["interpolate", ["linear"], ["zoom"], 4, 0, 6.5, 0.9],
-  0.9,
+// Shops fade in as you zoom into a metro (city dots stay); shop labels only at
+// the closest zoom so they don't pile up.
+const SHOP_FADE_CIRCLE = [
+  "interpolate", ["linear"], ["zoom"], 9, 0, 11, 0.92,
+] as unknown as number;
+const SHOP_FADE_TEXT = [
+  "interpolate", ["linear"], ["zoom"], 9, 0, 11, 1,
+] as unknown as number;
+const SHOP_LABEL_OPACITY = [
+  "interpolate", ["linear"], ["zoom"], 12, 0, 13.5, 1,
 ] as unknown as number;
 
 // Memoized loading placeholder marker
@@ -1354,6 +1358,37 @@ function MapInner({
         onCityClick?.(city);
         return;
       }
+      if (feat?.layer?.id === "shop-clusters") {
+        const clusterId = feat.properties?.cluster_id;
+        const geom = feat.geometry;
+        if (geom.type !== "Point") return;
+        const coords: [number, number] = [
+          geom.coordinates[0],
+          geom.coordinates[1],
+        ];
+        const src = mapRef.current?.getSource("shop-points") as
+          | { getClusterExpansionZoom: (id: number) => Promise<number> }
+          | undefined;
+        if (src && clusterId != null) {
+          src
+            .getClusterExpansionZoom(clusterId)
+            .then(z => {
+              mapRef.current?.easeTo({
+                center: coords,
+                zoom: z + 0.3,
+                duration: 600,
+              });
+              syncTier(z + 0.3);
+            })
+            .catch(() => {});
+        }
+        return;
+      }
+      if (feat?.layer?.id === "shop-unclustered") {
+        const p = feat.properties || {};
+        onShopClick?.({ id: p.shopId, shop_name: p.shopName });
+        return;
+      }
 
       if (!feat) {
         setSelectedStateName(null);
@@ -1382,6 +1417,7 @@ function MapInner({
       fitCityShops,
       onCityClick,
       syncTier,
+      onShopClick,
     ]
   );
 
@@ -1444,6 +1480,34 @@ function MapInner({
         if (tooltipRef.current && e.originalEvent) {
           tooltipRef.current.style.left = `${e.originalEvent.clientX + 12}px`;
           tooltipRef.current.style.top = `${e.originalEvent.clientY - 12}px`;
+        }
+        return;
+      }
+      if (
+        feat.layer?.id === "shop-clusters" ||
+        feat.layer?.id === "shop-unclustered"
+      ) {
+        if (mapRef.current) mapRef.current.getCanvas().style.cursor = "pointer";
+        if (feat.layer.id === "shop-unclustered") {
+          const p = feat.properties || {};
+          const data = {
+            name: p.shopName,
+            stateName: null,
+            countryName: null,
+            artistCount: p.artistCount || 0,
+            shopCount: 0,
+          };
+          if (tooltipDataRef.current?.name !== data.name) {
+            tooltipDataRef.current = data;
+            setTooltipData(data);
+          }
+          if (tooltipRef.current && e.originalEvent) {
+            tooltipRef.current.style.left = `${e.originalEvent.clientX + 12}px`;
+            tooltipRef.current.style.top = `${e.originalEvent.clientY - 12}px`;
+          }
+        } else if (tooltipDataRef.current) {
+          tooltipDataRef.current = null;
+          setTooltipData(null);
         }
         return;
       }
@@ -1735,6 +1799,26 @@ function MapInner({
     [cityData]
   );
 
+  // SPIKE: shops as a clustered GeoJSON source (fade in at close zoom).
+  const shopGeoJSON = useMemo(
+    () => ({
+      type: "FeatureCollection" as const,
+      features: shops.map(s => ({
+        type: "Feature" as const,
+        geometry: {
+          type: "Point" as const,
+          coordinates: [s.lng, s.lat],
+        },
+        properties: {
+          shopId: s.id,
+          shopName: s.shopName,
+          artistCount: s.artistCount,
+        },
+      })),
+    }),
+    [shops]
+  );
+
   return (
     <div
       className={styles.mapWrapper}
@@ -1797,7 +1881,7 @@ function MapInner({
         onMouseLeave={handleMapMouseLeave}
         interactiveLayerIds={
           USE_DOT_DENSITY
-            ? ["clusters", "unclustered"]
+            ? ["clusters", "unclustered", "shop-clusters", "shop-unclustered"]
             : tier === "city"
               ? ["states-fill"]
               : ["countries-fill", "states-fill"]
@@ -2012,8 +2096,8 @@ function MapInner({
             type="geojson"
             data={cityGeoJSON}
             cluster
-            clusterMaxZoom={12}
-            clusterRadius={34}
+            clusterMaxZoom={8}
+            clusterRadius={20}
             clusterProperties={
               {
                 artists: ["+", ["get", "artistCount"]],
@@ -2079,6 +2163,7 @@ function MapInner({
                 "text-size": 11,
                 "text-anchor": "top",
                 "text-offset": [0, 1.1],
+                "symbol-sort-key": ["-", 0, ["get", "artists"]] as unknown as number,
               }}
               paint={{
                 "text-color": "#5c4a3a",
@@ -2093,7 +2178,7 @@ function MapInner({
               paint={{
                 "circle-radius": dotRadius("artistCount"),
                 "circle-color": dotColor("artistCount"),
-                "circle-opacity": FADE_SINGLES_OPACITY,
+                "circle-opacity": 0.92,
                 "circle-stroke-width": 1.5,
                 "circle-stroke-color": "#ffffff",
               }}
@@ -2108,10 +2193,7 @@ function MapInner({
                 "text-size": 10,
                 "text-allow-overlap": true,
               }}
-              paint={{
-                "text-color": "#ffffff",
-                "text-opacity": FADE_SINGLES_OPACITY,
-              }}
+              paint={{ "text-color": "#ffffff" }}
             />
             <Layer
               id="unclustered-label"
@@ -2123,12 +2205,87 @@ function MapInner({
                 "text-size": 10,
                 "text-anchor": "top",
                 "text-offset": [0, 1.0],
+                "symbol-sort-key": ["-", 0, ["get", "artistCount"]] as unknown as number,
               }}
               paint={{
                 "text-color": "#5c4a3a",
                 "text-halo-color": "#f3efe9",
                 "text-halo-width": 1.4,
-                "text-opacity": FADE_SINGLES_OPACITY,
+              }}
+            />
+          </Source>
+        )}
+
+        {/* SPIKE: shops as a second clustered source — fade in as you zoom into
+            a metro (red circles) so a shop-dense city reads as many circles. */}
+        {USE_DOT_DENSITY && shops.length > 0 && (
+          <Source
+            id="shop-points"
+            type="geojson"
+            data={shopGeoJSON}
+            cluster
+            clusterMaxZoom={12}
+            clusterRadius={26}
+          >
+            <Layer
+              id="shop-clusters"
+              type="circle"
+              filter={["has", "point_count"]}
+              paint={{
+                "circle-radius": [
+                  "interpolate",
+                  ["linear"],
+                  ["get", "point_count"],
+                  2, 12,
+                  10, 22,
+                  30, 32,
+                ] as unknown as number,
+                "circle-color": "#c0392b",
+                "circle-opacity": SHOP_FADE_CIRCLE,
+                "circle-stroke-width": 1.5,
+                "circle-stroke-color": "#ffffff",
+              }}
+            />
+            <Layer
+              id="shop-cluster-count"
+              type="symbol"
+              filter={["has", "point_count"]}
+              layout={{
+                "text-field": ["to-string", ["get", "point_count"]] as unknown as string,
+                "text-font": ["Noto Sans Regular"],
+                "text-size": 11,
+                "text-allow-overlap": true,
+              }}
+              paint={{ "text-color": "#ffffff", "text-opacity": SHOP_FADE_TEXT }}
+            />
+            <Layer
+              id="shop-unclustered"
+              type="circle"
+              filter={["!", ["has", "point_count"]]}
+              paint={{
+                "circle-radius": 7,
+                "circle-color": "#c0392b",
+                "circle-opacity": SHOP_FADE_CIRCLE,
+                "circle-stroke-width": 1.5,
+                "circle-stroke-color": "#ffffff",
+              }}
+            />
+            <Layer
+              id="shop-unclustered-label"
+              type="symbol"
+              filter={["!", ["has", "point_count"]]}
+              layout={{
+                "text-field": ["get", "shopName"] as unknown as string,
+                "text-font": ["Noto Sans Regular"],
+                "text-size": 10,
+                "text-anchor": "top",
+                "text-offset": [0, 0.9],
+              }}
+              paint={{
+                "text-color": "#7a2318",
+                "text-halo-color": "#f3efe9",
+                "text-halo-width": 1.4,
+                "text-opacity": SHOP_LABEL_OPACITY,
               }}
             />
           </Source>
@@ -2234,7 +2391,7 @@ function MapInner({
           </>
         )}
         {/* Shop pins — individual shops with geocoded coordinates */}
-        {tier === "city" &&
+        {!USE_DOT_DENSITY && tier === "city" &&
           shops.map(shop => (
             <ShopMarker
               key={`shop-${shop.id}`}
