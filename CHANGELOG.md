@@ -14,6 +14,18 @@ From the next tagged release onward this file is maintained automatically by
 [Conventional Commits](https://www.conventionalcommits.org/) — do not hand-edit
 released sections.
 
+## [0.8.0](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.7.0...tattoo-directory-v0.8.0) (2026-09-12)
+
+
+### Added
+
+* **map:** shop dots show artist count, city dot shows unshopped artists ([#83](https://github.com/jmanhart/trad-directory/issues/83)) ([ed85a59](https://github.com/jmanhart/trad-directory/commit/ed85a597d9b0c9e1d5476c9e0f95c997e6cecec8))
+
+
+### Fixed
+
+* **scripts:** backup loads prod creds from .env.local ([e5591a1](https://github.com/jmanhart/trad-directory/commit/e5591a1f61882ef6789b2f9fa6efe542842d867f))
+
 ## [0.7.0](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.6.0...tattoo-directory-v0.7.0) (2026-09-11)
 
 
