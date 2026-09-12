@@ -72,8 +72,11 @@ Returns `{ "lat": null, "lng": null }` when the address can't be resolved.
 
 `addShop` and `updateShop` geocode the shop's street address to `latitude` /
 `longitude` on save (non-fatal: a miss leaves the shop uncoded, which the admin
-shops table flags as "Not geocoded"). Backfill existing shops that predate this
-with `node scripts/geocodeShops.js` (dry run) / `--fix` (write).
+shops table flags as "Not geocoded"). Explicit `latitude` / `longitude` in the
+body take precedence over geocoding — the admin form's coordinate field lets an
+admin paste coords (e.g. from Google Maps) when Nominatim can't resolve an
+address. Backfill existing shops that predate this with
+`node scripts/geocodeShops.js` (dry run) / `--fix` (write).
 
 ## Development
 

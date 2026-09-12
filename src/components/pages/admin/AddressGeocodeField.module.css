@@ -50,6 +50,12 @@
   border-radius: var(--border-radius, 6px);
 }
 
+
+.hint {
+  margin: 0.35rem 0 0;
+  color: var(--color-text-secondary, #6c757d);
+  font-size: 0.78rem;
+}
 .osmLink {
   display: inline-block;
   margin-top: 0.35rem;

@@ -1,24 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FormGroup, Label, Input } from "./AdminFormComponents";
 import { geocodeAddressPreview } from "../../../services/adminApi";
 import styles from "./AddressGeocodeField.module.css";
 
 /**
- * Address input with a "Check address" tool for the admin shop add/edit forms.
+ * Address + coordinate tool for the admin shop add/edit forms.
  *
- * Lets an admin confirm where a street address geocodes to *before* saving:
- * clicking "Check address" hits /api/geocodeAddress and, on success, shows the
- * resolved coordinates plus an OpenStreetMap preview with a marker so the exact
- * spot can be eyeballed. It's advisory only — the server re-geocodes the address
- * on save (addShop/updateShop), so a shop still saves even if the check fails
- * (it just lands flagged "Not geocoded" in the data table).
+ * - "Check address" geocodes the street address (via /api/geocodeAddress) and,
+ *   on success, auto-fills the coordinate field and shows an OpenStreetMap
+ *   preview with a marker so the exact spot can be confirmed before saving.
+ * - When geocoding can't find the address (free OSM data is patchy on exact
+ *   house numbers), the admin can paste coordinates manually — e.g. from Google
+ *   Maps (right-click → copy the lat/lng) — and the preview updates.
  *
- * Pass the selected city's name/state/country so partial addresses resolve and
- * same-named cities (Portland OR vs ME) disambiguate correctly.
+ * The resolved coordinates are lifted to the parent via `onCoordsChange` and
+ * sent to addShop/updateShop, which store them verbatim (explicit coords win
+ * over server-side geocoding). Passing the selected city's name/state/country
+ * lets partial addresses resolve and disambiguates same-named cities.
  */
 interface AddressGeocodeFieldProps {
   value: string;
   onChange: (value: string) => void;
+  latitude: number | null;
+  longitude: number | null;
+  onCoordsChange: (lat: number | null, lng: number | null) => void;
   cityName?: string | null;
   stateName?: string | null;
   countryName?: string | null;
@@ -26,28 +31,57 @@ interface AddressGeocodeFieldProps {
   label?: string;
 }
 
-type CheckState =
-  | { status: "idle" }
-  | { status: "checking" }
-  | { status: "found"; lat: number; lng: number }
-  | { status: "notfound" }
-  | { status: "error"; message: string };
+type CheckStatus = "idle" | "checking" | "found" | "notfound" | "error";
+
+function parseLatLng(text: string): { lat: number; lng: number } | null {
+  const m = text
+    .trim()
+    .match(/^(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)$/);
+  if (!m) return null;
+  const lat = parseFloat(m[1]);
+  const lng = parseFloat(m[2]);
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+  return { lat, lng };
+}
 
 export default function AddressGeocodeField({
   value,
   onChange,
+  latitude,
+  longitude,
+  onCoordsChange,
   cityName,
   stateName,
   countryName,
   id = "address",
   label = "Address",
 }: AddressGeocodeFieldProps) {
-  const [state, setState] = useState<CheckState>({ status: "idle" });
+  const [status, setStatus] = useState<CheckStatus>("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [coordText, setCoordText] = useState(
+    latitude != null && longitude != null ? `${latitude}, ${longitude}` : ""
+  );
+
+  // Seed the coordinate field when existing coords arrive (the edit form loads
+  // the shop asynchronously, so props are null on first render).
+  useEffect(() => {
+    if (!coordText && latitude != null && longitude != null) {
+      setCoordText(`${latitude}, ${longitude}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latitude, longitude]);
+
+  const applyCoordText = (text: string) => {
+    setCoordText(text);
+    const parsed = parseLatLng(text);
+    onCoordsChange(parsed?.lat ?? null, parsed?.lng ?? null);
+  };
 
   const check = async () => {
     const address = value.trim();
     if (!address) return;
-    setState({ status: "checking" });
+    setStatus("checking");
+    setErrorMsg("");
     try {
       const { lat, lng } = await geocodeAddressPreview({
         address,
@@ -55,77 +89,97 @@ export default function AddressGeocodeField({
         state_name: stateName,
         country_name: countryName,
       });
-      setState(
-        lat != null && lng != null
-          ? { status: "found", lat, lng }
-          : { status: "notfound" }
-      );
+      if (lat != null && lng != null) {
+        setStatus("found");
+        applyCoordText(`${lat}, ${lng}`);
+      } else {
+        setStatus("notfound");
+      }
     } catch (err) {
-      setState({
-        status: "error",
-        message: err instanceof Error ? err.message : "Geocode failed",
-      });
+      setStatus("error");
+      setErrorMsg(err instanceof Error ? err.message : "Geocode failed");
     }
   };
 
+  const coords = parseLatLng(coordText);
+
   return (
-    <FormGroup>
-      <Label htmlFor={id}>{label}</Label>
-      <div className={styles.row}>
+    <>
+      <FormGroup>
+        <Label htmlFor={id}>{label}</Label>
+        <div className={styles.row}>
+          <Input
+            type="text"
+            id={id}
+            value={value}
+            onChange={e => {
+              onChange(e.target.value);
+              setStatus("idle");
+            }}
+            placeholder="Street address"
+          />
+          <button
+            type="button"
+            className={styles.checkButton}
+            onClick={check}
+            disabled={!value.trim() || status === "checking"}
+          >
+            {status === "checking" ? "Checking…" : "Check address"}
+          </button>
+        </div>
+        {status === "found" && (
+          <p className={styles.found}>✓ Located from address</p>
+        )}
+        {status === "notfound" && (
+          <p className={styles.warn}>
+            ⚠️ Couldn't locate this address. Enter coordinates manually below, or
+            save without a pin (it'll be flagged “Not geocoded”).
+          </p>
+        )}
+        {status === "error" && (
+          <p className={styles.warn}>Geocode error: {errorMsg}</p>
+        )}
+      </FormGroup>
+
+      <FormGroup>
+        <Label htmlFor={`${id}_coords`}>Coordinates (lat, lng)</Label>
         <Input
           type="text"
-          id={id}
-          value={value}
-          onChange={e => {
-            onChange(e.target.value);
-            setState({ status: "idle" });
-          }}
-          placeholder="Street address"
+          id={`${id}_coords`}
+          value={coordText}
+          onChange={e => applyCoordText(e.target.value)}
+          placeholder="e.g. 41.53699, -87.44848"
         />
-        <button
-          type="button"
-          className={styles.checkButton}
-          onClick={check}
-          disabled={!value.trim() || state.status === "checking"}
-        >
-          {state.status === "checking" ? "Checking…" : "Check address"}
-        </button>
-      </div>
-
-      {state.status === "found" && (
-        <div className={styles.preview}>
-          <p className={styles.found}>
-            ✓ Located at {state.lat.toFixed(5)}, {state.lng.toFixed(5)}
-          </p>
-          <iframe
-            className={styles.map}
-            title="Address location preview"
-            loading="lazy"
-            src={`https://www.openstreetmap.org/export/embed.html?bbox=${
-              state.lng - 0.008
-            }%2C${state.lat - 0.006}%2C${state.lng + 0.008}%2C${
-              state.lat + 0.006
-            }&layer=mapnik&marker=${state.lat}%2C${state.lng}`}
-          />
-          <a
-            className={styles.osmLink}
-            href={`https://www.openstreetmap.org/?mlat=${state.lat}&mlon=${state.lng}#map=16/${state.lat}/${state.lng}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open in OpenStreetMap ↗
-          </a>
-        </div>
-      )}
-      {state.status === "notfound" && (
-        <p className={styles.warn}>
-          ⚠️ Couldn't locate this address. You can still save — the shop will be
-          flagged “Not geocoded” until the address is corrected.
+        <p className={styles.hint}>
+          Auto-filled by “Check address”, or paste from Google Maps (right-click →
+          the coordinates at the top → copy).
         </p>
-      )}
-      {state.status === "error" && (
-        <p className={styles.warn}>Geocode error: {state.message}</p>
-      )}
-    </FormGroup>
+        {coords && (
+          <div className={styles.preview}>
+            <p className={styles.found}>
+              Pin at {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+            </p>
+            <iframe
+              className={styles.map}
+              title="Location preview"
+              loading="lazy"
+              src={`https://www.openstreetmap.org/export/embed.html?bbox=${
+                coords.lng - 0.008
+              }%2C${coords.lat - 0.006}%2C${coords.lng + 0.008}%2C${
+                coords.lat + 0.006
+              }&layer=mapnik&marker=${coords.lat}%2C${coords.lng}`}
+            />
+            <a
+              className={styles.osmLink}
+              href={`https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=16/${coords.lat}/${coords.lng}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open in OpenStreetMap ↗
+            </a>
+          </div>
+        )}
+      </FormGroup>
+    </>
   );
 }

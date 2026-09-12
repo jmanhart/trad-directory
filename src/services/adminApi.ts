@@ -132,6 +132,8 @@ interface AddShopData {
   contact?: string;
   phone_number?: string;
   website_url?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   city_id: number;
 }
 
@@ -380,6 +382,8 @@ interface UpdateShopData {
   contact?: string;
   phone_number?: string;
   website_url?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   city_id?: number;
 }
 

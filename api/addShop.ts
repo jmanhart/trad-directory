@@ -9,6 +9,8 @@ interface AddShopData {
   contact?: string;
   phone_number?: string;
   website_url?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   city_id: number;
 }
 
@@ -87,8 +89,15 @@ export default async function handler(req: any, res: any) {
 
     if (data.address) {
       shopData.address = data.address;
-      // Geocode the street address so the shop drops as a pin at its real
-      // location. Non-fatal: a miss just leaves the shop uncoded (admin-flagged).
+    }
+
+    // Prefer explicit coordinates from the admin "Check address" / manual-entry
+    // tool; otherwise geocode the street address. Non-fatal — a miss just leaves
+    // the shop uncoded (flagged in the admin table).
+    if (data.latitude != null && data.longitude != null) {
+      shopData.latitude = data.latitude;
+      shopData.longitude = data.longitude;
+    } else if (data.address) {
       try {
         const coords = await geocodeShopByCity(
           supabase,

@@ -14,6 +14,8 @@ interface ShopFormData {
   contact: string;
   phone_number: string;
   website_url: string;
+  latitude: number | null;
+  longitude: number | null;
   city_id: string;
 }
 
@@ -37,6 +39,8 @@ export default function AdminAddShop() {
       contact: "",
       phone_number: "",
       website_url: "",
+      latitude: null,
+      longitude: null,
       city_id: "",
     },
     onSubmit: async (data) => {
@@ -49,6 +53,8 @@ export default function AdminAddShop() {
       contact: formData.contact || undefined,
       phone_number: formData.phone_number || undefined,
       website_url: formData.website_url || undefined,
+      latitude: formData.latitude,
+      longitude: formData.longitude,
       city_id: parseInt(formData.city_id),
     }),
     validateData: (formData) => {
@@ -104,6 +110,11 @@ export default function AdminAddShop() {
           id="address"
           value={formData.address}
           onChange={v => setFormData(prev => ({ ...prev, address: v }))}
+          latitude={formData.latitude}
+          longitude={formData.longitude}
+          onCoordsChange={(lat, lng) =>
+            setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }))
+          }
           cityName={selectedCity?.city_name ?? null}
           stateName={selectedCity?.state_name ?? null}
           countryName={selectedCity?.country_name ?? null}

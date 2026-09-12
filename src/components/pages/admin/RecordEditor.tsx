@@ -53,6 +53,8 @@ interface ShopFormData {
   contact: string;
   phone_number: string;
   website_url: string;
+  latitude: number | null;
+  longitude: number | null;
   city_id: string;
 }
 
@@ -422,6 +424,8 @@ export default function RecordEditor({
         contact: shop.contact || "",
         phone_number: shop.phone_number || "",
         website_url: shop.website_url || "",
+        latitude: shop.latitude ?? null,
+        longitude: shop.longitude ?? null,
         city_id: shop.city_id?.toString() || "",
       };
       setShopFormData(formData);
@@ -532,6 +536,8 @@ export default function RecordEditor({
           contact: shopFormData.contact || undefined,
           phone_number: shopFormData.phone_number || undefined,
           website_url: shopFormData.website_url || undefined,
+          latitude: shopFormData.latitude,
+          longitude: shopFormData.longitude,
           city_id: shopFormData.city_id
             ? parseInt(shopFormData.city_id)
             : undefined,
@@ -1113,6 +1119,15 @@ export default function RecordEditor({
                         id="shop_address"
                         value={shopFormData.address}
                         onChange={v => handleShopFormChange("address", v)}
+                        latitude={shopFormData.latitude}
+                        longitude={shopFormData.longitude}
+                        onCoordsChange={(lat, lng) =>
+                          setShopFormData(prev =>
+                            prev
+                              ? { ...prev, latitude: lat, longitude: lng }
+                              : prev
+                          )
+                        }
                         cityName={shopCity?.city_name ?? null}
                         stateName={shopCity?.state_name ?? null}
                         countryName={shopCity?.country_name ?? null}

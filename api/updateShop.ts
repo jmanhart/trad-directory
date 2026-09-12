@@ -58,9 +58,19 @@ export default async function handler(req: any, res: any) {
     if (data.website_url !== undefined) updateData.website_url = data.website_url || null;
     if (data.city_id !== undefined) updateData.city_id = data.city_id || null;
 
+    // Explicit coordinates from the "Check address" / manual-entry tool win.
+    const hasExplicitCoords = data.latitude != null && data.longitude != null;
+    if (hasExplicitCoords) {
+      updateData.latitude = data.latitude;
+      updateData.longitude = data.longitude;
+    }
+
     // Re-geocode when the address or city changed so coordinates keep tracking
     // the street address. Non-fatal; clears coords only when the address is removed.
-    if (data.address !== undefined || data.city_id !== undefined) {
+    if (
+      !hasExplicitCoords &&
+      (data.address !== undefined || data.city_id !== undefined)
+    ) {
       const { data: current } = await supabase
         .from("tattoo_shops")
         .select("address, city_id")
