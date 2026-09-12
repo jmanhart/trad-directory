@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 
 export async function geocodeCity(
@@ -85,4 +87,45 @@ export async function geocodeAddress(
     console.error(`Geocode error for "${query}":`, err);
     return null;
   }
+}
+
+// Resolve a shop's coordinates from its street address, pulling city/state/
+// country context from the shop's city_id so partial addresses still land in
+// the right place. Server-only (needs a Supabase client). Returns null when the
+// address can't be geocoded.
+type JoinCountry = { country_name: string | null };
+type JoinState = {
+  state_name: string | null;
+  country: JoinCountry | JoinCountry[] | null;
+};
+type CityContext = {
+  city_name: string | null;
+  state: JoinState | JoinState[] | null;
+};
+
+export async function geocodeShopByCity(
+  supabase: SupabaseClient,
+  cityId: number,
+  address: string
+): Promise<{ lat: number; lng: number } | null> {
+  if (!address || !cityId) return null;
+  const { data } = await supabase
+    .from("cities")
+    .select(
+      "city_name, state:states(state_name, country:countries(country_name))"
+    )
+    .eq("id", cityId)
+    .single();
+  // Supabase's untyped client returns loosely-typed rows for string selects.
+  const city = data as CityContext | null;
+  const state = Array.isArray(city?.state) ? city?.state[0] : city?.state;
+  const country = Array.isArray(state?.country)
+    ? state?.country[0]
+    : state?.country;
+  return geocodeAddress(
+    address,
+    city?.city_name ?? null,
+    state?.state_name ?? null,
+    country?.country_name ?? null
+  );
 }

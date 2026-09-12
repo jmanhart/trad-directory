@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { requireAdminAuth } from "./_middleware/auth";
+import { geocodeShopByCity } from "./_utils/geocode";
 
 interface AddShopData {
   shop_name: string;
@@ -86,6 +87,21 @@ export default async function handler(req: any, res: any) {
 
     if (data.address) {
       shopData.address = data.address;
+      // Geocode the street address so the shop drops as a pin at its real
+      // location. Non-fatal: a miss just leaves the shop uncoded (admin-flagged).
+      try {
+        const coords = await geocodeShopByCity(
+          supabase,
+          data.city_id,
+          data.address
+        );
+        if (coords) {
+          shopData.latitude = coords.lat;
+          shopData.longitude = coords.lng;
+        }
+      } catch (geoErr) {
+        console.warn("Shop geocode failed:", geoErr);
+      }
     }
 
     if (data.contact) {
