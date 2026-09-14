@@ -1,135 +1,153 @@
 # Magic Link Authentication Setup
 
+Accounts (magic-link sign-in, save-favorites, claim-your-listing) are built
+behind the `accounts` feature flag. **Working in local + dev preview; dark in
+production** until the rollout checklist below is done.
+
+- Flag: `VITE_FEATURE_ACCOUNTS` (build-time, `src/lib/flags.ts`). Unset →
+  Vite dead-code-eliminates every account route, nav link, and save button, so
+  nothing ships. This is why production currently has no Saved page.
+- Auth: Supabase GoTrue magic link (`signInWithOtp`), no passwords.
+- Favorites: per-user rows in `saved_artists` / `saved_shops`, RLS-scoped to the
+  owner; the browser writes them directly (not through `/api`).
+
 ## File Tree
 
 ```
 src/
 ├── lib/
-│   └── supabaseClient.ts          # Supabase client singleton
+│   ├── supabaseClient.ts          # Supabase client singleton (VITE_SUPABASE_*)
+│   └── flags.ts                   # accounts feature flag
 ├── contexts/
-│   └── AuthContext.tsx            # Auth provider with React context
+│   └── AuthContext.tsx            # AuthProvider (mounted in main.tsx)
+├── hooks/
+│   ├── useSavedArtists.ts         # saved_artists read/toggle
+│   └── useSavedShops.ts           # saved_shops read/toggle
 ├── components/
 │   ├── auth/
-│   │   ├── LoginPage.tsx          # Magic link login form
-│   │   ├── LoginPage.module.css
-│   │   ├── RequireAuth.tsx        # Protected route wrapper
-│   │   └── AuthCallback.tsx       # Handles OAuth callback
+│   │   ├── LoginPage.tsx          # magic link login form
+│   │   ├── RequireAuth.tsx        # protected route wrapper
+│   │   └── AuthCallback.tsx       # token exchange on redirect
 │   └── pages/
-│       ├── SavedPage.tsx          # Example protected page
-│       └── SavedPage.module.css
-migrations/
-└── create_saved_artists_table.sql  # Database table for saved artists
+│       ├── SavedPage.tsx          # saved artists + shops
+│       └── AccountPage.tsx
+supabase/
+├── migrations/                    # source of truth (profiles, saved_artists,
+│                                  #   saved_shops, handle_new_user trigger)
+├── templates/magic_link.html      # branded magic-link email
+└── config.toml                    # LOCAL auth config only (not cloud)
 ```
 
-## Setup Instructions
+## Environments
 
-### 1. Supabase Dashboard Configuration
+Three environments, three different backends. The `23503` FK error we hit came
+from mixing them — see Gotchas.
 
-Go to your Supabase project → **Authentication** → **URL Configuration**
+| | Backend Supabase | `VITE_FEATURE_ACCOUNTS` | Magic-link email |
+|---|---|---|---|
+| **Local** | local stack (`127.0.0.1:54321`) | on (via `.env.local`) | mail catcher `:54324`, any fake address |
+| **Dev preview** (Vercel) | cloud project | on (preview env var) | cloud SMTP — real emails |
+| **Production** (`trad-directory.com`) | cloud project | **off until launch** | cloud SMTP — real emails |
 
-#### Site URL
-- **Local dev**: `http://localhost:5173`
-- **Production**: `https://yourdomain.com`
+`config.toml` `[auth]` (`site_url`, `additional_redirect_urls`, `magic_link`
+template) governs **local only**. The cloud project's equivalent settings live
+in the Supabase dashboard and must be set separately (rollout step 2–3).
 
-#### Redirect URLs (add both)
-- `http://localhost:5173/auth/callback`
-- `https://yourdomain.com/auth/callback` (for production)
+## Local Development
 
-#### Gotchas
-- Magic links work in SPAs, but you need the callback route (`/auth/callback`)
-- The redirect URL must match exactly (including protocol and port)
-- For local dev, use `http://localhost:5173` (not `http://127.0.0.1:5173`)
+Full detail in the `trad-directory-local-auth-testing` skill. Short version:
 
-### 2. Database Setup
+1. `colima start` (Docker via Colima, not Docker Desktop).
+2. `npm run db:start` — starts local Supabase; auto-runs migrations + `seed.sql`.
+   Ports: API 54321, Studio 54323, **mail catcher 54324**.
+3. `.env.development.local` (gitignored) points the browser at local Supabase.
+   If parked as `.bak`, restore it (or recreate from `supabase status`).
+4. `npm run dev:admin` — `.env.local` already sets `VITE_FEATURE_ACCOUNTS=true`.
+   Env is not hot-reloaded; restart after any env change.
+5. Sign in: `/login` → any fake email → open **http://127.0.0.1:54324** → click
+   the magic link. `handle_new_user` auto-creates a `profiles` row.
 
-Run the migration in Supabase SQL Editor:
+## Production Rollout Checklist
 
-```sql
--- See: migrations/create_saved_artists_table.sql
-```
+Do these in order against the **cloud** project before flipping the flag.
 
-This creates:
-- `saved_artists` table with RLS policies
-- Users can only read/write their own saved artists
+1. **Database.** Apply all migrations to the cloud project:
+   ```bash
+   npm run db:push:safe          # backs up, then supabase db push
+   supabase migration list       # confirm every local has a matching remote
+   ```
+   This provisions `profiles`, `saved_artists`, `saved_shops`, and the
+   `handle_new_user` trigger with their RLS policies.
 
-### 3. Environment Variables
+2. **Auth URL configuration** (Dashboard → Authentication → URL Configuration —
+   the cloud equivalent of `config.toml`, which is local-only):
+   - Site URL: `https://www.trad-directory.com`
+   - Redirect URLs: add `https://www.trad-directory.com/**` (covers
+     `/auth/callback`). Match protocol + host exactly.
 
-Ensure these are in your `.env`:
+3. **Email delivery** (Dashboard → Authentication):
+   - **SMTP Settings**: configure a real provider (SendGrid/Resend/etc.). The
+     built-in sender is rate-limited (~2–4/hr, `config.toml` shows
+     `email_sent = 2` locally) and is for testing only — without SMTP,
+     production magic links will throttle and drop.
+   - **Email Templates → Magic Link**: paste the HTML from
+     `supabase/templates/magic_link.html`; set subject
+     `Your Trad Directory sign-in link`.
+   - Ensure email signups are enabled (`enable_signup`).
 
-```env
-VITE_SUPABASE_URL=your-project-url
-VITE_SUPABASE_ANON_KEY=your-anon-key
-```
+4. **Feature flag** (the launch switch). In Vercel **Production** env, set:
+   ```
+   VITE_FEATURE_ACCOUNTS=true
+   ```
+   Build-time, so this triggers a redeploy. Also surfaces `/admin/claims`.
+   Leave unset to keep accounts dark.
 
-### 4. Update Imports (if needed)
-
-If you have existing code importing from `src/services/supabaseClient.ts`, update to:
-```ts
-import { supabase } from "../lib/supabaseClient";
-```
-
-## Usage
-
-### Protected Routes
-
-Wrap any route that requires auth:
-
-```tsx
-<Route
-  path="/saved"
-  element={
-    <RequireAuth>
-      <SavedPage />
-    </RequireAuth>
-  }
-/>
-```
-
-### Using Auth in Components
-
-```tsx
-import { useAuth } from "../contexts/AuthContext";
-
-function MyComponent() {
-  const { user, signOut } = useAuth();
-  
-  if (user) {
-    return <button onClick={signOut}>Sign Out</button>;
-  }
-}
-```
-
-### Save Artist Example
-
-```tsx
-import { supabase } from "../lib/supabaseClient";
-import { useAuth } from "../contexts/AuthContext";
-
-function ArtistCard({ artistId }) {
-  const { user } = useAuth();
-  
-  const toggleSave = async () => {
-    if (!user) return;
-    
-    const { error } = await supabase
-      .from("saved_artists")
-      .insert({ user_id: user.id, artist_id: artistId });
-  };
-}
-```
+5. **Redeploy + verify live** (a passing build is not proof):
+   - `/login` on the production domain → magic link arrives via SMTP.
+   - Click it → lands signed in → save an artist and a shop → both persist and
+     appear on `/saved` after reload.
 
 ## How It Works
 
-1. User visits protected route → redirected to `/login`
-2. User enters email → magic link sent
-3. User clicks link in email → redirected to `/auth/callback`
-4. Supabase handles token exchange → user authenticated
-5. `AuthCallback` redirects to original destination (or `/saved`)
+1. Protected route (`RequireAuth`) → redirect to `/login`.
+2. Email entered → `signInWithOtp` sends the magic link.
+3. Link → `/auth/callback` → Supabase token exchange → authenticated.
+4. `AuthCallback` redirects to the original destination (or `/saved`).
 
-## Testing Locally
+## Usage
 
-1. Start dev server: `npm run dev`
-2. Visit `http://localhost:5173/saved` (should redirect to login)
-3. Enter email, check inbox
-4. Click magic link → should redirect back to `/saved`
+Protected route:
 
+```tsx
+<Route path="/saved" element={<RequireAuth><SavedPage /></RequireAuth>} />
+```
+
+Auth in a component:
+
+```tsx
+import { useAuth } from "../contexts/AuthContext";
+const { user, signOut } = useAuth();
+```
+
+Saving (through the hooks, which own persistence + optimistic state):
+
+```tsx
+import { useSavedArtists } from "../hooks/useSavedArtists";
+const { isSaved, toggleSave } = useSavedArtists();
+// toggleSave(artistId) inserts/deletes the saved_artists row; logs on failure.
+```
+
+## Gotchas
+
+- **`23503` FK violation on save (`Key is not present in table "users"`).**
+  You're signed in with a session minted against one Supabase but the browser
+  client points at another (classic: a cloud session in localStorage while
+  `.env.development.local` points at local). RLS passes (`auth.uid() ==
+  user_id`) but the FK to that backend's `auth.users` has no row. Fix: sign out
+  and sign in fresh against the backend you're actually pointed at. A session
+  and DB must agree on who you are.
+- **Redirect URL must match exactly** — protocol, host, and port. For local use
+  `http://localhost:5173`, not `127.0.0.1`.
+- **`config.toml` changes need `supabase stop && supabase start`**; cloud auth
+  changes are made in the dashboard, not this file.
+- **Env changes are not hot-reloaded** — full dev-server restart.

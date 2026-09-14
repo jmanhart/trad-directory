@@ -56,8 +56,8 @@ export function useSavedShops() {
         });
         return true;
       }
+      console.error("Error removing saved shop:", error);
     } else {
-      // Add to saved
       const { error } = await supabase.from("saved_shops").insert({
         user_id: user.id,
         shop_id: shopId,
@@ -67,6 +67,7 @@ export function useSavedShops() {
         setSavedShopIds(prev => new Set(prev).add(shopId));
         return true;
       }
+      console.error("Error saving shop:", error);
     }
     return false;
   };

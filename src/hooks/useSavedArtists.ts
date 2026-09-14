@@ -53,6 +53,7 @@ export function useSavedArtists() {
         });
         return true;
       }
+      console.error("Error removing saved artist:", error);
     } else {
       // Add to saved
       const { error } = await supabase.from("saved_artists").insert({
@@ -64,6 +65,7 @@ export function useSavedArtists() {
         setSavedArtistIds((prev) => new Set(prev).add(artistId));
         return true;
       }
+      console.error("Error saving artist:", error);
     }
     return false;
   };
