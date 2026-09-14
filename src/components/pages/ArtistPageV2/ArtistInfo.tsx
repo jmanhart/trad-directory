@@ -4,6 +4,7 @@ import { Button } from "../../common/FormComponents";
 import { formatArtistLocation } from "../../../utils/formatArtistLocation";
 import type { ArtistPageV2Artist } from "./types";
 import styles from "./ArtistInfo.module.css";
+import ClaimListing from "../../claim/ClaimListing";
 
 export interface ArtistInfoProps {
   artist: ArtistPageV2Artist;
@@ -69,6 +70,12 @@ export default function ArtistInfo({ artist, imageUrl }: ArtistInfoProps) {
               </span>
             </div>
           )}
+          <ClaimListing
+            entityType="artist"
+            entityId={artist.id}
+            listingName={artist.name}
+            instagramHandle={artist.instagram_handle}
+          />
         </div>
       </div>
       {instagramUrl && (

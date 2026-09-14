@@ -45,6 +45,12 @@ import { usePageTracking } from "./hooks/usePageTracking";
 import ScatteredSvgBackground from "./components/ScatteredSvgBackground/ScatteredSvgBackground";
 import { AdminUiProvider } from "./components/pages/admin/AdminUiContext";
 import useIsMobile from "./hooks/useIsMobile";
+import LoginPage from "./components/auth/LoginPage";
+import AuthCallback from "./components/auth/AuthCallback";
+import RequireAuth from "./components/auth/RequireAuth";
+import AccountPage from "./components/pages/AccountPage";
+import SavedPage from "./components/pages/SavedPage";
+import { flags } from "./lib/flags";
 
 // Enhanced App component with Sentry error boundary
 const SentryApp = Sentry.withErrorBoundary(App, {
@@ -68,7 +74,13 @@ const SentryApp = Sentry.withErrorBoundary(App, {
   },
 });
 
-const PAGES_WITHOUT_FOOTER = ["/artists", "/shops", "/countries", "/store", "/map"];
+const PAGES_WITHOUT_FOOTER = [
+  "/artists",
+  "/shops",
+  "/countries",
+  "/store",
+  "/map",
+];
 
 // Admin routes that render standalone (not inside the sidebar AdminLayout).
 const LEGACY_ADMIN_PATHS = [
@@ -97,7 +109,9 @@ function AppContent() {
   usePageTracking();
 
   return (
-    <div className={`${styles.appContainer} ${isAdminLayoutRoute ? styles.adminContainer : ""}`}>
+    <div
+      className={`${styles.appContainer} ${isAdminLayoutRoute ? styles.adminContainer : ""}`}
+    >
       <ScatteredSvgBackground preset="default" intensity="subtle" />
       {isMapPage && <FeedbackButton />}
       {isAdminRoute ? (
@@ -135,11 +149,30 @@ function AppContent() {
           <Route path="/search-results" element={<SearchResults />} />
           <Route path="/logo-type" element={<LogoTypePlayground />} />
           <Route path="/artist/:slugOrId" element={<ArtistPage />} />
+          {flags.accounts && (
+            <>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route
+                path="/account"
+                element={
+                  <RequireAuth>
+                    <AccountPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/saved"
+                element={
+                  <RequireAuth>
+                    <SavedPage />
+                  </RequireAuth>
+                }
+              />
+            </>
+          )}
           <Route path="/admin" element={<AdminLayout />}>
-            <Route
-              index
-              element={<Navigate to="/admin/analytics" replace />}
-            />
+            <Route index element={<Navigate to="/admin/analytics" replace />} />
             <Route path="analytics" element={<AllAnalyticsPage />} />
             <Route path="data" element={<AdminAllData />} />
             <Route
@@ -163,6 +196,12 @@ function AppContent() {
               element={<AdminAllData embeddedTab="new_artists" />}
             />
             <Route path="bugs" element={<AdminAllData embeddedTab="bugs" />} />
+            {flags.accounts && (
+              <Route
+                path="claims"
+                element={<AdminAllData embeddedTab="claims" />}
+              />
+            )}
             <Route path="broken-links" element={<AllLinkHealthPage />} />
             <Route path="data-builder" element={<AdminDataBuilder />} />
           </Route>

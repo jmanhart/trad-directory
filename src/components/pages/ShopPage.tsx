@@ -9,6 +9,7 @@ import styles from "./ShopPage.module.css";
 /** Set to true to use the new shop page (ShopPageV2) while you build it. */
 const USE_NEW_SHOP_PAGE = false;
 import InstagramLogoUrl from "/logo-instagram.svg";
+import ClaimListing from "../claim/ClaimListing";
 
 interface Artist {
   id: number;
@@ -180,6 +181,12 @@ export default function ShopPage() {
                 </a>
               </div>
             )}
+            <ClaimListing
+              entityType="shop"
+              entityId={shop.id}
+              listingName={shop.shop_name}
+              instagramHandle={shop.instagram_handle}
+            />
           </div>
         </div>
 

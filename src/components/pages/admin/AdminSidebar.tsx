@@ -5,6 +5,7 @@ import styles from "./AdminSidebar.module.css";
 import navStyles from "../../common/SideNav/SideNav.module.css";
 import { useAdminUi } from "./AdminUiContext";
 import AdminAddMenu from "./AdminAddMenu";
+import { flags } from "../../../lib/flags";
 
 interface AdminSidebarProps {
   isMobile: boolean;
@@ -96,6 +97,20 @@ function buildEntries(badges: {
         </>
       ),
     },
+    ...(flags.accounts
+      ? [
+          {
+            to: "/admin/claims",
+            label: "Claims",
+            icon: icon(
+              <>
+                <path d="M10 2.5l6 2.5v4c0 3.5-2.5 6-6 7-3.5-1-6-3.5-6-7V5l6-2.5z" />
+                <path d="M7.3 9.8l1.9 1.9 3.5-3.7" />
+              </>
+            ),
+          },
+        ]
+      : []),
     {
       to: "/admin/data-builder",
       label: "Data Builder",

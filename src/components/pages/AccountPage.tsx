@@ -4,10 +4,20 @@ import { useNavigate } from "react-router-dom";
 import { useProfile } from "../../hooks/useProfile";
 import RequireAuth from "../auth/RequireAuth";
 import styles from "./AccountPage.module.css";
+import { flags } from "../../lib/flags";
+import {
+  MOCK_ACCOUNT_CLAIMS,
+  ACCOUNT_CLAIM_STATUS_LABEL,
+} from "../claim/claim";
 
 function AccountPageContent() {
   const { user, signOut } = useAuth();
-  const { profile, loading: profileLoading, updateProfile, updateEmail } = useProfile();
+  const {
+    profile,
+    loading: profileLoading,
+    updateProfile,
+    updateEmail,
+  } = useProfile();
   const navigate = useNavigate();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -97,7 +107,7 @@ function AccountPageContent() {
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={e => setName(e.target.value)}
                 className={styles.input}
                 placeholder="Your name"
               />
@@ -108,7 +118,7 @@ function AccountPageContent() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 className={styles.input}
                 placeholder="your@email.com"
               />
@@ -122,7 +132,7 @@ function AccountPageContent() {
               <input
                 type="url"
                 value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
+                onChange={e => setAvatarUrl(e.target.value)}
                 className={styles.input}
                 placeholder="https://example.com/avatar.jpg"
               />
@@ -131,7 +141,9 @@ function AccountPageContent() {
             {error && <p className={styles.error}>{error}</p>}
             {success && (
               <p className={styles.success}>
-                Profile updated! {email !== user?.email && "Check your email to verify the new address."}
+                Profile updated!{" "}
+                {email !== user?.email &&
+                  "Check your email to verify the new address."}
               </p>
             )}
 
@@ -186,14 +198,50 @@ function AccountPageContent() {
                 >
                   View Saved Artists
                 </button>
-                <button
-                  onClick={handleSignOut}
-                  className={styles.buttonDanger}
-                >
+                <button onClick={handleSignOut} className={styles.buttonDanger}>
                   Sign Out
                 </button>
               </div>
             </div>
+
+            {flags.accounts && (
+              <div className={styles.section}>
+                <h2>Your claims</h2>
+                {MOCK_ACCOUNT_CLAIMS.length === 0 ? (
+                  <p className={styles.value}>
+                    You haven't claimed any listings yet.
+                  </p>
+                ) : (
+                  <ul className={styles.claimList}>
+                    {MOCK_ACCOUNT_CLAIMS.map(claim => (
+                      <li key={claim.id} className={styles.claimItem}>
+                        <div className={styles.claimMain}>
+                          <span className={styles.claimName}>
+                            {claim.listingName}
+                          </span>
+                          <span className={styles.claimEntity}>
+                            {claim.entityType}
+                          </span>
+                        </div>
+                        <div className={styles.claimMeta}>
+                          <span
+                            className={`${styles.claimPill} ${styles[claim.status]}`}
+                          >
+                            {ACCOUNT_CLAIM_STATUS_LABEL[claim.status]}
+                          </span>
+                          <span className={styles.claimHandle}>
+                            @{claim.handle}
+                          </span>
+                        </div>
+                        {claim.reason && (
+                          <p className={styles.claimReason}>{claim.reason}</p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>
@@ -208,4 +256,3 @@ export default function AccountPage() {
     </RequireAuth>
   );
 }
-
