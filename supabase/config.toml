@@ -233,6 +233,13 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
+# Branded magic-link email. Applies LOCALLY (renders in the mail catcher at
+# :54324); set the same HTML in the cloud dashboard (Auth -> Email Templates)
+# for production. Config changes need `supabase stop && supabase start`.
+[auth.email.template.magic_link]
+subject = "Your Trad Directory sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
 # Use a production-ready SMTP server
 # [auth.email.smtp]
 # enabled = true

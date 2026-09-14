@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
+    <title>Your sign-in link</title>
+  </head>
+  <!--
+    Branded magic-link email for Trad Directory.
+
+    Email HTML is its own world: tables + inline styles, a CSS subset, no
+    external stylesheets. It cannot reuse the app's SCSS/tokens — the brand
+    colors below are hardcoded copies of src/styles/variables.css
+    (--color-primary #9c0101, --color-background #fff4f4, --black-200 #1f1f1f).
+
+    GoTrue Go-template variables available here: .ConfirmationURL (the magic
+    link), .Token / .TokenHash (OTP code), .Email, .SiteURL, .RedirectTo.
+
+    Wired in supabase/config.toml -> [auth.email.template.magic_link] for LOCAL
+    testing (renders in the mail catcher at :54324). For production, set the
+    same HTML in the cloud dashboard: Auth -> Email Templates.
+  -->
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background-color: #fff4f4;
+      -webkit-text-size-adjust: 100%;
+    "
+  >
+    <!-- Preheader: shown in inbox preview, hidden in the body. -->
+    <div
+      style="
+        display: none;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        color: #fff4f4;
+        font-size: 1px;
+        line-height: 1px;
+      "
+    >
+      Your one-time link to sign in to Trad Directory.
+    </div>
+
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="background-color: #fff4f4"
+    >
+      <tr>
+        <td align="center" style="padding: 32px 16px">
+          <table
+            role="presentation"
+            width="480"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            style="
+              width: 480px;
+              max-width: 480px;
+              background-color: #ffffff;
+              border: 1px solid #f0d2d2;
+              border-radius: 8px;
+            "
+          >
+            <tr>
+              <td style="padding: 40px 40px 32px 40px">
+                <!-- Wordmark -->
+                <div
+                  style="
+                    font-family: Georgia, &quot;Times New Roman&quot;, serif;
+                    font-size: 22px;
+                    font-weight: 700;
+                    letter-spacing: 2px;
+                    color: #9c0101;
+                    text-transform: uppercase;
+                  "
+                >
+                  Trad Directory
+                </div>
+
+                <!-- Heading -->
+                <h1
+                  style="
+                    margin: 28px 0 12px 0;
+                    font-family:
+                      -apple-system, &quot;Segoe UI&quot;, Roboto, Helvetica,
+                      Arial, sans-serif;
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: #1f1f1f;
+                  "
+                >
+                  Your sign-in link
+                </h1>
+
+                <!-- Body -->
+                <p
+                  style="
+                    margin: 0 0 28px 0;
+                    font-family:
+                      -apple-system, &quot;Segoe UI&quot;, Roboto, Helvetica,
+                      Arial, sans-serif;
+                    font-size: 15px;
+                    line-height: 1.6;
+                    color: #4b5563;
+                  "
+                >
+                  Tap the button below to sign in to Trad Directory. This link
+                  expires shortly and can only be used once.
+                </p>
+
+                <!-- Bulletproof button -->
+                <table
+                  role="presentation"
+                  cellpadding="0"
+                  cellspacing="0"
+                  border="0"
+                >
+                  <tr>
+                    <td
+                      align="center"
+                      bgcolor="#9c0101"
+                      style="border-radius: 4px"
+                    >
+                      <a
+                        href="{{ .ConfirmationURL }}"
+                        target="_blank"
+                        style="
+                          display: inline-block;
+                          padding: 14px 32px;
+                          font-family:
+                            -apple-system, &quot;Segoe UI&quot;, Roboto,
+                            Helvetica, Arial, sans-serif;
+                          font-size: 15px;
+                          font-weight: 600;
+                          color: #ffffff;
+                          text-decoration: none;
+                          border-radius: 4px;
+                        "
+                      >
+                        Sign in
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Fallback link -->
+                <p
+                  style="
+                    margin: 28px 0 0 0;
+                    font-family:
+                      -apple-system, &quot;Segoe UI&quot;, Roboto, Helvetica,
+                      Arial, sans-serif;
+                    font-size: 13px;
+                    line-height: 1.5;
+                    color: #6b7280;
+                  "
+                >
+                  Or paste this link into your browser:
+                </p>
+                <p style="margin: 4px 0 0 0; word-break: break-all">
+                  <a
+                    href="{{ .ConfirmationURL }}"
+                    target="_blank"
+                    style="
+                      font-family:
+                        -apple-system, &quot;Segoe UI&quot;, Roboto, Helvetica,
+                        Arial, sans-serif;
+                      font-size: 13px;
+                      line-height: 1.5;
+                      color: #9c0101;
+                    "
+                    >{{ .ConfirmationURL }}</a
+                  >
+                </p>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td
+                style="
+                  padding: 24px 40px;
+                  border-top: 1px solid #f3e5e5;
+                  font-family:
+                    -apple-system, &quot;Segoe UI&quot;, Roboto, Helvetica,
+                    Arial, sans-serif;
+                  font-size: 12px;
+                  line-height: 1.5;
+                  color: #9ca3af;
+                "
+              >
+                You received this because someone entered this email address to
+                sign in to
+                <a
+                  href="{{ .SiteURL }}"
+                  target="_blank"
+                  style="color: #9ca3af; text-decoration: underline"
+                  >Trad Directory</a
+                >. If it wasn't you, you can safely ignore this email.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
