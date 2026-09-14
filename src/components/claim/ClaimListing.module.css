@@ -1,0 +1,89 @@
+.wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Understated entry point — a text-forward button, not a loud CTA, so it sits
+   quietly near the listing name until an owner recognizes themselves. */
+.claimButton {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: transparent;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.claimButton:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.statusRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--border-radius);
+  padding: 0.2rem 0.55rem;
+}
+
+.pillPending {
+  background-color: rgba(255, 193, 7, 0.14);
+  color: #a97a00;
+}
+
+.pillRejected {
+  background-color: rgba(220, 53, 69, 0.12);
+  color: #dc3545;
+}
+
+.linkButton {
+  padding: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}
+
+/* Verified ownership badge shown in place of the claim button. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-success);
+  background-color: color-mix(in srgb, var(--color-success) 12%, white);
+  border: var(--border-width) solid
+    color-mix(in srgb, var(--color-success) 35%, white);
+  border-radius: var(--border-radius);
+  padding: 0.25rem 0.6rem;
+}
+
+.badgeCheck {
+  font-weight: 700;
+}

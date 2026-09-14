@@ -40,6 +40,26 @@
   min-width: 0;
 }
 
+.authNav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.authLink {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.authLink:hover {
+  color: var(--color-primary);
+}
+
 .logoContainer {
   display: flex;
   align-items: center;
@@ -84,7 +104,8 @@
   }
 
   .right {
-    flex: 0 0 0;
+    flex: 0 0 auto;
     min-width: 0;
+    margin-left: 8px;
   }
 }

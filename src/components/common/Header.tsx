@@ -6,11 +6,12 @@ import { useSearchSuggestions } from "../../hooks/useSearchSuggestions";
 import { type Suggestion } from "../../utils/suggestions";
 import { trackSearch } from "../../utils/analytics";
 import styles from "./Header.module.css";
+import { flags } from "../../lib/flags";
 
 export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const isHomePage = location.pathname === "/";
   const showSearchBar = !isHomePage;
 
@@ -138,22 +139,21 @@ export default function Header() {
           >
             Instagram
           </a>
-          {false && user ? (
-            <>
-              <Link to="/saved" className={styles.navLink}>
-                Saved
-              </Link>
-              <Link to="/account" className={styles.navLink}>
-                Account
-              </Link>
-            </>
-          ) : (
-            false && (
+          {flags.accounts &&
+            (user ? (
+              <>
+                <Link to="/saved" className={styles.navLink}>
+                  Saved
+                </Link>
+                <Link to="/account" className={styles.navLink}>
+                  Account
+                </Link>
+              </>
+            ) : (
               <Link to="/login" className={styles.navLink}>
                 Sign In
               </Link>
-            )
-          )}
+            ))}
         </nav>
       </div>
     </header>
