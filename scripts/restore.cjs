@@ -28,6 +28,7 @@ const TABLES = [
   "submissions",
   "profiles",
   "saved_artists",
+  "saved_shops",
 ];
 
 const SEQUENCE_TABLES = {
@@ -46,7 +47,8 @@ async function main() {
   const tableIndex = args.indexOf("--table");
   const singleTable = tableIndex !== -1 ? args[tableIndex + 1] : null;
   const dirIndex = args.indexOf("--dir");
-  const backupDir = dirIndex !== -1 ? args[dirIndex + 1] : path.join(process.cwd(), "backups");
+  const backupDir =
+    dirIndex !== -1 ? args[dirIndex + 1] : path.join(process.cwd(), "backups");
 
   if (singleTable && !TABLES.includes(singleTable)) {
     console.error(`Unknown table: ${singleTable}`);
@@ -126,10 +128,7 @@ async function main() {
     console.log("\nSequences to reset:");
     for (const table of tablesToRestore) {
       if (backupData[table] && SEQUENCE_TABLES[table]) {
-        const maxId = Math.max(
-          0,
-          ...backupData[table].map(r => r.id || 0)
-        );
+        const maxId = Math.max(0, ...backupData[table].map(r => r.id || 0));
         console.log(`  ${SEQUENCE_TABLES[table]} -> ${maxId}`);
       }
     }
@@ -243,9 +242,7 @@ async function main() {
     const actual = count || 0;
     const status = actual === expected ? "OK" : "MISMATCH";
 
-    console.log(
-      `  ${table}: ${actual} rows (expected ${expected}) ${status}`
-    );
+    console.log(`  ${table}: ${actual} rows (expected ${expected}) ${status}`);
   }
 
   console.log("\nRestore complete.");

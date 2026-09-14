@@ -32,6 +32,7 @@ const TABLES = [
   "submissions",
   "profiles",
   "saved_artists",
+  "saved_shops",
 ];
 
 // Columns that are auto-generated and need sequence resets
@@ -64,7 +65,8 @@ async function fetchAllRows(supabase, table) {
           .from(table)
           .select("*")
           .range(offset, offset + pageSize - 1);
-        if (retryError) throw new Error(`Failed to fetch ${table}: ${retryError.message}`);
+        if (retryError)
+          throw new Error(`Failed to fetch ${table}: ${retryError.message}`);
         if (!allData || allData.length === 0) break;
         rows.push(...allData);
         if (allData.length < pageSize) break;
@@ -122,7 +124,8 @@ async function main() {
   const args = process.argv.slice(2);
   const shouldPush = args.includes("--push");
   const dirIndex = args.indexOf("--dir");
-  const backupDir = dirIndex !== -1 ? args[dirIndex + 1] : path.join(process.cwd(), "backups");
+  const backupDir =
+    dirIndex !== -1 ? args[dirIndex + 1] : path.join(process.cwd(), "backups");
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
@@ -193,7 +196,9 @@ async function main() {
     JSON.stringify(manifest, null, 2) + "\n"
   );
 
-  console.log(`\nTotal: ${manifest.totalRows} rows across ${TABLES.length} tables`);
+  console.log(
+    `\nTotal: ${manifest.totalRows} rows across ${TABLES.length} tables`
+  );
   console.log(`Output: ${backupDir}`);
 
   // Push to GitHub backup repo
