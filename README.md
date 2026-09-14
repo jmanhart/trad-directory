@@ -41,6 +41,20 @@ To run the admin API (Vercel functions in `/api`) locally alongside the app:
 npm run dev:admin      # app on :5173, `vercel dev` API on :3001
 ```
 
+### Why the app shows no data on plain `npm run dev`
+
+`/api/*` is served by `vercel dev`, **not** Vite. On plain `npm run dev` there is
+no API, so artist/shop lists come back empty. Use `npm run dev:admin` for
+anything that reads data. When the API isn't reachable, Vite now prints a red
+**`API PROXY`** error on the first failed `/api` request instead of failing
+silently.
+
+Ports are pinned and can't drift: Vite's `/api` proxy and `vercel dev --listen`
+both read `API_PORT` (default **3001**), and a preflight (`predev:admin`) frees
+stale dev servers on `:3001`/`:5173` before start — so the app is always on
+`:5173` and the API always on `:3001`. Override with `API_PORT=… npm run dev:admin`
+if 3001 is genuinely taken by something you can't stop.
+
 ## Scripts
 
 | Command                           | What it does                                 |
