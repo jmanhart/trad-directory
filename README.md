@@ -55,6 +55,41 @@ stale dev servers on `:3001`/`:5173` before start — so the app is always on
 `:5173` and the API always on `:3001`. Override with `API_PORT=… npm run dev:admin`
 if 3001 is genuinely taken by something you can't stop.
 
+### Testing accounts & the claim flow locally (end-to-end)
+
+Account features (sign in, Saved, Claims) sit behind the `accounts` flag and
+need a logged-in session. To exercise the **real** magic-link flow without
+setting up real email inboxes, run against **local Supabase** — it ships a mail
+catcher, so sign-in links land in a local web inbox instead of being emailed.
+
+**One-time prerequisites:** Docker (Colima here: `colima start`) + the Supabase CLI.
+
+1. Start the local stack (Postgres + Auth + mail catcher + seeded data):
+   ```bash
+   colima start          # if Docker isn't already running
+   npm run db:start      # supabase start — API :54321, Studio :54323, inbox :54324
+   ```
+   Migrations and `supabase/seed.sql` (real directory data) load automatically.
+2. Point the browser at local Supabase. `.env.development.local` is the local
+   override (gitignored) that sets `VITE_SUPABASE_URL=http://127.0.0.1:54321`. If
+   it's missing, create it with the local URL + anon key from `supabase status`.
+   **Env changes require a dev-server restart.**
+3. Run the app with accounts on:
+   ```bash
+   VITE_FEATURE_ACCOUNTS=true npm run dev:admin
+   ```
+4. Sign in: go to `/login`, enter **any** made-up address (`me@test.com`),
+   submit, then open the local inbox at **http://127.0.0.1:54324**, open the
+   newest email, and click the magic link. You're in — real session, RLS works.
+   Test multiple users with different made-up addresses; every link lands in the
+   same inbox. (Admin at `/admin/claims` is a separate password gate — no account
+   needed.)
+
+Switch back to **cloud** data (real prod Supabase, no local mail catcher): rename
+the override — `mv .env.development.local .env.development.local.bak` — and
+restart. See "Why the app shows no data" above for the failure mode when the
+override points at a local stack that isn't running.
+
 ## Scripts
 
 | Command                           | What it does                                 |
