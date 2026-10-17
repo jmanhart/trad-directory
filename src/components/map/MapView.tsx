@@ -1050,10 +1050,34 @@ function MapInner({
               type="circle"
               filter={["!", ["has", "point_count"]]}
               paint={{
-                "circle-radius": 7,
+                "circle-radius": [
+                  "interpolate",
+                  ["linear"],
+                  ["sqrt", ["max", ["get", "artistCount"], 1]],
+                  1, 8,
+                  2, 10,
+                  4, 14,
+                  7, 18,
+                ] as unknown as number,
                 "circle-color": "#c0392b",
                 "circle-opacity": SHOP_FADE_CIRCLE,
               }}
+            />
+            <Layer
+              id="shop-unclustered-count"
+              type="symbol"
+              filter={[
+                "all",
+                ["!", ["has", "point_count"]],
+                [">", ["get", "artistCount"], 0],
+              ]}
+              layout={{
+                "text-field": ["to-string", ["get", "artistCount"]] as unknown as string,
+                "text-font": ["Noto Sans Regular"],
+                "text-size": 10,
+                "text-allow-overlap": true,
+              }}
+              paint={{ "text-color": "#ffffff", "text-opacity": SHOP_FADE_TEXT }}
             />
             <Layer
               id="shop-unclustered-label"
@@ -1064,7 +1088,7 @@ function MapInner({
                 "text-font": ["Noto Sans Regular"],
                 "text-size": 10,
                 "text-anchor": "top",
-                "text-offset": [0, 0.9],
+                "text-offset": [0, 1.3],
               }}
               paint={{
                 "text-color": "#7a2318",
