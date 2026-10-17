@@ -143,14 +143,44 @@ const SHOP_LABEL_OPACITY = [
   "interpolate", ["linear"], ["zoom"], 12, 0, 13.5, 1,
 ] as unknown as number;
 
-// City aggregate dots cross-fade out at close zoom *only where the city has
-// shops*, so its shop circles take over without shopless cities vanishing.
-const CITY_FADE_WHEN_SHOPPED = [
+// City aggregate dots carry the whole city's artist count when zoomed out (no
+// shop pins visible yet). As shop pins fade in (zoom CITY_Z_OUT -> CITY_Z_IN),
+// the city dot hands its shopped artists over to those pins and shrinks to the
+// "remainder": artists NOT pinned to a shown shop (shopless, or at a shop not
+// yet geocoded). City dot + its shop pins therefore always sum to the true city
+// total, with no artist counted twice. When the remainder is 0 the city dot
+// shrinks away entirely and the shop pins stand alone.
+const CITY_Z_OUT = 9;
+const CITY_Z_IN = 11;
+const cityHasRemainder = [">", ["get", "unshoppedCount"], 0];
+// Radius morphs total -> remainder across the shop-pin fade band.
+const cityRadius = [
   "interpolate",
   ["linear"],
   ["zoom"],
-  10, 0.92,
-  12, ["case", [">", ["get", "shopCount"], 0], 0, 0.92],
+  CITY_Z_OUT, dotRadius("artistCount"),
+  CITY_Z_IN, ["case", cityHasRemainder, dotRadius("unshoppedCount"), 0],
+] as unknown as number;
+// Number flips total -> remainder once, mid-band, so it never blurs two digits.
+const cityCountField = [
+  "step",
+  ["zoom"],
+  ["to-string", ["get", "artistCount"]],
+  10, ["to-string", ["get", "unshoppedCount"]],
+] as unknown as string;
+// Hide the number at close zoom when there's no remainder to show.
+const cityCountOpacity = [
+  "step",
+  ["zoom"],
+  1,
+  10, ["case", cityHasRemainder, 1, 0],
+] as unknown as number;
+// Keep the city name only while its dot is still visible.
+const cityLabelOpacity = [
+  "step",
+  ["zoom"],
+  1,
+  CITY_Z_IN, ["case", cityHasRemainder, 1, 0],
 ] as unknown as number;
 
 // Inner component with map logic
@@ -601,6 +631,7 @@ function MapInner({
             countryName: d.countryName,
             artistCount: d.artistCount,
             shopCount: d.shopCount,
+            unshoppedCount: d.unshoppedCount,
           },
         })),
     }),
@@ -961,9 +992,9 @@ function MapInner({
               type="circle"
               filter={["!", ["has", "point_count"]]}
               paint={{
-                "circle-radius": dotRadius("artistCount"),
+                "circle-radius": cityRadius,
                 "circle-color": dotColor("artistCount"),
-                "circle-opacity": CITY_FADE_WHEN_SHOPPED,
+                "circle-opacity": 0.92,
               }}
             />
             <Layer
@@ -971,14 +1002,14 @@ function MapInner({
               type="symbol"
               filter={["!", ["has", "point_count"]]}
               layout={{
-                "text-field": ["to-string", ["get", "artistCount"]] as unknown as string,
+                "text-field": cityCountField,
                 "text-font": ["Noto Sans Regular"],
                 "text-size": 10,
                 "text-allow-overlap": true,
               }}
               paint={{
                 "text-color": "#ffffff",
-                "text-opacity": CITY_FADE_WHEN_SHOPPED,
+                "text-opacity": cityCountOpacity,
               }}
             />
             <Layer
@@ -999,7 +1030,7 @@ function MapInner({
                 "text-color": "#5c4a3a",
                 "text-halo-color": "#f3efe9",
                 "text-halo-width": 1.4,
-                "text-opacity": CITY_FADE_WHEN_SHOPPED,
+                "text-opacity": cityLabelOpacity,
               }}
             />
           </Source>
