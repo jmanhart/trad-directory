@@ -151,34 +151,48 @@ const SHOP_FADE_TEXT = [
 const CITY_Z_OUT = 9;
 const CITY_Z_IN = 11;
 const cityHasRemainder = [">", ["get", "unshoppedCount"], 0];
-// Radius morphs total -> remainder across the shop-pin fade band.
+// Radius morphs total -> remainder across the shop-pin fade band. The selected
+// city (the one you clicked) is pinned to its full total so focusing a city
+// never shrinks its own dot away -- even when its remainder is 0.
+// NOTE: a ["zoom"] expression must stay at the top level of a step/interpolate;
+// it cannot be nested inside a ["case"], so the isSelected branch lives in the
+// per-stop OUTPUT values instead (MapLibre drops the whole layer otherwise).
 const cityRadius = [
   "interpolate",
   ["linear"],
   ["zoom"],
   CITY_Z_OUT, dotRadius("artistCount"),
-  CITY_Z_IN, ["case", cityHasRemainder, dotRadius("unshoppedCount"), 0],
+  CITY_Z_IN, [
+    "case",
+    ["get", "isSelected"], dotRadius("artistCount"),
+    cityHasRemainder, dotRadius("unshoppedCount"),
+    0,
+  ],
 ] as unknown as number;
-// Number flips total -> remainder once, mid-band, so it never blurs two digits.
+// Number flips total -> remainder once, mid-band; the selected city stays total.
 const cityCountField = [
   "step",
   ["zoom"],
   ["to-string", ["get", "artistCount"]],
-  10, ["to-string", ["get", "unshoppedCount"]],
+  10, [
+    "case",
+    ["get", "isSelected"], ["to-string", ["get", "artistCount"]],
+    ["to-string", ["get", "unshoppedCount"]],
+  ],
 ] as unknown as string;
-// Hide the number at close zoom when there's no remainder to show.
+// Hide the number at close zoom when there's no remainder (selected city keeps it).
 const cityCountOpacity = [
   "step",
   ["zoom"],
   1,
-  10, ["case", cityHasRemainder, 1, 0],
+  10, ["case", ["get", "isSelected"], 1, cityHasRemainder, 1, 0],
 ] as unknown as number;
-// Keep the city name only while its dot is still visible.
+// Keep the city name while its dot is visible (always for the selected city).
 const cityLabelOpacity = [
   "step",
   ["zoom"],
   1,
-  CITY_Z_IN, ["case", cityHasRemainder, 1, 0],
+  CITY_Z_IN, ["case", ["get", "isSelected"], 1, cityHasRemainder, 1, 0],
 ] as unknown as number;
 
 // Inner component with map logic
@@ -192,6 +206,7 @@ function MapInner({
   panelOpen,
   shops = [],
   onShopClick,
+  selectedCity,
 }: MapViewProps) {
   const isMobile = useIsMobile();
   const mapRef = useRef<MapRef>(null);
@@ -630,10 +645,15 @@ function MapInner({
             artistCount: d.artistCount,
             shopCount: d.shopCount,
             unshoppedCount: d.unshoppedCount,
+            isSelected:
+              !!selectedCity &&
+              ((selectedCity.id != null && d.id === selectedCity.id) ||
+                (selectedCity.cityName === d.cityName &&
+                  selectedCity.stateName === d.stateName)),
           },
         })),
     }),
-    [cityData]
+    [cityData, selectedCity]
   );
 
   // SPIKE: shops as a clustered GeoJSON source (fade in at close zoom).
@@ -993,6 +1013,9 @@ function MapInner({
                 "circle-radius": cityRadius,
                 "circle-color": dotColor("artistCount"),
                 "circle-opacity": 1,
+                "circle-stroke-width": ["case", ["get", "isSelected"], 3, 0] as unknown as number,
+                "circle-stroke-color": "#ffffff",
+                "circle-stroke-opacity": 1,
               }}
             />
             <Layer
