@@ -131,16 +131,14 @@ const dotColor = (prop: string) =>
     120, "#7a1f1a",
   ] as unknown as string;
 
-// Shops fade in as you zoom into a metro (city dots stay); shop labels only at
-// the closest zoom so they don't pile up.
+// Shops (dots, count badges, and name labels) stay hidden at world/region zoom
+// so the overview reads as city dots only, then snap to FULL opacity as soon as
+// you're into a metro -- no half-transparent markers hanging around mid-zoom.
 const SHOP_FADE_CIRCLE = [
-  "interpolate", ["linear"], ["zoom"], 9, 0, 11, 0.92,
+  "interpolate", ["linear"], ["zoom"], 9, 0, 9.5, 1,
 ] as unknown as number;
 const SHOP_FADE_TEXT = [
-  "interpolate", ["linear"], ["zoom"], 9, 0, 11, 1,
-] as unknown as number;
-const SHOP_LABEL_OPACITY = [
-  "interpolate", ["linear"], ["zoom"], 12, 0, 13.5, 1,
+  "interpolate", ["linear"], ["zoom"], 9, 0, 9.5, 1,
 ] as unknown as number;
 
 // City aggregate dots carry the whole city's artist count when zoomed out (no
@@ -948,7 +946,7 @@ function MapInner({
               paint={{
                 "circle-radius": dotRadius("artists"),
                 "circle-color": dotColor("artists"),
-                "circle-opacity": 0.92,
+                "circle-opacity": 1,
               }}
             />
             <Layer
@@ -994,7 +992,7 @@ function MapInner({
               paint={{
                 "circle-radius": cityRadius,
                 "circle-color": dotColor("artistCount"),
-                "circle-opacity": 0.92,
+                "circle-opacity": 1,
               }}
             />
             <Layer
@@ -1113,6 +1111,7 @@ function MapInner({
             <Layer
               id="shop-unclustered-label"
               type="symbol"
+              minzoom={11}
               filter={["!", ["has", "point_count"]]}
               layout={{
                 "text-field": ["get", "shopName"] as unknown as string,
@@ -1125,7 +1124,6 @@ function MapInner({
                 "text-color": "#7a2318",
                 "text-halo-color": "#f3efe9",
                 "text-halo-width": 1.4,
-                "text-opacity": SHOP_LABEL_OPACITY,
               }}
             />
           </Source>
