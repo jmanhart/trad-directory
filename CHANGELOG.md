@@ -14,6 +14,21 @@ From the next tagged release onward this file is maintained automatically by
 [Conventional Commits](https://www.conventionalcommits.org/) — do not hand-edit
 released sections.
 
+## [0.9.0](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.8.0...tattoo-directory-v0.9.0) (2026-10-18)
+
+
+### Added
+
+* **map:** city dot shows unshopped-artist remainder at city zoom ([7db4a3f](https://github.com/jmanhart/trad-directory/commit/7db4a3f6d973cc4f34442ce51a7bf97bbbb242d8))
+* **map:** render dots and labels at full opacity ([751968d](https://github.com/jmanhart/trad-directory/commit/751968d5ce7529c14ccd80e32d363ee6e00409da))
+* **map:** show artist count inside shop pins ([2ac786b](https://github.com/jmanhart/trad-directory/commit/2ac786bf34f00c45be3c332ef0242d7af9ef81c9))
+
+
+### Fixed
+
+* **map:** keep the clicked city's dot anchored at full opacity ([0cd41ba](https://github.com/jmanhart/trad-directory/commit/0cd41ba67c4d40d6b98aef9cf7eecd3e4ecfa5b7))
+* **map:** stop mobile feedback button overlapping the search bar ([754620a](https://github.com/jmanhart/trad-directory/commit/754620adb053f5a9a090793e00987e3bcdd3bec0))
+
 ## [0.8.0](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.7.0...tattoo-directory-v0.8.0) (2026-09-12)
 
 
