@@ -1,11 +1,6 @@
 {
   "installCommand": "npm install --include=dev",
   "framework": "vite",
-  "functions": {
-    "api/render.ts": {
-      "includeFiles": "dist/index.html"
-    }
-  },
   "rewrites": [
     {
       "source": "/((?!api/).*)",
