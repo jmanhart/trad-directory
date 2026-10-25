@@ -20,3 +20,10 @@ export function generateUniqueSlug(name: string, id: number): string {
   const base = generateSlug(name);
   return base ? `${base}-${id}` : String(id);
 }
+
+/** City page slug: "seattle-washington" (city + state, or + country). */
+export function citySlug(cityName: string, region: string | null): string {
+  const base = generateSlug(cityName);
+  const reg = region ? generateSlug(region) : "";
+  return reg ? `${base}-${reg}` : base;
+}
