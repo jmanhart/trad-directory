@@ -1,0 +1,28 @@
+# Trad Directory
+
+> A curated, worldwide directory of traditional (American "old-school") tattoo
+> artists and the shops they work at. Browse by artist, shop, city, or country,
+> or explore an interactive map. ~1,460 artists across ~320 shops in 40+
+> countries.
+
+Each artist and shop has its own page with location, Instagram, and (for shops)
+their resident artists. Pages are server-rendered with Schema.org structured
+data (Person for artists, TattooParlor for shops).
+
+## Key pages
+
+- [All artists](https://www.trad-directory.com/artists): browse every traditional tattoo artist
+- [All shops](https://www.trad-directory.com/shops): browse traditional tattoo shops
+- [Countries](https://www.trad-directory.com/countries): artists and shops grouped by country
+- [Map](https://www.trad-directory.com/map): interactive map of artists and shops
+- [About](https://www.trad-directory.com/about): what Trad Directory is
+
+## Complete index
+
+- [sitemap.xml](https://www.trad-directory.com/sitemap.xml): every artist and shop page
+
+## Notes
+
+- Artist page URL: `https://www.trad-directory.com/artist/{slug}`
+- Shop page URL: `https://www.trad-directory.com/shop/{slug}`
+- Contact / suggest a listing: via the "Suggest an Artist" action on the site.
