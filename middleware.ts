@@ -26,8 +26,10 @@ export default function middleware(request: Request) {
   dest.searchParams.set("p", p);
   return rewrite(dest);
 }
-
 export const config = {
+  // Node.js runtime (Edge can't bundle @vercel/functions here; also the
+  // recommended runtime per Vercel). Keeps middleware on Fluid Compute.
+  runtime: "nodejs",
   // Skip /api (the render target itself lives there — avoids a rewrite loop).
   matcher: ["/((?!api/).*)"],
 };
