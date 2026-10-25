@@ -7,6 +7,8 @@ import SearchBar from "../common/SearchBar";
 import HeroMessageText from "../common/HeroMessageText";
 import styles from "./HomePage.module.css";
 import RecentlyAdded from "../recent/RecentlyAdded";
+import Seo from "../../seo/Seo";
+import { seoHome } from "../../seo/buildSeo";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -63,6 +65,7 @@ export default function HomePage() {
   if (loading) {
     return (
       <>
+        <Seo data={seoHome()} />
         {mapBanner}
         <div className={styles.container}>
           <p>Loading...</p>
@@ -73,6 +76,7 @@ export default function HomePage() {
 
   return (
     <>
+      <Seo data={seoHome()} />
       {mapBanner}
       <div className={styles.container}>
         <div className={styles.heroSection}>

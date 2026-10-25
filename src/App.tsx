@@ -51,6 +51,7 @@ import RequireAuth from "./components/auth/RequireAuth";
 import AccountPage from "./components/pages/AccountPage";
 import SavedPage from "./components/pages/SavedPage";
 import { flags } from "./lib/flags";
+import RouteSeo from "./seo/RouteSeo";
 
 // Enhanced App component with Sentry error boundary
 const SentryApp = Sentry.withErrorBoundary(App, {
@@ -113,6 +114,7 @@ function AppContent() {
       className={`${styles.appContainer} ${isAdminLayoutRoute ? styles.adminContainer : ""}`}
     >
       <ScatteredSvgBackground preset="default" intensity="subtle" />
+      <RouteSeo />
       {isMapPage && <FeedbackButton />}
       {isAdminRoute ? (
         (isMobile || !isAdminLayoutRoute) && <AdminTopAppBar />
