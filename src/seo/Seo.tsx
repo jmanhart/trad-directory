@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { SITE_NAME, type SeoData } from "./buildSeo";
+import { SITE_NAME, type SeoData } from "../../api/_seo/buildSeo";
 
 /**
  * Renders a route's SEO tags into <head> via react-helmet-async. Drives
