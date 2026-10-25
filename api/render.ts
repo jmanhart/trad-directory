@@ -5,14 +5,17 @@ import {
   seoStaticPage,
   seoArtist,
   seoShop,
+  seoCity,
 } from "./_seo/buildSeo";
 import { injectHead } from "./_seo/renderHead";
 import {
   renderArtistBody,
   renderShopBody,
+  renderCityBody,
   injectBody,
 } from "./_seo/renderContent";
 import { fetchArtistForSeo, fetchShopForSeo } from "./_seo/fetchEntity";
+import { fetchCityForSeo } from "./_seo/fetchCity";
 
 // Serves the SEO routes that middleware.ts rewrites here. Reads the built
 // index.html shell (bundled via vercel.json functions.includeFiles), injects
@@ -108,6 +111,20 @@ export default async function handler(
               injectHead(shell(), seoShop(r.seo)),
               renderShopBody(r.seo, r.artists)
             )
+          );
+        return;
+      }
+    }
+
+    const cityParam = matchPrefix(pathname, "/city/");
+    if (cityParam) {
+      const c = await fetchCityForSeo(cityParam);
+      if (c) {
+        res.setHeader("Cache-Control", CACHE_PAGE);
+        res
+          .status(200)
+          .send(
+            injectBody(injectHead(shell(), seoCity(c)), renderCityBody(c))
           );
         return;
       }

@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { generateUniqueSlug } from "./_seo/slug";
+import { generateUniqueSlug, citySlug } from "./_seo/slug";
 
 // Dynamic sitemap.xml generated from Supabase so new listings appear with no
 // rebuild. Served at /sitemap.xml via a vercel.json rewrite. Cached at the CDN.
@@ -48,6 +48,11 @@ interface SitemapResponse {
   send(body: string): void;
 }
 
+function one<T>(v: unknown): T | null {
+  if (Array.isArray(v)) return (v[0] as T) ?? null;
+  return (v as T) ?? null;
+}
+
 export default async function handler(_req: unknown, res: SitemapResponse) {
   try {
     const url = process.env.SUPABASE_URL;
@@ -69,8 +74,40 @@ export default async function handler(_req: unknown, res: SitemapResponse) {
       slug: string | null;
     }>(supabase, "tattoo_shops", "id, shop_name, slug");
 
+    // Cities that have at least one artist (skip thin/empty city pages).
+    const artistLocs = await fetchAllRows<{ city_id: number | null }>(
+      supabase,
+      "artist_location",
+      "city_id"
+    );
+    const cityIdsWithArtists = new Set(
+      artistLocs.map(r => r.city_id).filter((v): v is number => v != null)
+    );
+    const cityRows = await fetchAllRows<{
+      id: number;
+      city_name: string;
+      state?: unknown;
+      country?: unknown;
+    }>(
+      supabase,
+      "cities",
+      "id, city_name, state:states (state_name), country:countries (country_name)"
+    );
+    const cityUrls: string[] = [];
+    for (const c of cityRows) {
+      if (!cityIdsWithArtists.has(c.id)) continue;
+      const state = one<{ state_name?: string | null }>(c.state)?.state_name ?? null;
+      const country =
+        one<{ country_name?: string | null }>(c.country)?.country_name ?? null;
+      const name = (c.city_name ?? "").trim();
+      if (!name) continue;
+      const region = (state || country)?.trim() || null;
+      cityUrls.push(`${ORIGIN}/city/${citySlug(name, region)}`);
+    }
+
     const locs: string[] = [
       ...STATIC_PATHS.map(p => `${ORIGIN}${p}`),
+      ...cityUrls,
       ...artists.map(
         a => `${ORIGIN}/artist/${a.slug || generateUniqueSlug(a.name, a.id)}`
       ),

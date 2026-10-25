@@ -21,6 +21,7 @@ import TypeTestingPage from "./components/pages/TypeTestingPage";
 import styles from "./App.module.css";
 import { Sentry } from "./utils/sentry";
 import ArtistPage from "./components/pages/ArtistPage";
+import CityPage from "./components/pages/CityPage";
 import NotFoundPage from "./components/pages/NotFoundPage";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import AdminPage from "./components/pages/admin/AdminPage";
@@ -151,6 +152,7 @@ function AppContent() {
           <Route path="/search-results" element={<SearchResults />} />
           <Route path="/logo-type" element={<LogoTypePlayground />} />
           <Route path="/artist/:slugOrId" element={<ArtistPage />} />
+          <Route path="/city/:slug" element={<CityPage />} />
           {flags.accounts && (
             <>
               <Route path="/login" element={<LoginPage />} />
