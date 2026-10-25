@@ -14,6 +14,33 @@ From the next tagged release onward this file is maintained automatically by
 [Conventional Commits](https://www.conventionalcommits.org/) — do not hand-edit
 released sections.
 
+## [0.9.0](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.8.0...tattoo-directory-v0.9.0) (2026-10-25)
+
+
+### Added
+
+* **map:** city dot shows unshopped-artist remainder at city zoom ([7db4a3f](https://github.com/jmanhart/trad-directory/commit/7db4a3f6d973cc4f34442ce51a7bf97bbbb242d8))
+* **map:** render dots and labels at full opacity ([751968d](https://github.com/jmanhart/trad-directory/commit/751968d5ce7529c14ccd80e32d363ee6e00409da))
+* **map:** show artist count inside shop pins ([2ac786b](https://github.com/jmanhart/trad-directory/commit/2ac786bf34f00c45be3c332ef0242d7af9ef81c9))
+* **seo:** add curated llms.txt for AI agents ([9304791](https://github.com/jmanhart/trad-directory/commit/9304791ad33631617b746a4543b53e75b9e3fa0a))
+* **seo:** add robots.txt + IndexNow key ([58f9886](https://github.com/jmanhart/trad-directory/commit/58f98862a18414651be417f4f16e54614e274910))
+* **seo:** add SEO core (buildSeo SSOT) + client-side meta via helmet ([52ca5d9](https://github.com/jmanhart/trad-directory/commit/52ca5d99afa85d090c1acc92e0ffe3ecfaf1ecbd))
+* **seo:** centralized client meta for static routes (RouteSeo) ([4a8a3ae](https://github.com/jmanhart/trad-directory/commit/4a8a3ae6615db96d1dfbee0c5cf59489b8ab3166))
+* **seo:** city pages (/city/:slug) ([37e1b38](https://github.com/jmanhart/trad-directory/commit/37e1b389e9533a0220782f7beba0f528672fb14f))
+* **seo:** dynamic sitemap.xml from Supabase ([8dd810d](https://github.com/jmanhart/trad-directory/commit/8dd810de20baecd2791f27693fbc93c7dc9141a0))
+* **seo:** server-render artist + shop pages from Supabase ([125b529](https://github.com/jmanhart/trad-directory/commit/125b52936c3edd3489899fe35d81030624caf73e))
+* **seo:** server-render SEO routes (middleware + api/render) [v1: static] ([df4ea6a](https://github.com/jmanhart/trad-directory/commit/df4ea6ad09b67823afeee8a773fa1991efeb2e51))
+
+
+### Fixed
+
+* **map:** keep the clicked city's dot anchored at full opacity ([0cd41ba](https://github.com/jmanhart/trad-directory/commit/0cd41ba67c4d40d6b98aef9cf7eecd3e4ecfa5b7))
+* **map:** stop mobile feedback button overlapping the search bar ([754620a](https://github.com/jmanhart/trad-directory/commit/754620adb053f5a9a090793e00987e3bcdd3bec0))
+* **seo:** middleware uses raw protocol headers (drop @vercel/functions) ([03be299](https://github.com/jmanhart/trad-directory/commit/03be29984127684c5ae704bbe2cebafe4e2ec708))
+* **seo:** run middleware on the Node.js runtime ([93d2b94](https://github.com/jmanhart/trad-directory/commit/93d2b946a0ae9db17d2f63fd968d6ad8fdf1c22e))
+* **seo:** server render with CJS-safe module boundary (retry) ([f96ac5a](https://github.com/jmanhart/trad-directory/commit/f96ac5ab49a0acbfc2fa467cf95aa8b4926d50ee))
+* **seo:** trim place fields (city/state/country) for clean titles/meta ([34b4500](https://github.com/jmanhart/trad-directory/commit/34b45006c390071cb58c9373df4b8c7df47e64bf))
+
 ## [0.8.0](https://github.com/jmanhart/trad-directory/compare/tattoo-directory-v0.7.0...tattoo-directory-v0.8.0) (2026-09-12)
 
 
