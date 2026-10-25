@@ -1,7 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
-import { seoHome, seoStaticPage } from "./_seo/buildSeo";
+import {
+  seoHome,
+  seoStaticPage,
+  seoArtist,
+  seoShop,
+} from "./_seo/buildSeo";
 import { injectHead } from "./_seo/renderHead";
+import {
+  renderArtistBody,
+  renderShopBody,
+  injectBody,
+} from "./_seo/renderContent";
+import { fetchArtistForSeo, fetchShopForSeo } from "./_seo/fetchEntity";
 
 // Serves the SEO routes that middleware.ts rewrites here. Reads the built
 // index.html shell (bundled via vercel.json functions.includeFiles), injects
@@ -43,28 +54,77 @@ interface RenderResponse {
   send(body: string): void;
 }
 
-export default function handler(req: RenderRequest, res: RenderResponse) {
+const CACHE_PAGE = "public, s-maxage=3600, stale-while-revalidate=86400";
+const CACHE_SHELL = "public, s-maxage=300, stale-while-revalidate=86400";
+
+function matchPrefix(pathname: string, prefix: string): string | null {
+  if (!pathname.startsWith(prefix)) return null;
+  const rest = pathname.slice(prefix.length).replace(/\/+$/, "");
+  return rest ? decodeURIComponent(rest) : null;
+}
+
+export default async function handler(
+  req: RenderRequest,
+  res: RenderResponse
+) {
   const raw = typeof req.query?.p === "string" ? req.query.p : "/";
   const pathname = raw.split("?")[0] || "/";
-  const seo = pathname === "/" ? seoHome() : seoStaticPage(pathname);
-
   res.setHeader("Content-Type", "text/html; charset=utf-8");
 
-  if (!seo) {
-    // Entity routes (artist/shop/city) get DB-driven rendering in a later
-    // step. Until then — and for anything unknown — serve the plain shell so
-    // the SPA renders it exactly as before (no regression).
-    res.setHeader(
-      "Cache-Control",
-      "public, s-maxage=300, stale-while-revalidate=86400"
-    );
-    res.status(200).send(shell());
-    return;
-  }
+  try {
+    const staticSeo = pathname === "/" ? seoHome() : seoStaticPage(pathname);
+    if (staticSeo) {
+      res.setHeader("Cache-Control", CACHE_PAGE);
+      res.status(200).send(injectHead(shell(), staticSeo));
+      return;
+    }
 
-  res.setHeader(
-    "Cache-Control",
-    "public, s-maxage=3600, stale-while-revalidate=86400"
-  );
-  res.status(200).send(injectHead(shell(), seo));
+    const artistSlug = matchPrefix(pathname, "/artist/");
+    if (artistSlug) {
+      const r = await fetchArtistForSeo(artistSlug);
+      if (r) {
+        res.setHeader("Cache-Control", CACHE_PAGE);
+        res
+          .status(200)
+          .send(
+            injectBody(
+              injectHead(shell(), seoArtist(r.seo)),
+              renderArtistBody(r.seo, r.shopSlug)
+            )
+          );
+        return;
+      }
+    }
+
+    const shopSlug = matchPrefix(pathname, "/shop/");
+    if (shopSlug) {
+      const r = await fetchShopForSeo(shopSlug);
+      if (r) {
+        res.setHeader("Cache-Control", CACHE_PAGE);
+        res
+          .status(200)
+          .send(
+            injectBody(
+              injectHead(shell(), seoShop(r.seo)),
+              renderShopBody(r.seo, r.artists)
+            )
+          );
+        return;
+      }
+    }
+
+    // Unknown route or entity not found -> plain shell; the SPA handles it.
+    res.setHeader("Cache-Control", CACHE_SHELL);
+    res.status(200).send(shell());
+  } catch (err) {
+    // An SEO/DB failure must NEVER 500 the page — fall back to the plain shell
+    // so the SPA still renders. (This is the guard the first outage lacked.)
+    console.error("[render] error for", pathname, err);
+    try {
+      res.setHeader("Cache-Control", "no-store");
+      res.status(200).send(shell());
+    } catch {
+      res.status(500).send("");
+    }
+  }
 }

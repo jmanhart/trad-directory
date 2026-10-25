@@ -124,3 +124,142 @@ export function seoStaticPage(path: string): SeoData | null {
     ogType: "website",
   };
 }
+
+// ── Entity pages (resolved server-side from Supabase) ──────────────────────
+// Inputs carry an already-resolved `slug` (DB slug or name-id fallback) so the
+// builders stay pure.
+
+function locString(
+  city?: string | null,
+  state?: string | null,
+  country?: string | null
+): string {
+  return [city, state || country].filter(Boolean).join(", ");
+}
+
+export interface ArtistSeoInput {
+  id: number;
+  name: string;
+  slug: string;
+  instagram: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  shopName: string | null;
+}
+
+export function seoArtist(a: ArtistSeoInput): SeoData {
+  const loc = locString(a.city, a.state, a.country);
+  const title = `${a.name}${a.city ? `, ${a.city}` : ""} — Traditional Tattoo Artist | ${SITE_NAME}`;
+  const description =
+    `${a.name} is a traditional tattoo artist${loc ? ` based in ${loc}` : ""}` +
+    `${a.shopName ? ` at ${a.shopName}` : ""}. ` +
+    `${a.instagram ? `Follow @${a.instagram} and see` : "See"} their work on ${SITE_NAME}.`;
+  const canonical = absoluteUrl(`/artist/${a.slug}`);
+
+  const person: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: a.name,
+    jobTitle: "Tattoo Artist",
+    url: canonical,
+  };
+  if (a.instagram) person.sameAs = [`https://instagram.com/${a.instagram}`];
+  if (a.shopName) person.worksFor = { "@type": "Organization", name: a.shopName };
+  if (a.city || a.country) {
+    person.address = {
+      "@type": "PostalAddress",
+      ...(a.city ? { addressLocality: a.city } : {}),
+      ...(a.state ? { addressRegion: a.state } : {}),
+      ...(a.country ? { addressCountry: a.country } : {}),
+    };
+  }
+  return { title, description, canonical, ogImage: DEFAULT_OG_IMAGE, ogType: "profile", jsonLd: [person] };
+}
+
+export interface ShopSeoInput {
+  id: number;
+  name: string;
+  slug: string;
+  instagram: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  artistCount: number;
+}
+
+export function seoShop(s: ShopSeoInput): SeoData {
+  const loc = locString(s.city, s.state, s.country);
+  const title = `${s.name}${s.city ? `, ${s.city}` : ""} — Traditional Tattoo Shop | ${SITE_NAME}`;
+  const description =
+    `${s.name} is a traditional tattoo shop${loc ? ` in ${loc}` : ""}` +
+    `${s.artistCount ? ` with ${s.artistCount} artist${s.artistCount === 1 ? "" : "s"}` : ""}. ` +
+    `See resident artists and location on ${SITE_NAME}.`;
+  const canonical = absoluteUrl(`/shop/${s.slug}`);
+
+  const shop: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "TattooParlor",
+    name: s.name,
+    url: canonical,
+  };
+  if (s.instagram) shop.sameAs = [`https://instagram.com/${s.instagram}`];
+  if (s.address || s.city || s.country) {
+    shop.address = {
+      "@type": "PostalAddress",
+      ...(s.address ? { streetAddress: s.address } : {}),
+      ...(s.city ? { addressLocality: s.city } : {}),
+      ...(s.state ? { addressRegion: s.state } : {}),
+      ...(s.country ? { addressCountry: s.country } : {}),
+    };
+  }
+  return { title, description, canonical, ogImage: DEFAULT_OG_IMAGE, ogType: "website", jsonLd: [shop] };
+}
+
+export interface CityListItem {
+  name: string;
+  slug: string;
+}
+export interface CitySeoInput {
+  slug: string;
+  city: string;
+  state: string | null;
+  country: string | null;
+  artists: CityListItem[];
+  shops: CityListItem[];
+}
+
+export function seoCity(c: CitySeoInput): SeoData {
+  const loc = locString(c.city, c.state, c.country);
+  const title = `Traditional Tattoo Artists in ${c.city}${c.state ? `, ${c.state}` : ""} | ${SITE_NAME}`;
+  const description =
+    `Find traditional tattoo artists and shops in ${loc}. ` +
+    `${c.artists.length} artist${c.artists.length === 1 ? "" : "s"} and ` +
+    `${c.shops.length} shop${c.shops.length === 1 ? "" : "s"} listed on ${SITE_NAME}.`;
+  const canonical = absoluteUrl(`/city/${c.slug}`);
+
+  const itemList = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `Traditional tattoo artists in ${c.city}`,
+    itemListElement: c.artists.slice(0, 50).map((a, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: absoluteUrl(`/artist/${a.slug}`),
+      name: a.name,
+    })),
+  };
+  const breadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: SITE_NAME, item: SITE_ORIGIN },
+      ...(c.country
+        ? [{ "@type": "ListItem", position: 2, name: c.country, item: absoluteUrl("/countries") }]
+        : []),
+      { "@type": "ListItem", position: c.country ? 3 : 2, name: c.city, item: canonical },
+    ],
+  };
+  return { title, description, canonical, ogImage: DEFAULT_OG_IMAGE, ogType: "website", jsonLd: [itemList, breadcrumb] };
+}
