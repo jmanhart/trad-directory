@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 import Seo from "./Seo";
-import { seoStaticPage } from "./buildSeo";
+import { seoStaticPage } from "../../api/_seo/buildSeo";
 
 /**
  * Centralized client-side SEO for the fixed (non-entity) routes — About, the

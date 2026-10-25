@@ -8,7 +8,7 @@ import HeroMessageText from "../common/HeroMessageText";
 import styles from "./HomePage.module.css";
 import RecentlyAdded from "../recent/RecentlyAdded";
 import Seo from "../../seo/Seo";
-import { seoHome } from "../../seo/buildSeo";
+import { seoHome } from "../../../api/_seo/buildSeo";
 
 export default function HomePage() {
   const navigate = useNavigate();
