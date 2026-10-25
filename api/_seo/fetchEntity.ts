@@ -47,10 +47,14 @@ function placeFromCity(city: CityRow | null): {
 } {
   const state = one<{ state_name?: string | null }>(city?.state);
   const country = one<{ country_name?: string | null }>(city?.country);
+  const clean = (v: string | null | undefined): string | null => {
+    const t = (v ?? "").trim();
+    return t ? t : null;
+  };
   return {
-    city: city?.city_name ?? null,
-    state: state?.state_name ?? null,
-    country: country?.country_name ?? null,
+    city: clean(city?.city_name),
+    state: clean(state?.state_name),
+    country: clean(country?.country_name),
   };
 }
 
