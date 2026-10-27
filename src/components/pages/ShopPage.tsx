@@ -10,6 +10,10 @@ import styles from "./ShopPage.module.css";
 const USE_NEW_SHOP_PAGE = false;
 import InstagramLogoUrl from "/logo-instagram.svg";
 import ClaimListing from "../claim/ClaimListing";
+import { useAuth } from "../../contexts/AuthContext";
+import { useSavedShops } from "../../hooks/useSavedShops";
+import { flags } from "../../lib/flags";
+import SaveButton from "../common/SaveButton";
 
 interface Artist {
   id: number;
@@ -42,6 +46,20 @@ export default function ShopPage() {
   const [shop, setShop] = useState<Shop | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { user } = useAuth();
+  const { isSaved, toggleSave } = useSavedShops();
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!shop) return;
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    setSaving(true);
+    await toggleSave(shop.id);
+    setSaving(false);
+  };
 
   const fromSearch = Boolean((location.state as any)?.fromSearch);
   const previous = (location.state as any)?.previous as string | undefined;
@@ -179,6 +197,15 @@ export default function ShopPage() {
                   />
                   @{shop.instagram_handle}
                 </a>
+              </div>
+            )}
+            {flags.accounts && (
+              <div style={{ marginTop: "0.75rem" }}>
+                <SaveButton
+                  saved={isSaved(shop.id)}
+                  saving={saving}
+                  onClick={handleSave}
+                />
               </div>
             )}
             <ClaimListing

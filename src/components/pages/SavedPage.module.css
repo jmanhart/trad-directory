@@ -58,3 +58,12 @@
   background: #b71c1c;
 }
 
+.section {
+  margin-bottom: 2.5rem;
+}
+
+.section h2 {
+  margin: 0 0 0.5rem 0;
+  color: var(--color-text-primary, #333);
+  font-size: 1.25rem;
+}

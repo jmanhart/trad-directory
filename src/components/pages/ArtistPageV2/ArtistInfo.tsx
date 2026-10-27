@@ -5,6 +5,12 @@ import { formatArtistLocation } from "../../../utils/formatArtistLocation";
 import type { ArtistPageV2Artist } from "./types";
 import styles from "./ArtistInfo.module.css";
 import ClaimListing from "../../claim/ClaimListing";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../contexts/AuthContext";
+import { useSavedArtists } from "../../../hooks/useSavedArtists";
+import { flags } from "../../../lib/flags";
+import SaveButton from "../../common/SaveButton";
 
 export interface ArtistInfoProps {
   artist: ArtistPageV2Artist;
@@ -20,6 +26,20 @@ export default function ArtistInfo({ artist, imageUrl }: ArtistInfoProps) {
     ? `https://www.instagram.com/${artist.shop_instagram_handle}`
     : null;
   const locationString = formatArtistLocation(artist);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { isSaved, toggleSave } = useSavedArtists();
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    setSaving(true);
+    await toggleSave(artist.id);
+    setSaving(false);
+  };
 
   // Build secondary location strings
   const secondaryLocations = (artist.locations || [])
@@ -68,6 +88,15 @@ export default function ArtistInfo({ artist, imageUrl }: ArtistInfoProps) {
               <span className={styles.value}>
                 {secondaryLocations.join("; ")}
               </span>
+            </div>
+          )}
+          {flags.accounts && (
+            <div style={{ marginTop: "0.75rem" }}>
+              <SaveButton
+                saved={isSaved(artist.id)}
+                saving={saving}
+                onClick={handleSave}
+              />
             </div>
           )}
           <ClaimListing
