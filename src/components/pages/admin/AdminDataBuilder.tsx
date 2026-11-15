@@ -9,6 +9,7 @@ interface ArtistRow {
   name: string;
   city_id: number | null;
   instagram_handle: string | null;
+  gender: string | null;
   city_name: string | null;
   state_name: string | null;
   country_name: string | null;

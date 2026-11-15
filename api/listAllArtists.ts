@@ -45,6 +45,7 @@ export default async function handler(req: any, res: any) {
           `
         id,
         name,
+        gender,
         instagram_handle,
         is_traveling,
         artist_location (
@@ -108,6 +109,7 @@ export default async function handler(req: any, res: any) {
       return {
         id: artist.id,
         name: artist.name,
+        gender: artist.gender ?? null,
         instagram_handle: artist.instagram_handle || null,
         is_traveling: artist.is_traveling || false,
         city_id: primary?.city_id ?? null,
