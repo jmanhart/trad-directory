@@ -15,6 +15,7 @@ interface ArtistRow {
   name: string;
   city_id: number | null;
   instagram_handle: string | null;
+  gender: string | null;
   city_name: string | null;
   state_name: string | null;
   country_name: string | null;
@@ -194,6 +195,7 @@ export default function DataBuilder({ cities, states, countries, artists, broken
     new Set()
   );
   const [result, setResult] = useState<GenerateResult | null>(null);
+  const [selectedGender, setSelectedGender] = useState("");
 
   const sortedCountries = useMemo(
     () =>
@@ -202,6 +204,19 @@ export default function DataBuilder({ cities, states, countries, artists, broken
       ),
     [countries]
   );
+
+  // Distinct gender values present in the data (gender is a free-text column,
+  // so the options come straight from the DB rather than a fixed enum).
+  const genderOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const a of artists) {
+      const g = a.gender?.trim();
+      if (g) set.add(g);
+    }
+    return [...set].sort((x, y) =>
+      x.localeCompare(y, undefined, { sensitivity: "base" })
+    );
+  }, [artists]);
 
   const filteredStates = useMemo(() => {
     if (!selectedCountryId) return [];
@@ -361,6 +376,11 @@ export default function DataBuilder({ cities, states, countries, artists, broken
       }
     }
 
+    // Gender: subtractive refinement applied on top of the location selection.
+    if (selectedGender) {
+      filtered = filtered.filter(a => a.gender === selectedGender);
+    }
+
     const totalCount = filtered.length;
 
     const broken: { name: string; handle: string }[] = [];
@@ -506,6 +526,24 @@ export default function DataBuilder({ cities, states, countries, artists, broken
                 />
               </FormGroup>
             )}
+
+            {selectedCountryId && (
+              <FormGroup>
+                <Label htmlFor="db_gender">Gender</Label>
+                <Select
+                  id="db_gender"
+                  value={selectedGender}
+                  onChange={e => setSelectedGender(e.target.value)}
+                >
+                  <option value="">All</option>
+                  {genderOptions.map(g => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
+            )}
           </div>
 
           <div className={styles.formActionsWrapper}>
@@ -525,6 +563,7 @@ export default function DataBuilder({ cities, states, countries, artists, broken
                   setSelectedCountryId("");
                   setSelectedStateIds(new Set());
                   setSelectedCityIds(new Set());
+                  setSelectedGender("");
                   setResult(null);
                 }}
               >

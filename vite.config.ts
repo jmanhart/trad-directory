@@ -81,6 +81,15 @@ export default defineConfig({
         target: `http://localhost:${API_PORT}`,
         changeOrigin: true,
         secure: false,
+        // The SEO layer has client code import shared modules from `api/`
+        // (e.g. `api/_seo/buildSeo.ts`). Vite requests those as source modules
+        // under `/api/...ts`, which this proxy would otherwise forward to
+        // `vercel dev` and 404, breaking the app mount. Only proxy real
+        // endpoint calls (extensionless); let Vite serve source modules.
+        bypass: (req: { url?: string }) =>
+          req.url && /\.(ts|tsx|js|jsx|mjs)(\?|$)/.test(req.url)
+            ? req.url
+            : undefined,
         // Fail LOUD instead of silently returning empty data: if nothing is
         // listening on the API port, the app used to just render with no data
         // and no error. This prints an actionable message on the first failed
