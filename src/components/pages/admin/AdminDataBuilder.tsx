@@ -9,7 +9,7 @@ interface ArtistRow {
   name: string;
   city_id: number | null;
   instagram_handle: string | null;
-  gender: string | null;
+  gender_id: number | null;
   city_name: string | null;
   state_name: string | null;
   country_name: string | null;
@@ -22,9 +22,10 @@ export default function AdminDataBuilder() {
   const [artists, setArtists] = useState<ArtistRow[]>([]);
   const [brokenHandles, setBrokenHandles] = useState<Set<string>>(new Set());
 
-  const { cities, states, loading } = useAdminData({
+  const { cities, states, genders, loading } = useAdminData({
     loadCities: true,
     loadStates: true,
+    loadGenders: true,
   });
 
   useEffect(() => {
@@ -57,6 +58,7 @@ export default function AdminDataBuilder() {
           states={states}
           countries={countries}
           artists={artists}
+          genders={genders}
           brokenHandles={brokenHandles}
         />
       )}

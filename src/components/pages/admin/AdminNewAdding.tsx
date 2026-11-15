@@ -42,6 +42,7 @@ export default function AdminNewAdding() {
     cities,
     states,
     shops,
+    genders,
     loading: loadingData,
     error: dataError,
     refetch,
@@ -49,6 +50,7 @@ export default function AdminNewAdding() {
     loadCities: true,
     loadStates: true,
     loadShops: true,
+    loadGenders: true,
   });
 
   const [countries, setCountries] = useState<{ id: number; country_name: string }[]>([]);
@@ -300,7 +302,7 @@ export default function AdminNewAdding() {
       const artistId = await addArtist({
         name: formData.artist_name,
         instagram_handle: formData.artist_instagram_handle || undefined,
-        gender: formData.artist_gender || undefined,
+        gender_id: formData.artist_gender ? parseInt(formData.artist_gender, 10) : undefined,
         url: formData.artist_url || undefined,
         contact: formData.artist_contact || undefined,
         city_id: cityId,
@@ -584,14 +586,19 @@ export default function AdminNewAdding() {
 
         <FormGroup>
           <Label htmlFor="artist_gender">Gender</Label>
-          <Input
-            type="text"
+          <Select
             id="artist_gender"
             name="artist_gender"
             value={formData.artist_gender}
             onChange={handleChange}
-            placeholder="Gender"
-          />
+          >
+            <option value="">Not specified</option>
+            {genders.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.label}
+              </option>
+            ))}
+          </Select>
         </FormGroup>
 
         <FormGroup>

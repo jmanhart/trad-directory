@@ -51,7 +51,7 @@ export default async function handler(req: any, res: any) {
         ? data.instagram_handle.replace(/^@/, "")
         : null;
     }
-    if (data.gender !== undefined) updateData.gender = data.gender || null;
+    if (data.gender_id !== undefined) updateData.gender_id = data.gender_id || null;
     if (data.url !== undefined) updateData.url = data.url || null;
     if (data.contact !== undefined) updateData.contact = data.contact || null;
     if (data.is_traveling !== undefined) updateData.is_traveling = data.is_traveling || false;

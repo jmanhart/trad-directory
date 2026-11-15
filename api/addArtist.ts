@@ -6,7 +6,7 @@ import { geocodeCity } from "./_utils/geocode";
 interface AddArtistData {
   name: string;
   instagram_handle?: string;
-  gender?: string;
+  gender_id?: number;
   url?: string;
   contact?: string;
   city_id?: number; // If provided, use this city directly
@@ -259,8 +259,8 @@ export default async function handler(req: any, res: any) {
       artistData.instagram_handle = data.instagram_handle.replace(/^@/, "");
     }
 
-    if (data.gender) {
-      artistData.gender = data.gender;
+    if (data.gender_id != null) {
+      artistData.gender_id = data.gender_id;
     }
 
     if (data.url) {

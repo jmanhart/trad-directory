@@ -45,7 +45,8 @@ export default async function handler(req: any, res: any) {
           `
         id,
         name,
-        gender,
+        gender_id,
+        gender_bucket: genders ( id, label, slug ),
         instagram_handle,
         is_traveling,
         artist_location (
@@ -106,10 +107,15 @@ export default async function handler(req: any, res: any) {
         );
       const primary =
         locations.find((l: any) => l.is_primary) || locations[0] || null;
+      const gb = Array.isArray(artist.gender_bucket)
+        ? artist.gender_bucket[0]
+        : artist.gender_bucket;
       return {
         id: artist.id,
         name: artist.name,
-        gender: artist.gender ?? null,
+        gender_id: artist.gender_id ?? null,
+        gender: gb?.label ?? null,
+        gender_slug: gb?.slug ?? null,
         instagram_handle: artist.instagram_handle || null,
         is_traveling: artist.is_traveling || false,
         city_id: primary?.city_id ?? null,
