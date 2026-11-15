@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { requireAdminAuth } from "./_middleware/auth";
+import { resolveGenderBucket } from "./_utils/gender";
 
 export default async function handler(req: any, res: any) {
   // Set CORS headers
@@ -51,7 +52,14 @@ export default async function handler(req: any, res: any) {
         ? data.instagram_handle.replace(/^@/, "")
         : null;
     }
-    if (data.gender_id !== undefined) updateData.gender_id = data.gender_id || null;
+    if (data.gender_id !== undefined || data.gender !== undefined) {
+      const genderBucket = await resolveGenderBucket(supabase, {
+        gender_id: data.gender_id,
+        gender: data.gender,
+      });
+      updateData.gender_id = genderBucket ? genderBucket.id : null;
+      updateData.gender = genderBucket ? genderBucket.label : null; // dual-write
+    }
     if (data.url !== undefined) updateData.url = data.url || null;
     if (data.contact !== undefined) updateData.contact = data.contact || null;
     if (data.is_traveling !== undefined) updateData.is_traveling = data.is_traveling || false;
