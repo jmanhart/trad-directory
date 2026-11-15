@@ -10,7 +10,7 @@ function adminHeaders(): Record<string, string> {
 interface AddArtistData {
   name: string;
   instagram_handle?: string;
-  gender?: string;
+  gender_id?: number;
   url?: string;
   contact?: string;
   city_id?: number;
@@ -316,7 +316,7 @@ interface UpdateArtistData {
   id: number;
   name?: string;
   instagram_handle?: string;
-  gender?: string;
+  gender_id?: number;
   url?: string;
   contact?: string;
   city_id?: number;
@@ -819,4 +819,23 @@ export async function deleteArtistStyle(
   if (!response.ok) {
     throw new Error(data.error || `HTTP error! status: ${response.status}`);
   }
+}
+
+// ---- Genders ----
+
+export interface GenderOption {
+  id: number;
+  label: string;
+  slug: string;
+  sort_order: number;
+}
+
+export async function listGenders(): Promise<GenderOption[]> {
+  const apiUrl = import.meta.env.VITE_API_URL || "/api/listGenders";
+  const response = await fetch(apiUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch genders: ${response.status}`);
+  }
+  const data = await response.json();
+  return data.genders || [];
 }

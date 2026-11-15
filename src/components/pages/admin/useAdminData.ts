@@ -1,5 +1,5 @@
 /**
- * Custom hook for loading admin data (cities, shops, states, artists)
+ * Custom hook for loading admin data (cities, shops, states, artists, genders)
  */
 
 import { useState, useEffect } from "react";
@@ -8,6 +8,8 @@ import {
   fetchShops,
   fetchStates,
   fetchArtists,
+  listGenders,
+  GenderOption,
 } from "../../../services/adminApi";
 import { City, Shop, State, Artist, MessageType } from "./adminTypes";
 
@@ -16,6 +18,7 @@ interface UseAdminDataOptions {
   loadShops?: boolean;
   loadStates?: boolean;
   loadArtists?: boolean;
+  loadGenders?: boolean;
 }
 
 interface UseAdminDataReturn {
@@ -23,6 +26,7 @@ interface UseAdminDataReturn {
   shops: Shop[];
   states: State[];
   artists: Artist[];
+  genders: GenderOption[];
   loading: boolean;
   error: MessageType;
   refetch: () => Promise<void>;
@@ -36,12 +40,14 @@ export function useAdminData(
     loadShops = false,
     loadStates = false,
     loadArtists = false,
+    loadGenders = false,
   } = options;
 
   const [cities, setCities] = useState<City[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
   const [states, setStates] = useState<State[]>([]);
   const [artists, setArtists] = useState<Artist[]>([]);
+  const [genders, setGenders] = useState<GenderOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<MessageType>(null);
 
@@ -56,6 +62,7 @@ export function useAdminData(
       if (loadShops) promises.push(fetchShops());
       if (loadStates) promises.push(fetchStates());
       if (loadArtists) promises.push(fetchArtists());
+      if (loadGenders) promises.push(listGenders());
 
       const results = await Promise.all(promises);
 
@@ -72,6 +79,9 @@ export function useAdminData(
       if (loadArtists) {
         setArtists(results[resultIndex++]);
       }
+      if (loadGenders) {
+        setGenders(results[resultIndex++]);
+      }
     } catch (err) {
       setError({
         type: "error",
@@ -84,7 +94,16 @@ export function useAdminData(
 
   useEffect(() => {
     loadData();
-  }, [loadCities, loadShops, loadStates, loadArtists]);
+  }, [loadCities, loadShops, loadStates, loadArtists, loadGenders]);
 
-  return { cities, shops, states, artists, loading, error, refetch: loadData };
+  return {
+    cities,
+    shops,
+    states,
+    artists,
+    genders,
+    loading,
+    error,
+    refetch: loadData,
+  };
 }

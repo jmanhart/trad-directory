@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { FormGroup, Label, Select } from "./AdminFormComponents";
 import { useToast } from "../../common/Toast";
 import type { City, State } from "./adminTypes";
+import type { GenderOption } from "../../../services/adminApi";
 import styles from "./DataBuilder.module.css";
 
 interface Country {
@@ -15,7 +16,7 @@ interface ArtistRow {
   name: string;
   city_id: number | null;
   instagram_handle: string | null;
-  gender: string | null;
+  gender_id: number | null;
   city_name: string | null;
   state_name: string | null;
   country_name: string | null;
@@ -33,6 +34,7 @@ interface Props {
   states: State[];
   countries: Country[];
   artists: ArtistRow[];
+  genders: GenderOption[];
   brokenHandles: Set<string>;
 }
 
@@ -184,7 +186,7 @@ function MultiSelect({
   );
 }
 
-export default function DataBuilder({ cities, states, countries, artists, brokenHandles }: Props) {
+export default function DataBuilder({ cities, states, countries, artists, genders, brokenHandles }: Props) {
   const { showToast } = useToast();
 
   const [selectedCountryId, setSelectedCountryId] = useState("");
@@ -205,18 +207,6 @@ export default function DataBuilder({ cities, states, countries, artists, broken
     [countries]
   );
 
-  // Distinct gender values present in the data (gender is a free-text column,
-  // so the options come straight from the DB rather than a fixed enum).
-  const genderOptions = useMemo(() => {
-    const set = new Set<string>();
-    for (const a of artists) {
-      const g = a.gender?.trim();
-      if (g) set.add(g);
-    }
-    return [...set].sort((x, y) =>
-      x.localeCompare(y, undefined, { sensitivity: "base" })
-    );
-  }, [artists]);
 
   const filteredStates = useMemo(() => {
     if (!selectedCountryId) return [];
@@ -378,7 +368,7 @@ export default function DataBuilder({ cities, states, countries, artists, broken
 
     // Gender: subtractive refinement applied on top of the location selection.
     if (selectedGender) {
-      filtered = filtered.filter(a => a.gender === selectedGender);
+      filtered = filtered.filter(a => String(a.gender_id) === selectedGender);
     }
 
     const totalCount = filtered.length;
@@ -536,9 +526,9 @@ export default function DataBuilder({ cities, states, countries, artists, broken
                   onChange={e => setSelectedGender(e.target.value)}
                 >
                   <option value="">All</option>
-                  {genderOptions.map(g => (
-                    <option key={g} value={g}>
-                      {g}
+                  {genders.map(g => (
+                    <option key={g.id} value={g.id}>
+                      {g.label}
                     </option>
                   ))}
                 </Select>

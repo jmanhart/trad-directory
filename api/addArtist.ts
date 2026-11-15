@@ -2,11 +2,13 @@ import { createClient } from "@supabase/supabase-js";
 import * as Sentry from "@sentry/node";
 import { requireAdminAuth } from "./_middleware/auth";
 import { geocodeCity } from "./_utils/geocode";
+import { resolveGenderBucket } from "./_utils/gender";
 
 interface AddArtistData {
   name: string;
   instagram_handle?: string;
-  gender?: string;
+  gender_id?: number;
+  gender?: string; // legacy free-text (chrome extension); mapped to a bucket
   url?: string;
   contact?: string;
   city_id?: number; // If provided, use this city directly
@@ -259,8 +261,13 @@ export default async function handler(req: any, res: any) {
       artistData.instagram_handle = data.instagram_handle.replace(/^@/, "");
     }
 
-    if (data.gender) {
-      artistData.gender = data.gender;
+    const genderBucket = await resolveGenderBucket(supabase, {
+      gender_id: data.gender_id,
+      gender: data.gender,
+    });
+    if (genderBucket) {
+      artistData.gender_id = genderBucket.id;
+      artistData.gender = genderBucket.label; // dual-write legacy text column
     }
 
     if (data.url) {

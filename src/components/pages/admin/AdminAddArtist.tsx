@@ -29,12 +29,14 @@ export default function AdminAddArtist() {
   const {
     cities,
     shops,
+    genders,
     loading: loadingData,
     error: dataError,
     refetch,
   } = useAdminData({
     loadCities: true,
     loadShops: true,
+    loadGenders: true,
   });
 
   const { formData, setFormData, loading, message, handleChange, handleSubmit } =
@@ -55,7 +57,7 @@ export default function AdminAddArtist() {
       transformData: formData => ({
         name: formData.name,
         instagram_handle: formData.instagram_handle || undefined,
-        gender: formData.gender || undefined,
+        gender_id: formData.gender ? parseInt(formData.gender, 10) : undefined,
         url: formData.url || undefined,
         contact: formData.contact || undefined,
         city_id: parseInt(formData.city_id),
@@ -122,14 +124,19 @@ export default function AdminAddArtist() {
 
         <FormGroup>
           <Label htmlFor="gender">Gender</Label>
-          <Input
-            type="text"
+          <Select
             id="gender"
             name="gender"
             value={formData.gender}
             onChange={handleChange}
-            placeholder="Gender"
-          />
+          >
+            <option value="">Not specified</option>
+            {genders.map(g => (
+              <option key={g.id} value={g.id}>
+                {g.label}
+              </option>
+            ))}
+          </Select>
         </FormGroup>
 
         <FormGroup>

@@ -15,7 +15,8 @@ const ARTIST_SELECT = `
   name,
   slug,
   instagram_handle,
-  gender,
+  gender_id,
+  gender_bucket: genders ( id, label, slug ),
   url,
   contact,
   is_traveling
@@ -215,13 +216,18 @@ function applyPrimaryFlat(result: any) {
 }
 
 function formatArtist(data: any): Artist & Record<string, any> {
+  const gb = Array.isArray(data.gender_bucket)
+    ? data.gender_bucket[0]
+    : data.gender_bucket;
   return {
     id: data.id,
     name: data.name,
     slug: data.slug || null,
     instagram_handle: data.instagram_handle || null,
     is_traveling: data.is_traveling || false,
-    gender: data.gender || null,
+    gender_id: data.gender_id ?? null,
+    gender: gb?.label || null,
+    gender_slug: gb?.slug || null,
     url: data.url || null,
     contact: data.contact || null,
   };

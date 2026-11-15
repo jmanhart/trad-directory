@@ -136,10 +136,11 @@ export default function RecordEditor({
   const [deletingStyleId, setDeletingStyleId] = useState<number | null>(null);
   const [styleError, setStyleError] = useState<string | null>(null);
 
-  const { cities, shops, states, refetch } = useAdminData({
+  const { cities, shops, states, genders, refetch } = useAdminData({
     loadCities: true,
     loadShops: true,
     loadStates: true,
+    loadGenders: true,
   });
 
   const [linkStatuses, setLinkStatuses] = useState<LinkStatusMaps>({
@@ -314,7 +315,7 @@ export default function RecordEditor({
       const formData: ArtistFormData = {
         name: artist.name || "",
         instagram_handle: artist.instagram_handle || "",
-        gender: artist.gender || "",
+        gender: artist.gender_id != null ? String(artist.gender_id) : "",
         url: artist.url || "",
         contact: artist.contact || "",
         city_id: artist.city_id?.toString() || "",
@@ -505,7 +506,7 @@ export default function RecordEditor({
           id: editingArtistId,
           name: formData.name,
           instagram_handle: formData.instagram_handle || undefined,
-          gender: formData.gender || undefined,
+          gender_id: formData.gender ? parseInt(formData.gender, 10) : undefined,
           url: formData.url || undefined,
           contact: formData.contact || undefined,
           city_id: formData.city_id ? parseInt(formData.city_id) : undefined,
@@ -655,7 +656,7 @@ export default function RecordEditor({
         <div className={styles.viewList}>
           {viewRow("Name", formData.name)}
           {viewRow("Instagram", formData.instagram_handle)}
-          {viewRow("Gender", formData.gender)}
+          {viewRow("Gender", genders.find(g => String(g.id) === formData.gender)?.label || "")}
           {viewRow("URL", formData.url)}
           {viewRow("Contact", formData.contact)}
           {viewRow("City", cityLabel(formData.city_id))}
@@ -833,15 +834,20 @@ export default function RecordEditor({
 
                       <FormGroup>
                         <Label htmlFor="gender">Gender</Label>
-                        <Input
-                          type="text"
+                        <Select
                           id="gender"
                           value={formData.gender}
                           onChange={e =>
                             handleFormChange("gender", e.target.value)
                           }
-                          placeholder="Gender"
-                        />
+                        >
+                          <option value="">Not specified</option>
+                          {genders.map(g => (
+                            <option key={g.id} value={g.id}>
+                              {g.label}
+                            </option>
+                          ))}
+                        </Select>
                       </FormGroup>
 
                       <FormGroup>
