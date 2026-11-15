@@ -27,6 +27,7 @@ const TABLES = [
   "states",
   "cities",
   "tattoo_shops",
+  "genders",
   "artists",
   "artist_location",
   "submissions",
@@ -41,6 +42,7 @@ const SEQUENCE_TABLES = {
   cities: "cities_id_seq",
   tattoo_shops: "tattoo_shops_id_seq",
   artists: "artists_id_seq",
+  genders: "genders_id_seq",
   submissions: "submissions_id_seq",
   profiles: "profiles_id_seq",
 };
