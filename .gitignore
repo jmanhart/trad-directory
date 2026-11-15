@@ -37,3 +37,4 @@ backups/
 !.env.example
 
 *storybook.log
+.env.supabase
